@@ -1,85 +1,83 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
+  <!-- Navbar fijo -->
+  <header class="navbar">
+    <div class="navbar-container">
+      <!-- Logo y nombre -->
+      <div class="brand">
+        <img
+          alt="Vue logo"
+          class="logo"
+          src="@/assets/logo.svg"
+          width="50"
+          height="50"
+        />
+        <h1>Hospitals</h1>
+      </div>
 
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
+      <!-- rutas a archivos -->
+      <nav class="nav-links">
 
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
+        <RouterLink to="/">Homes</RouterLink>
         <RouterLink to="/about">About</RouterLink>
+        <RouterLink to="/contact">Contact Us</RouterLink>
+        <RouterLink to="/faq">FAQ</RouterLink>
       </nav>
     </div>
   </header>
 
-  <RouterView />
+  <!-- Contenido principal -->
+  <main>
+    <RouterView />
+  </main>
 </template>
 
 <style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
+/* css navbar */
+.navbar {
+  position: fixed;       /* Se queda "pegada" al top */
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: #fff;
+  border-bottom: 1px solid #ccc;
+  z-index: 999;         /* Asegura que quede encima de otros elementos */
 }
 
-.logo {
+/* centrar contenido */
+.navbar-container {
+  max-width: 1200px;    /* Anchura máxima deseada (ajústalo a tu gusto) */
+  margin: 0 auto;       /* Centra horizontalmente */
+  display: flex;
+  align-items: center;  /* Centra verticalmente */
+  justify-content: space-between; /* Espacio entre logo y menú */
+  padding: 0.5rem 1rem; /* Espacio interno del navbar */
+}
+
+/* Sección para el logo y texto */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem; /* Espacio entre logo y título */
+}
+
+.brand .logo {
   display: block;
-  margin: 0 auto 2rem;
 }
 
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
+/* Estilos del nav */
+.nav-links a {
+  margin-left: 1rem;
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
 }
 
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
+main {
+  margin-top: 80px; /* Ajustar según la altura del navbar */
+  padding: 1rem;
 }
 </style>
