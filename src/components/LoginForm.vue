@@ -1,16 +1,16 @@
 <template>
   <form @submit.prevent="login">
-    <h2>Log in</h2>
-    <input v-model="correo" placeholder="Email address" type="email" required />
-    <input v-model="contrasena" type="password" placeholder="Password" required />
-    <button type="submit">Log in</button>
+    <h2>Iniciar Sesión</h2>
+    <input v-model="correo" placeholder="Correo" type="email" required />
+    <input v-model="contrasena" type="password" placeholder="Contraseña" required />
+    <button type="submit">Ingresar</button>
 
     <p v-if="mensaje" class="error">{{ mensaje }}</p>
 
     <!-- 🔹 Enlace para registrarse con colores personalizados -->
     <p class="register-link">
-      <span class="text">¿Don´t you have an account?</span>
-      <RouterLink to="/signup" class="link"> Sign up here</RouterLink>
+      <span class="text">¿No tienes una cuenta?</span>
+      <RouterLink to="/signup" class="link">Regístrate aquí</RouterLink>
     </p>
   </form>
 </template>

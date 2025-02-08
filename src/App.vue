@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterLink, RouterView } from 'vue-router';
 </script>
 
 <template>
@@ -25,8 +25,7 @@ import { RouterLink, RouterView } from 'vue-router'
         <RouterLink to="/contact">Contact Us</RouterLink>
         <RouterLink to="/faq">FAQ</RouterLink>
 
-        <!-- 🔹 Agregamos los enlaces de Registro y Login -->
-
+        <!-- 🔹 Se mantiene solo el botón de Login en el navbar -->
         <RouterLink to="/login">Log in</RouterLink>
       </nav>
     </div>
