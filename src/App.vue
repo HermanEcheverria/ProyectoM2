@@ -20,11 +20,14 @@ import { RouterLink, RouterView } from 'vue-router'
 
       <!-- rutas a archivos -->
       <nav class="nav-links">
-
-        <RouterLink to="/">Homes</RouterLink>
+        <RouterLink to="/">Home</RouterLink>
         <RouterLink to="/about">About</RouterLink>
         <RouterLink to="/contact">Contact Us</RouterLink>
         <RouterLink to="/faq">FAQ</RouterLink>
+
+        <!-- 🔹 Agregamos los enlaces de Registro y Login -->
+
+        <RouterLink to="/login">Log in</RouterLink>
       </nav>
     </div>
   </header>
