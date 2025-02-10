@@ -1,6 +1,8 @@
 package com.unis.model;
 
+
 import jakarta.persistence.*;
+import java.util.Date;
 
 @Entity
 @Table(name = "USUARIO")
@@ -20,8 +22,16 @@ public class Usuario {
     @Column(name = "CONTRASENA", nullable = false, length = 100)
     private String contrasena;
 
-    @Column(name = "ROL", nullable = true, length = 50)
-    private String rol;
+    @ManyToOne
+    @JoinColumn(name = "ROL_ID", nullable = true)  // La relación con la tabla ROL, por ahora, será NULL hasta ser asignado por el admin
+    private Rol rol;
+
+    @Column(name = "ESTADO", nullable = false)
+    private int estado = 0;  // Estado siempre será 0 (inactivo) al inicio
+
+    @Column(name = "FECHA_CREACTION", nullable = false)
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date fechaCreaction = new Date();  // Fecha de creación se establece con la fecha y hora actual
 
     // Getters y Setters
     public Long getId() {
@@ -56,11 +66,27 @@ public class Usuario {
         this.contrasena = contrasena;
     }
 
-    public String getRol() {
+    public Rol getRol() {
         return rol;
     }
 
-    public void setRol(String rol) {
+    public void setRol(Rol rol) {
         this.rol = rol;
+    }
+
+    public int getEstado() {
+        return estado;
+    }
+
+    public void setEstado(int estado) {
+        this.estado = estado;
+    }
+
+    public Date getFechaCreaction() {
+        return fechaCreaction;
+    }
+
+    public void setFechaCreaction(Date fechaCreaction) {
+        this.fechaCreaction = fechaCreaction;
     }
 }

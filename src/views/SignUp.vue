@@ -16,14 +16,14 @@ const registrar = async () => {
 
   try {
     await registerUser(nombreUsuario.value, correo.value, contrasena.value);
-    mensaje.value = "✅ Registro exitoso. Redirigiendo al login...";
+    mensaje.value = "Registro exitoso. Redirigiendo al login...";
 
     // Espera 2 segundos y redirige a la página de login
     setTimeout(() => {
       router.push("/login");
     }, 2000);
   } catch (error) {
-    errorMensaje.value = "❌ Error al registrar usuario. Inténtalo nuevamente.";
+    errorMensaje.value = "Error al registrar usuario. Inténtalo nuevamente.";
   }
 };
 </script>

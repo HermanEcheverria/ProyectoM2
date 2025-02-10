@@ -1,29 +1,39 @@
 import axios from "axios";
 import { API_URL } from "@/config.js";
 
-// 🔹 Registro de usuario
 export const registerUser = async (nombreUsuario, correo, contrasena) => {
   try {
     const response = await axios.post(`${API_URL}/usuarios/registro`, {
       nombreUsuario,
       correo,
       contrasena,
-      rol: null, // Se registra como NULL si el rol no es obligatorio
+      rol: null, // Se registra como NULL hasta que un admin lo asigne
     });
     return response.data;
   } catch (error) {
-    console.error(" Error registrando usuario:", error.response?.data || error.message);
+    console.error("Error registrando usuario:", error.response?.data || error.message);
     throw error;
   }
 };
 
-// 🔹 Login de usuario
 export const loginUser = async (correo, contrasena) => {
   try {
     const response = await axios.post(`${API_URL}/usuarios/login`, { correo, contrasena });
+
+    const { id, rol } = response.data;
+
+    localStorage.setItem("userRole", rol?.id || null);
+    localStorage.setItem("userId", id);
+
     return response.data;
   } catch (error) {
-    console.error(" Error iniciando sesión:", error.response?.data || error.message);
+    console.error("Error iniciando sesión:", error.response?.data || error.message);
     throw error;
   }
+};
+
+// Función para cerrar sesión
+export const logoutUser = () => {
+  localStorage.removeItem("userRole");
+  localStorage.removeItem("userId");
 };

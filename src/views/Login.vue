@@ -2,44 +2,46 @@
 import { ref } from "vue";
 import { loginUser } from "@/services/authService.js";
 import { useRouter } from "vue-router";
+import { setUser } from "@/stores/authStore"; // Estado global
 
 const router = useRouter();
 const correo = ref("");
 const contrasena = ref("");
-const mensaje = ref("");
+const errorMensaje = ref("");
 
 const login = async () => {
+  errorMensaje.value = "";
+
   try {
-    const user = await loginUser({
-      correo: correo.value,
-      contrasena: contrasena.value,
-    });
-    localStorage.setItem("user", JSON.stringify(user));
-    mensaje.value = "Inicio de sesión exitoso. Redirigiendo...";
-    setTimeout(() => {
+    const user = await loginUser(correo.value, contrasena.value);
+
+    // 🔹 Establece el usuario en el estado global
+    setUser(user.rol?.id || null);
+
+    // 🔄 Redirige automáticamente según el rol
+    if (user.rol?.id === 1) {
+      router.push("/admin-portal");
+    } else {
       router.push("/");
-    }, 2000);
+    }
   } catch (error) {
-    mensaje.value = "Credenciales incorrectas.";
+    errorMensaje.value = "Error al iniciar sesión. Inténtalo nuevamente.";
   }
 };
 </script>
 
 <template>
   <form @submit.prevent="login">
-    <h2>Iniciar Sesión</h2>
+    <h2>Iniciar sesión</h2>
     <input v-model="correo" type="email" placeholder="Correo" required />
     <input v-model="contrasena" type="password" placeholder="Contraseña" required />
-    <button type="submit">Ingresar</button>
+    <button type="submit">Iniciar sesión</button>
 
-    <p v-if="mensaje">{{ mensaje }}</p>
 
-    <p>
-      ¿No tienes cuenta?
-      <RouterLink to="/signup">Regístrate aquí</RouterLink>
-    </p>
+    <p v-if="errorMensaje" class="error">{{ errorMensaje }}</p>
   </form>
 </template>
+
 
 <style scoped>
 form {
