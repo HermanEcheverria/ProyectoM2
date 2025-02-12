@@ -7,11 +7,11 @@ const SERVICE_ID = "service_f70s6q3";
 const TEMPLATE_ID = "template_tf3o0fd";
 const PUBLIC_KEY = "SFAQ9kOAKVFMBgkSC";
 
-//  Función para enviar el correo de confirmación
+// Función para enviar el correo de confirmación
 const sendWelcomeEmail = async (userEmail, userName) => {
   try {
     const templateParams = {
-      to_email: userEmail,
+      to_email: userEmail, // ✅ Se envía al destinatario correcto
       to_name: userName,
     };
 
@@ -22,7 +22,7 @@ const sendWelcomeEmail = async (userEmail, userName) => {
   }
 };
 
-//  Registro de usuario
+// Registro de usuario
 export const registerUser = async (nombreUsuario, correo, contrasena) => {
   try {
     const response = await axios.post(`${API_URL}/usuarios/registro`, {
@@ -32,8 +32,10 @@ export const registerUser = async (nombreUsuario, correo, contrasena) => {
       rol: null, // Se registra como NULL hasta que un admin lo asigne
     });
 
-    //  Enviar correo de bienvenida después del registro
-    await sendWelcomeEmail(correo, nombreUsuario);
+    if (response.data) {
+      // Solo envía el correo si el usuario se registró correctamente
+      await sendWelcomeEmail(correo, nombreUsuario);
+    }
 
     return response.data;
   } catch (error) {
@@ -42,12 +44,16 @@ export const registerUser = async (nombreUsuario, correo, contrasena) => {
   }
 };
 
-//  Inicio de sesión
+// Inicio de sesión
 export const loginUser = async (correo, contrasena) => {
   try {
     const response = await axios.post(`${API_URL}/usuarios/login`, { correo, contrasena });
 
-    const { id, rol } = response.data;
+    const { id, rol, estado } = response.data; // Asegúrate de que el backend envíe 'estado'
+
+    if (estado === 0) {
+      throw new Error("Tu cuenta está inactiva. Espera a que un administrador la active.");
+    }
 
     localStorage.setItem("userRole", rol?.id || null);
     localStorage.setItem("userId", id);
@@ -59,7 +65,7 @@ export const loginUser = async (correo, contrasena) => {
   }
 };
 
-//  Función para cerrar sesión
+// Función para cerrar sesión
 export const logoutUser = () => {
   localStorage.removeItem("userRole");
   localStorage.removeItem("userId");

@@ -2,8 +2,6 @@
 import { ref } from "vue";
 import { registerUser } from "@/services/authService.js";
 import { useRouter } from "vue-router";
-import emailjs from "emailjs-com"; //  Importamos EmailJS
-
 
 const router = useRouter();
 const nombreUsuario = ref("");
@@ -12,38 +10,15 @@ const contrasena = ref("");
 const mensaje = ref("");
 const errorMensaje = ref("");
 
-// Configuración de EmailJS
-const SERVICE_ID = "service_f70s6q3";
-const TEMPLATE_ID = "template_tf3o0fd";
-const PUBLIC_KEY = "SFAQ9kOAKVFMBgkSC";
-
-// Función para enviar el correo de bienvenida
-const sendWelcomeEmail = async () => {
-  try {
-    const templateParams = {
-      to_email: correo.value,
-      to_name: nombreUsuario.value,
-    };
-
-    await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, PUBLIC_KEY);
-    console.log("Correo de bienvenida enviado con éxito");
-  } catch (error) {
-    console.error("Error enviando correo:", error);
-  }
-};
-
 const registrar = async () => {
   mensaje.value = "";
   errorMensaje.value = "";
 
   try {
     await registerUser(nombreUsuario.value, correo.value, contrasena.value);
-    mensaje.value = "Registro exitoso. Redirigiendo al login...";
+    mensaje.value = "Registro exitoso. Revisa tu correo. Redirigiendo al login...";
 
-    // Enviar el correo después de registrar al usuario
-    await sendWelcomeEmail();
-
-    //  Espera 2 segundos y redirige a la página de login
+    // Espera 2 segundos y redirige a la página de login
     setTimeout(() => {
       router.push("/login");
     }, 2000);
@@ -65,7 +40,7 @@ const registrar = async () => {
     <p v-if="errorMensaje" class="error">{{ errorMensaje }}</p>
 
     <p>
-     Already an account?
+      Already have an account?
       <RouterLink to="/login">Click here</RouterLink>
     </p>
   </form>

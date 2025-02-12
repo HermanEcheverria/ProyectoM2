@@ -30,17 +30,19 @@ onMounted(() => {
 
       <nav class="nav-links">
         <RouterLink to="/">Home</RouterLink>
+        <RouterLink to="/">Sub Home 1</RouterLink>
+        <RouterLink to="/">Sub Home 2</RouterLink>
         <RouterLink to="/about">About</RouterLink>
         <RouterLink to="/contact">Contact Us</RouterLink>
         <RouterLink to="/faq">FAQ</RouterLink>
 
-        <!-- 🔹 Mostrar "Gestionar" SOLO si el usuario es Admin (rol_id === 1) -->
+        <!--  Mostrar "Gestionar" SOLO si el usuario es Admin (rol_id === 1) -->
         <RouterLink v-if="userRole === 1" to="/admin-portal">Gestionar</RouterLink>
 
-        <!-- 🔹 Mostrar "Log in" solo si NO está autenticado -->
+        <!--  Mostrar "Log in" solo si NO está autenticado -->
         <RouterLink v-if="!isLoggedIn" to="/login">Log in</RouterLink>
 
-        <!-- 🔹 Botón "Cerrar sesión" si está autenticado -->
+        <!-- Botón "Cerrar sesión" si está autenticado -->
         <button v-if="isLoggedIn" @click="logout(router)" class="logout-btn">Cerrar sesión</button>
       </nav>
     </div>
