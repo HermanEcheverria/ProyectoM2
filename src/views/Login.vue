@@ -4,6 +4,7 @@ import { loginUser } from "@/services/authService.js";
 import { useRouter } from "vue-router";
 import { setUser } from "@/stores/authStore"; // Estado global
 
+
 const router = useRouter();
 const correo = ref("");
 const contrasena = ref("");
@@ -38,7 +39,12 @@ const login = async () => {
     <button type="submit">Iniciar sesión</button>
 
 
+
     <p v-if="errorMensaje" class="error">{{ errorMensaje }}</p>
+    <p>
+      Don't have an account? <RouterLink to="/signup">CLICK HERE</RouterLink>
+
+    </p>
   </form>
 </template>
 
