@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import type { RouteLocationNormalized, NavigationGuardNext } from "vue-router";
 import HomeView from "../views/HomeView.vue";
 import AboutView from "../views/AboutView.vue";
 import SignUp from "../views/SignUp.vue";
@@ -8,8 +9,12 @@ import ContactView from "../views/ContactView.vue";
 import AdminPortal from "../views/AdminPortal.vue";
 import AdminFaqView from "../views/admin/AdminFaqView.vue";
 
-// 🔹 Función para validar si el usuario es administrador antes de entrar
-const requireAuthAdmin = (to, from, next) => {
+// Función para validar si el usuario es administrador antes de entrar
+const requireAuthAdmin = (
+  to: RouteLocationNormalized,
+  from: RouteLocationNormalized,
+  next: NavigationGuardNext
+) => {
   const userRole = localStorage.getItem("userRole");
   if (userRole === "1") {
     next(); // Permite el acceso

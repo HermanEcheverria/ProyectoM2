@@ -1,5 +1,5 @@
 import axios from "axios";
-import { API_URL } from "@/config.js";
+import API_URL from "@/config";
 import emailjs from "emailjs-com";
 
 // Configuración de EmailJS
