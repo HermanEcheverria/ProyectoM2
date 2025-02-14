@@ -4,7 +4,9 @@
     <p>Bienvenido al portal de gestión.</p>
 
     <!-- Botón para acceder a la gestión de FAQ -->
-    <button @click="irAGestionFaq" class="faq-button">❓ Gestionar Preguntas Frecuentes</button>
+    <button @click="irAGestionFaq" class="faq-button">
+      ❓ Gestionar Preguntas Frecuentes
+    </button>
 
     <!-- Vista dinámica según la ruta -->
     <router-view />
@@ -49,8 +51,6 @@ const irAGestionFaq = () => {
 .faq-button:hover {
   background-color: #0056b3;
 }
-</style>
-
 
 .admin-portal {
   padding: 20px;
