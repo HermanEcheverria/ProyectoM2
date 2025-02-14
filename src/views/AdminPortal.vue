@@ -3,24 +3,30 @@
     <h1>Panel de Administración</h1>
     <p>Bienvenido al portal de gestión.</p>
 
-    <!-- Botón para acceder a la gestión de FAQ -->
-    <button @click="irAGestionFaq" class="faq-button">
-      ❓ Gestionar Preguntas Frecuentes
-    </button>
+    <!-- Menú de navegación con botones -->
+    <div class="gestion-menu">
+      <button @click="router.push('/admin-usuarios')" class="gestion-button">Usuarios</button>
+      <button @click="router.push('/admin-doctores')" class="gestion-button">Doctores</button>
+      <button @click="router.push('/admin-citas')" class="gestion-button">Citas</button>
+      <button @click="router.push('/admin-agenda')" class="gestion-button">Agenda Médica</button>
+      <button @click="router.push('/admin-faq')" class="faq-button">FAQ</button>
+    </div>
 
     <!-- Vista dinámica según la ruta -->
     <router-view />
-    <!-- Se integra el componente para administrar usuarios inactivos -->
-    <AdminUsuarios />
+
+    <!-- Mostrar el formulario de AdminUsuarios si la ruta es /admin-usuarios -->
+    <AdminUsuarios v-if="route.path === '/admin-usuarios'" />
   </div>
 </template>
 
 <script lang="ts" setup>
 import { onMounted } from "vue";
-import { useRouter } from "vue-router";
-import AdminUsuarios from "@/components/AdminUsuarios.vue"; // Asegúrate que la ruta es correcta
+import { useRouter, useRoute } from "vue-router";
+import AdminUsuarios from "@/components/AdminUsuarios.vue";
 
 const router = useRouter();
+const route = useRoute();
 
 // Validación de seguridad: redirige a Home si el usuario no es Admin (rol "1")
 onMounted(() => {
@@ -29,15 +35,10 @@ onMounted(() => {
     router.push("/");
   }
 });
-
-// Redirigir a la página de gestión de FAQ
-const irAGestionFaq = () => {
-  router.push("/admin/faq");
-};
 </script>
 
 <style scoped>
-.faq-button {
+.faq-button, .gestion-button {
   background-color: #007bff;
   color: white;
   border: none;
@@ -45,14 +46,25 @@ const irAGestionFaq = () => {
   font-size: 16px;
   border-radius: 5px;
   cursor: pointer;
-  margin-top: 15px;
+  margin-top: 10px;
+  display: block;
+  width: 100%;
+  text-align: center;
 }
 
-.faq-button:hover {
+.faq-button:hover, .gestion-button:hover {
   background-color: #0056b3;
 }
 
 .admin-portal {
   padding: 20px;
+}
+
+.gestion-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 300px;
+  margin-bottom: 20px;
 }
 </style>

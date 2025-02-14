@@ -8,6 +8,7 @@ import FaqView from "../views/FaqView.vue";
 import ContactView from "../views/ContactView.vue";
 import AdminPortal from "../views/AdminPortal.vue";
 import AdminFaqView from "../views/admin/AdminFaqView.vue";
+import AdminUsuarios from "../components/AdminUsuarios.vue";
 
 // Función para validar si el usuario es administrador antes de entrar
 const requireAuthAdmin = (
@@ -34,6 +35,7 @@ const router = createRouter({
     { path: "/contact", name: "contact", component: ContactView },
     { path: "/admin-portal", name: "admin-portal", component: AdminPortal, beforeEnter: requireAuthAdmin }, // Solo Admins
     { path: "/admin/faq", name: "admin-faq", component: AdminFaqView, beforeEnter: requireAuthAdmin }, //Editar Faq
+    { path: "/admin-usuarios", name: "admin-usuarios", component: AdminUsuarios, beforeEnter: requireAuthAdmin },
   ],
 });
 
