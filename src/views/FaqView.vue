@@ -1,26 +1,32 @@
-<script setup lang="ts">
+<script setup lang="js">
 import { ref, onMounted } from "vue";
-import { obtenerPreguntas } from "@/services/faqService";
+import { obtenerPreguntas } from "@/services/faqService.js";
 
 
 // Variables reactivas
-const preguntas = ref<{ id: number; pregunta: string; respuesta?: string }[]>([]);
-const activeIndex = ref<number | null>(null);
-const errorCargando = ref<boolean>(false);
+const preguntas = ref([]);
+const activeIndex = ref(null);
+const errorCargando = ref(false);
 
 // Función para cargar preguntas desde la API
 const cargarPreguntas = async () => {
   try {
     errorCargando.value = false;
-    preguntas.value = await obtenerPreguntas();
+    const data = await obtenerPreguntas();
+    if (Array.isArray(data)) {
+      preguntas.value = data;
+    } else {
+      console.error("🚨 Error: La API no devolvió un array de preguntas.");
+      errorCargando.value = true;
+    }
   } catch (error) {
-    console.error("Error cargando preguntas:", error);
+    console.error("🚨 Error cargando preguntas:", error);
     errorCargando.value = true;
   }
 };
 
 // Alternar visibilidad de respuestas
-const toggleActive = (index: number) => {
+const toggleActive = (index) => {
   activeIndex.value = activeIndex.value === index ? null : index;
 };
 
@@ -36,22 +42,18 @@ onMounted(() => {
 
     <!-- Mostrar mensaje si hay error al cargar preguntas -->
     <p v-if="errorCargando" class="error-message">
-      No se pudieron cargar las preguntas. Intenta de nuevo más tarde.
+      ⚠ No se pudieron cargar las preguntas. Intenta de nuevo más tarde.
     </p>
 
     <!-- Sección dinámica con preguntas -->
-    <section
-      v-for="(pregunta, index) in preguntas"
-      :key="pregunta.id || index"
-      class="faq-item"
-    >
+    <section v-for="(pregunta, index) in preguntas" :key="pregunta.id" class="faq-item">
       <h2 @click="toggleActive(index)">
         <span :class="{ 'rotated': activeIndex === index }">▶</span>
         {{ pregunta.pregunta }}
       </h2>
 
       <p v-if="activeIndex === index">
-        {{ pregunta.respuesta ? pregunta.respuesta : "🔹 Esta pregunta aún no tiene respuesta." }}
+        {{ pregunta.respuesta?.trim() || "🔹 Esta pregunta aún no tiene respuesta." }}
       </p>
     </section>
   </div>
@@ -102,5 +104,6 @@ h1 {
   color: red;
   text-align: center;
   font-size: 1.2rem;
+  font-weight: bold;
 }
 </style>

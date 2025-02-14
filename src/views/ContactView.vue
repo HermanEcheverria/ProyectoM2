@@ -1,25 +1,31 @@
-<script setup>
+<script lang="js" setup>
 import { ref } from "vue";
-import { enviarPregunta } from "@/services/faqService";
+import { enviarPregunta } from "@/services/faqService.js";
 
-// Definir variables reactivas
+// ✅ Variables reactivas
 const nombre = ref("");
 const correo = ref("");
 const mensaje = ref("");
 const mensajeExito = ref("");
 
-// Función para enviar el formulario
+// ✅ Función para enviar el formulario
 const enviarFormulario = async () => {
+  if (!nombre.value.trim() || !correo.value.trim() || !mensaje.value.trim()) {
+    mensajeExito.value = "⚠ Todos los campos son obligatorios.";
+    return;
+  }
+
   try {
     await enviarPregunta(nombre.value, correo.value, mensaje.value);
-    mensajeExito.value = "¡Pregunta enviada con éxito!";
+    mensajeExito.value = "✅ ¡Pregunta enviada con éxito!";
 
     // Limpiar los campos después de enviar
     nombre.value = "";
     correo.value = "";
     mensaje.value = "";
   } catch (error) {
-    mensajeExito.value = "Error enviando la pregunta.";
+    console.error("❌ Error al enviar la pregunta:", error);
+    mensajeExito.value = "❌ Hubo un error al enviar tu pregunta. Intenta nuevamente.";
   }
 };
 </script>
@@ -46,7 +52,7 @@ const enviarFormulario = async () => {
 
     <button @click="enviarFormulario">Enviar</button>
 
-    <p v-if="mensajeExito">{{ mensajeExito }}</p>
+    <p v-if="mensajeExito" class="mensaje">{{ mensajeExito }}</p>
   </div>
 </template>
 
@@ -54,10 +60,12 @@ const enviarFormulario = async () => {
 .contact-page {
   max-width: 600px;
   margin: 0 auto;
+  text-align: center;
 }
 
 .form-group {
   margin-bottom: 1.25rem;
+  text-align: left;
 }
 
 label {
@@ -69,6 +77,8 @@ label {
 input, textarea {
   width: 100%;
   padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
   box-sizing: border-box;
 }
 
@@ -80,5 +90,14 @@ button {
   color: white;
   border: none;
   border-radius: 5px;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+.mensaje {
+  margin-top: 1rem;
+  font-weight: bold;
 }
 </style>

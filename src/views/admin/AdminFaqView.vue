@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { obtenerPreguntas, enviarPregunta, editarPregunta, eliminarPregunta } from "../../services/faqService";
+import { obtenerPreguntas, enviarPregunta, editarPregunta, eliminarPregunta } from "../../services/faqService.js";
+
 
 // Definir la estructura de una pregunta
 interface Pregunta {
