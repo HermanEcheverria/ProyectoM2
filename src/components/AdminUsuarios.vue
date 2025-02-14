@@ -45,41 +45,28 @@
   </div>
 </template>
 
-<script lang="ts" setup>
+<script setup>
 import { ref, onMounted } from "vue";
 import axios from "axios";
+import emailjs from "emailjs-com";
 
-/**
- * Interfaz que representa un Usuario en la aplicación.
- */
-interface Usuario {
-  id: number;
-  nombreUsuario: string;
-  correo: string;
-  estado: number; // 1 = Activo, 0 = Inactivo
-  rolSeleccionado?: number;
-}
+const usuarios = ref([]);
+const roles = ref([]);
 
-/**
- * Interfaz que representa un Rol en la aplicación.
- */
-interface Rol {
-  id: number;
-  roleName: string;
-}
-
-const usuarios = ref<Usuario[]>([]);
-const roles = ref<Rol[]>([]);
+// Configuración de EmailJS
+const SERVICE_ID = "service_f70s6q3";
+const TEMPLATE_ID = "template_5cq4vng";
+const PUBLIC_KEY = "SFAQ9kOAKVFMBgkSC";
 
 /**
  * Obtiene la lista de usuarios desde el backend.
  */
 async function fetchUsuarios() {
   try {
-    const response = await axios.get<Usuario[]>("/usuarios");
-    usuarios.value = response.data.map((usuario) => ({
+    const response = await axios.get("/usuarios");
+    usuarios.value = response.data.map(usuario => ({
       ...usuario,
-      rolSeleccionado: undefined, // Agregamos rolSeleccionado para control en el frontend
+      rolSeleccionado: null // Para permitir selección de rol antes de activar
     }));
   } catch (error) {
     console.error("Error al cargar usuarios:", error);
@@ -91,7 +78,7 @@ async function fetchUsuarios() {
  */
 async function fetchRoles() {
   try {
-    const response = await axios.get<Rol[]>("/usuarios/roles");
+    const response = await axios.get("/usuarios/roles");
     roles.value = response.data;
   } catch (error) {
     console.error("Error al cargar roles:", error);
@@ -99,20 +86,47 @@ async function fetchRoles() {
 }
 
 /**
- * Activa un usuario seleccionando un rol y cambiando su estado a activo.
- * @param usuario Usuario a activar.
+ * Envía un correo de activación con el rol asignado.
  */
-async function activarUsuario(usuario: Usuario) {
+const sendActivationEmail = async (userEmail, userName, roleName) => {
+  try {
+    const templateParams = {
+      to_email: userEmail,
+      to_name: userName,
+      message: `Your account has been activated. Your assigned role is: ${roleName}`
+    };
+
+    await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, PUBLIC_KEY);
+    console.log("Correo de activación enviado con éxito");
+  } catch (error) {
+    console.error("Error enviando correo de activación:", error);
+  }
+};
+
+/**
+ * Activa un usuario y le envía un correo de confirmación con su rol.
+ */
+async function activarUsuario(usuario) {
   if (!usuario.rolSeleccionado) {
     alert("Seleccione un rol para activar el usuario.");
     return;
   }
   try {
+    // Obtener el nombre del rol seleccionado
+    const roleName = roles.value.find(rol => rol.id === usuario.rolSeleccionado)?.roleName || "Unknown Role";
+
+    // Activar usuario en el backend
     await axios.put(`/usuarios/${usuario.id}/activar`, {
-      rolId: usuario.rolSeleccionado,
+      rolId: usuario.rolSeleccionado
     });
-    usuario.estado = 1; // Actualizar estado en frontend
-    alert("Usuario activado correctamente.");
+
+    // Cambiar el estado en el frontend
+    usuario.estado = 1;
+
+    // Enviar correo de activación
+    await sendActivationEmail(usuario.correo, usuario.nombreUsuario, roleName);
+
+    alert("Usuario activado correctamente y correo enviado.");
   } catch (error) {
     console.error("Error al activar usuario:", error);
     alert("Ocurrió un error al activar el usuario.");
@@ -121,9 +135,8 @@ async function activarUsuario(usuario: Usuario) {
 
 /**
  * Desactiva un usuario cambiando su estado a inactivo.
- * @param usuario Usuario a desactivar.
  */
-async function desactivarUsuario(usuario: Usuario) {
+async function desactivarUsuario(usuario) {
   try {
     await axios.put(`/usuarios/${usuario.id}/desactivar`);
     usuario.estado = 0; // Actualizar estado en frontend

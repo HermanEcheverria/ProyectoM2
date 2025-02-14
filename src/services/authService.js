@@ -4,25 +4,42 @@ import emailjs from "emailjs-com";
 
 // Configuración de EmailJS
 const SERVICE_ID = "service_f70s6q3";
-const TEMPLATE_ID = "template_tf3o0fd";
+const TEMPLATE_SIGNUP_ID = "template_tf3o0fd";  // Template de registro
+const TEMPLATE_ACTIVATION_ID = "template_5cq4vng"; // Template de activación
 const PUBLIC_KEY = "SFAQ9kOAKVFMBgkSC";
 
-// Función para enviar el correo de confirmación
+// 🔹 Función para enviar el correo de confirmación de registro
 const sendWelcomeEmail = async (userEmail, userName) => {
   try {
     const templateParams = {
-      to_email: userEmail, // ✅ Se envía al destinatario correcto
+      to_email: userEmail,
       to_name: userName,
     };
 
-    await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, PUBLIC_KEY);
+    await emailjs.send(SERVICE_ID, TEMPLATE_SIGNUP_ID, templateParams, PUBLIC_KEY);
     console.log("Correo de bienvenida enviado con éxito");
   } catch (error) {
-    console.error("Error enviando correo:", error);
+    console.error("Error enviando correo de bienvenida:", error);
   }
 };
 
-// Registro de usuario
+// 🔹 Función para enviar el correo de activación
+const sendActivationEmail = async (userEmail, userName, userRole) => {
+  try {
+    const templateParams = {
+      to_email: userEmail,
+      to_name: userName,
+      message: `Your account has been activated. Your assigned role is ${userRole}`,
+    };
+
+    await emailjs.send(SERVICE_ID, TEMPLATE_ACTIVATION_ID, templateParams, PUBLIC_KEY);
+    console.log("Correo de activación enviado con éxito");
+  } catch (error) {
+    console.error("Error enviando correo de activación:", error);
+  }
+};
+
+// 🔹 Registro de usuario
 export const registerUser = async (nombreUsuario, correo, contrasena) => {
   try {
     const response = await axios.post(`${API_URL}/usuarios/registro`, {
@@ -33,7 +50,7 @@ export const registerUser = async (nombreUsuario, correo, contrasena) => {
     });
 
     if (response.data) {
-      // Solo envía el correo si el usuario se registró correctamente
+      // Enviar correo de bienvenida solo si el registro fue exitoso
       await sendWelcomeEmail(correo, nombreUsuario);
     }
 
@@ -44,12 +61,25 @@ export const registerUser = async (nombreUsuario, correo, contrasena) => {
   }
 };
 
-// Inicio de sesión
+// 🔹 Función para activar un usuario y enviar correo de activación
+export const activateUser = async (usuarioId, userEmail, userName, userRole) => {
+  try {
+    await axios.put(`${API_URL}/usuarios/${usuarioId}/activar`, { rol: userRole });
+
+    // Enviar correo de activación después de activar la cuenta
+    await sendActivationEmail(userEmail, userName, userRole);
+  } catch (error) {
+    console.error("Error activando usuario:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// 🔹 Inicio de sesión
 export const loginUser = async (correo, contrasena) => {
   try {
     const response = await axios.post(`${API_URL}/usuarios/login`, { correo, contrasena });
 
-    const { id, rol, estado } = response.data; // Asegúrate de que el backend envíe 'estado'
+    const { id, rol, estado } = response.data;
 
     if (estado === 0) {
       throw new Error("Tu cuenta está inactiva. Espera a que un administrador la active.");
@@ -65,7 +95,7 @@ export const loginUser = async (correo, contrasena) => {
   }
 };
 
-// Función para cerrar sesión
+// 🔹 Función para cerrar sesión
 export const logoutUser = () => {
   localStorage.removeItem("userRole");
   localStorage.removeItem("userId");
