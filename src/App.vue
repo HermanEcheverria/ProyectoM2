@@ -33,6 +33,7 @@ onMounted(() => {
         <RouterLink to="/">Sub Home 1</RouterLink>
         <RouterLink to="/">Sub Home 2</RouterLink>
         <RouterLink to="/about">About</RouterLink>
+        <RouterLink to="/servicios-medicos">Servicios Médicos</RouterLink>
         <RouterLink to="/contact">Contact Us</RouterLink>
         <RouterLink to="/faq">FAQ</RouterLink>
 

@@ -1,40 +1,23 @@
 <template>
   <div class="admin-portal">
-    <h1>Panel de Administración</h1>
-    <p>Bienvenido al portal de gestión.</p>
+    <h1>Servicios médicos</h1>
 
     <!-- Menú de navegación con botones -->
     <div class="gestion-menu">
-      <button @click="router.push('/admin-usuarios')" class="gestion-button">Usuarios</button>
       <button @click="router.push('/admin/doctores-recetas')" class="gestion-button">Recetas médicas</button>
       <button @click="router.push('/admin/doctores-citas')" class="gestion-button">Citas médicas</button>
       <button @click="router.push('/admin/doctores-agenda')" class="gestion-button">Agenda médica</button>
-      <button @click="router.push('/admin/faq')" class="faq-button">FAQ</button>
     </div>
 
     <!-- Vista dinámica según la ruta -->
     <router-view />
-
-    <!-- Mostrar el formulario de AdminUsuarios si la ruta es /admin-usuarios -->
-    <AdminUsuarios v-if="route.path === '/admin-usuarios'" />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { onMounted } from "vue";
-import { useRouter, useRoute } from "vue-router";
-import AdminUsuarios from "@/components/AdminUsuarios.vue";
+import { useRouter } from "vue-router";
 
-const router = useRouter();
-const route = useRoute();
-
-// Validación de seguridad: redirige a Home si el usuario no es Admin (rol "1")
-onMounted(() => {
-  const userRole = localStorage.getItem("userRole");
-  if (userRole !== "1") {
-    router.push("/");
-  }
-});
+const router = useRouter(); // ✅ Asegura que router esté definido
 </script>
 
 <style scoped>

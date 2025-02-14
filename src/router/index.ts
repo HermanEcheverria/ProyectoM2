@@ -9,6 +9,10 @@ import ContactView from "../views/ContactView.vue";
 import AdminPortal from "../views/AdminPortal.vue";
 import AdminFaqView from "../views/admin/AdminFaqView.vue";
 import AdminUsuarios from "../components/AdminUsuarios.vue";
+import MedicalAppointments from "../views/doctores/MedicalAppointments.vue";
+import MedicalPrescription from "../views/doctores/MedicalPrescription.vue";
+import MedicalSchedule from "../views/doctores/MedicalAppointments.vue";
+import MedicalServices from "../views/MedicalServices.vue";
 
 // Función para validar si el usuario es administrador antes de entrar
 const requireAuthAdmin = (
@@ -33,9 +37,13 @@ const router = createRouter({
     { path: "/login", name: "login", component: Login },
     { path: "/faq", name: "faq", component: FaqView },
     { path: "/contact", name: "contact", component: ContactView },
+    { path: "/servicios-medicos", name: "servicios-medicos", component: MedicalServices },
     { path: "/admin-portal", name: "admin-portal", component: AdminPortal, beforeEnter: requireAuthAdmin }, // Solo Admins
     { path: "/admin/faq", name: "admin-faq", component: AdminFaqView, beforeEnter: requireAuthAdmin }, //Editar Faq
     { path: "/admin-usuarios", name: "admin-usuarios", component: AdminUsuarios, beforeEnter: requireAuthAdmin },
+    { path: "/admin/doctores-recetas", name: "doctores-recetas", component: MedicalPrescription, beforeEnter: requireAuthAdmin },
+    { path: "/admin/doctores-citas", name: "doctores-citas", component: MedicalAppointments, beforeEnter: requireAuthAdmin },
+    { path: "/admin/doctores-agenda", name: "doctores-agenda", component: MedicalSchedule, beforeEnter: requireAuthAdmin },
   ],
 });
 
