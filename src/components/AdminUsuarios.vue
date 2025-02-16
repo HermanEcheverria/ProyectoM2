@@ -24,13 +24,21 @@
             </span>
           </td>
           <td>
-            <select v-model="usuario.rolSeleccionado" :disabled="usuario.estado === 1">
-              <option disabled value="">Seleccione un rol</option>
-              <option v-for="rol in roles" :key="rol.id" :value="rol.id">
-                {{ rol.roleName }}
-              </option>
-            </select>
-          </td>
+  <span v-if="usuario.estado === 1">
+    {{ usuario.rol ? usuario.rol.roleName : "Sin rol asignado" }}
+  </span>
+  <span v-else>Sin rol asignado</span>
+</td>
+<td v-if="usuario.estado === 0">
+  <select v-model="usuario.rolSeleccionado">
+    <option disabled value="">Seleccione un rol</option>
+    <option v-for="rol in roles" :key="rol.id" :value="rol.id">
+      {{ rol.roleName }}
+    </option>
+  </select>
+</td>
+
+
           <td>
             <button v-if="usuario.estado === 0" @click="activarUsuario(usuario)">
               Activar
@@ -106,46 +114,60 @@ const sendActivationEmail = async (userEmail, userName, roleName) => {
 /**
  * Activa un usuario y le envía un correo de confirmación con su rol.
  */
-async function activarUsuario(usuario) {
+ async function activarUsuario(usuario) {
   if (!usuario.rolSeleccionado) {
     alert("Seleccione un rol para activar el usuario.");
     return;
   }
   try {
     // Obtener el nombre del rol seleccionado
-    const roleName = roles.value.find(rol => rol.id === usuario.rolSeleccionado)?.roleName || "Unknown Role";
+    const rolAsignado = roles.value.find(rol => rol.id === usuario.rolSeleccionado);
 
-    // Activar usuario en el backend
-    await axios.put(`/usuarios/${usuario.id}/activar`, {
+    if (!rolAsignado) {
+      alert("Error: No se encontró el rol seleccionado.");
+      return;
+    }
+
+    // Activar usuario en el backend y obtener el usuario actualizado
+    const response = await axios.put(`/usuarios/${usuario.id}/activar`, {
       rolId: usuario.rolSeleccionado
     });
 
-    // Cambiar el estado en el frontend
-    usuario.estado = 1;
+    if (response.data) {
+      // 🔹 Actualizar el usuario en la UI con los datos devueltos por el backend
+      usuario.estado = 1;
+      usuario.rol = rolAsignado; // Asignar el rol correctamente en el frontend
 
-    // Enviar correo de activación
-    await sendActivationEmail(usuario.correo, usuario.nombreUsuario, roleName);
+      // Enviar correo de activación
+      await sendActivationEmail(usuario.correo, usuario.nombreUsuario, rolAsignado.roleName);
 
-    alert("Usuario activado correctamente y correo enviado.");
+      alert("Usuario activado correctamente.");
+    } else {
+      alert("Error: No se pudo activar el usuario.");
+    }
   } catch (error) {
     console.error("Error al activar usuario:", error);
     alert("Ocurrió un error al activar el usuario.");
   }
 }
 
+
 /**
  * Desactiva un usuario cambiando su estado a inactivo.
  */
-async function desactivarUsuario(usuario) {
+ async function desactivarUsuario(usuario) {
   try {
     await axios.put(`/usuarios/${usuario.id}/desactivar`);
-    usuario.estado = 0; // Actualizar estado en frontend
+    usuario.estado = 0; // Marcar como inactivo
+    usuario.rol = null; // 🔹 Limpiar el rol para que se pueda volver a asignar
+
     alert("Usuario desactivado correctamente.");
   } catch (error) {
     console.error("Error al desactivar usuario:", error);
     alert("Ocurrió un error al desactivar el usuario.");
   }
 }
+
 
 // Cargar datos cuando el componente se monta
 onMounted(() => {
@@ -162,7 +184,6 @@ onMounted(() => {
   border-radius: 10px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
-
 table {
   width: 100%;
   border-collapse: collapse;
@@ -172,7 +193,8 @@ table {
 th, td {
   padding: 12px;
   border: 1px solid #444;
-  text-align: left;
+  text-align: center; /* Alinear al centro */
+  vertical-align: middle; /* Centrar contenido verticalmente */
 }
 
 th {
@@ -180,21 +202,24 @@ th {
   color: white;
 }
 
-select {
+td select {
+  width: 100%;
   padding: 5px;
   background: #222;
   color: white;
   border: 1px solid #444;
   border-radius: 5px;
+  text-align: center;
 }
 
-button {
+td button {
   padding: 8px 15px;
   background-color: #28a745;
   border: none;
   color: white;
   cursor: pointer;
   border-radius: 5px;
+  width: 100%; /* Hacer que el botón ocupe el ancho completo de la celda */
 }
 
 button.desactivar {
@@ -205,6 +230,7 @@ button:hover {
   opacity: 0.8;
 }
 
+/* Estilos para Estado */
 .activo {
   color: #28a745;
   font-weight: bold;
@@ -214,4 +240,13 @@ button:hover {
   color: #dc3545;
   font-weight: bold;
 }
+
+/* Ajustar el ancho de las columnas */
+th:nth-child(1), td:nth-child(1) { width: 5%; } /* ID */
+th:nth-child(2), td:nth-child(2) { width: 20%; } /* Nombre */
+th:nth-child(3), td:nth-child(3) { width: 25%; } /* Correo */
+th:nth-child(4), td:nth-child(4) { width: 10%; } /* Estado */
+th:nth-child(5), td:nth-child(5) { width: 20%; } /* Rol */
+th:nth-child(6), td:nth-child(6) { width: 10%; } /* Acciones */
+
 </style>
