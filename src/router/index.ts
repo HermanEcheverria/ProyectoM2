@@ -8,6 +8,7 @@ import FaqView from "../views/FaqView.vue";
 import ContactView from "../views/ContactView.vue";
 import AdminPortal from "../views/AdminPortal.vue";
 import AdminFaqView from "../views/admin/AdminFaqView.vue";
+import Patient from "../../src/components/Patient.vue";
 import AdminUsuarios from "../components/AdminUsuarios.vue";
 import MedicalAppointments from "../views/doctores/MedicalAppointments.vue";
 import MedicalPrescription from "../views/doctores/MedicalPrescription.vue";
@@ -38,6 +39,7 @@ const router = createRouter({
     { path: "/faq", name: "faq", component: FaqView },
     { path: "/contact", name: "contact", component: ContactView },
     { path: "/servicios-medicos", name: "servicios-medicos", component: MedicalServices },
+    { path: "/recetas-pacientes", name: "recetas-pacientes", component: Patient },
     { path: "/admin-portal", name: "admin-portal", component: AdminPortal, beforeEnter: requireAuthAdmin }, // Solo Admins
     { path: "/admin/faq", name: "admin-faq", component: AdminFaqView, beforeEnter: requireAuthAdmin }, //Editar Faq
     { path: "/admin-usuarios", name: "admin-usuarios", component: AdminUsuarios, beforeEnter: requireAuthAdmin },

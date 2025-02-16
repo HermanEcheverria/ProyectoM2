@@ -1,131 +1,207 @@
 <template>
-  <div class="receta-container">
-    <h2>Generar Receta Médica</h2>
-    <form @submit.prevent="guardarReceta">
-      <!-- Datos del paciente -->
+  <div class="formulario-receta">
+    <h2>{{ modoEdicion ? 'Editar' : 'Crear' }} Receta Médica</h2>
+    <form @submit.prevent="enviarReceta">
+      <!-- Datos generales -->
       <div class="form-group">
-        <label>Nombre del Paciente</label>
-        <input type="text" v-model="receta.paciente" required />
-      </div>
-      <div class="form-group">
-        <label>Número de Identificación</label>
-        <input type="text" v-model="receta.identificacion" required />
-      </div>
-      <div class="form-group">
-        <label>Código de Seguro (Opcional)</label>
-        <input type="text" v-model="receta.codigoSeguro" />
+        <label>ID del Paciente</label>
+        <input v-model="receta.idPaciente" placeholder="ID del Paciente" required />
       </div>
 
-      <!-- Datos del doctor -->
       <div class="form-group">
-        <label>Nombre del Doctor</label>
-        <input type="text" v-model="receta.doctor" required />
-      </div>
-      <div class="form-group">
-        <label>Número de Colegiado</label>
-        <input type="text" v-model="receta.colegiado" required />
-      </div>
-      <div class="form-group">
-        <label>Especialidad</label>
-        <input type="text" v-model="receta.especialidad" required />
+        <label>ID del Doctor</label>
+        <input v-model="receta.idDoctor" placeholder="ID del Doctor" required />
       </div>
 
-      <!-- Medicamentos -->
-      <div class="medicamentos">
-        <h3>Medicamentos</h3>
-        <div v-for="(medicamento, index) in receta.medicamentos" :key="index" class="medicamento-item">
-          <input type="text" v-model="medicamento.nombre" placeholder="Principio Activo" required />
-          <input type="text" v-model="medicamento.concentracion" placeholder="Concentración" required />
-          <input type="text" v-model="medicamento.presentacion" placeholder="Presentación" required />
-          <input type="text" v-model="medicamento.dosis" placeholder="Dosis" required />
-          <input type="text" v-model="medicamento.frecuencia" placeholder="Frecuencia" required />
-          <input type="text" v-model="medicamento.duracion" placeholder="Duración" required />
-          <button type="button" @click="eliminarMedicamento(index)">❌</button>
-        </div>
-        <button type="button" @click="agregarMedicamento">Agregar Medicamento</button>
-      </div>
-
-      <!-- Notas adicionales -->
       <div class="form-group">
-        <label>Notas Adicionales</label>
-        <textarea v-model="receta.notas"></textarea>
+        <label>Diagnóstico</label>
+        <input v-model="receta.diagnostico" placeholder="Diagnóstico" required />
       </div>
 
-      <!-- Acciones -->
-      <button type="submit">Guardar Receta</button>
-      <button type="button" @click="descargarPDF">Descargar PDF</button>
+      <div class="form-group">
+        <label>Observaciones</label>
+        <textarea v-model="receta.observaciones" placeholder="Observaciones" rows="3"></textarea>
+      </div>
+
+      <!-- Estado de la receta -->
+      <div class="form-group">
+        <label>Estado</label>
+        <select v-model="receta.estado" required>
+          <option value="activa">Activa</option>
+          <option value="completada">Completada</option>
+          <option value="cancelada">Cancelada</option>
+        </select>
+      </div>
+
+      <!-- Lista de medicamentos -->
+      <h3>Medicamentos</h3>
+      <div v-for="(med, index) in receta.detalleMedicamentos" :key="index" class="medicamento-item">
+        <input v-model="med.principioActivo" placeholder="Principio Activo" required />
+        <input v-model="med.concentracion" placeholder="Concentración (mg)" required />
+        <input v-model="med.presentacion" placeholder="Presentación" required />
+        <input v-model="med.dosis" placeholder="Dosis" required />
+        <input v-model="med.frecuencia" placeholder="Frecuencia (cada X horas)" required />
+        <input v-model="med.duracion" placeholder="Duración (días)" required />
+        <button @click.prevent="eliminarMedicamento(index)" class="btn-eliminar">❌</button>
+      </div>
+
+      <!-- Botones de acción -->
+      <button @click.prevent="agregarMedicamento" class="btn-secundario">➕ Agregar Medicamento</button>
+      <button type="submit" class="btn-primario">💾 {{ modoEdicion ? 'Actualizar' : 'Crear' }} Receta</button>
     </form>
   </div>
 </template>
 
-<script setup lang="js">
-import { reactive } from 'vue';
+<script>
+export default {
+  props: {
+    modoEdicion: { type: Boolean, default: false },
+    recetaInicial: { type: Object, default: null }
+  },
+  data() {
+    return {
+      receta: {
+        idPaciente: '',
+        idDoctor: '',
+        diagnostico: '',
+        observaciones: '',
+        estado: 'activa',
+        detalleMedicamentos: [
+          { principioActivo: '', concentracion: '', presentacion: '', dosis: '', frecuencia: '', duracion: '' }
+        ]
+      }
+    };
+  },
+  created() {
+    if (this.recetaInicial) {
+      this.receta = { ...this.recetaInicial };
+    }
+  },
+  methods: {
+    agregarMedicamento() {
+      this.receta.detalleMedicamentos.push({
+        principioActivo: '',
+        concentracion: '',
+        presentacion: '',
+        dosis: '',
+        frecuencia: '',
+        duracion: ''
+      });
+    },
+    eliminarMedicamento(index) {
+      this.receta.detalleMedicamentos.splice(index, 1);
+    },
+    async enviarReceta() {
+      try {
+        const response = await fetch('/api/recetas', {
+          method: this.modoEdicion ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.receta)
+        });
+        const resultado = await response.json();
 
-const receta = reactive({
-  paciente: "",
-  identificacion: "",
-  codigoSeguro: "",
-  doctor: "",
-  colegiado: "",
-  especialidad: "",
-  medicamentos: [],
-  notas: "",
-});
-
-const agregarMedicamento = () => {
-  receta.medicamentos.push({ nombre: "", concentracion: "", presentacion: "", dosis: "", frecuencia: "", duracion: "" });
-};
-
-const eliminarMedicamento = (index) => {
-  receta.medicamentos.splice(index, 1);
-};
-
-const guardarReceta = () => {
-  console.log("Receta guardada:", receta);
-};
-
-const descargarPDF = () => {
-  console.log("Descargando receta en PDF...");
+        if (response.ok) {
+          alert(`Receta ${this.modoEdicion ? 'actualizada' : 'creada'} exitosamente.`);
+          this.limpiarFormulario();
+        } else {
+          alert(`Error: ${resultado.mensaje || 'No se pudo completar la operación.'}`);
+        }
+      } catch (error) {
+        console.error('Error al enviar receta:', error);
+        alert('Error al conectar con el servidor.');
+      }
+    },
+    limpiarFormulario() {
+      this.receta = {
+        idPaciente: '',
+        idDoctor: '',
+        diagnostico: '',
+        observaciones: '',
+        estado: 'activa',
+        detalleMedicamentos: [
+          { principioActivo: '', concentracion: '', presentacion: '', dosis: '', frecuencia: '', duracion: '' }
+        ]
+      };
+    }
+  }
 };
 </script>
 
-
 <style scoped>
-.receta-container {
-  max-width: 600px;
-  margin: auto;
+.formulario-receta {
+  max-width: 700px;
+  margin: 20px auto;
   padding: 20px;
   border: 1px solid #ccc;
-  border-radius: 10px;
+  border-radius: 12px;
+  background-color: #f4f4f4;
 }
+
 .form-group {
   margin-bottom: 15px;
 }
-input, textarea {
+
+input, select, textarea {
   width: 100%;
-  padding: 8px;
+  padding: 10px;
   margin-top: 5px;
   border-radius: 5px;
   border: 1px solid #ddd;
+  box-sizing: border-box;
 }
-button {
-  margin-top: 10px;
+
+.medicamento-item {
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
   padding: 10px;
+  border-radius: 6px;
+  background-color: #eef5ff;
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.btn-primario {
+  background-color: #28a745;
+  color: white;
+  padding: 10px;
+  border: none;
+  margin-top: 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn-primario:hover {
+  background-color: #218838;
+}
+
+.btn-secundario {
   background-color: #007bff;
   color: white;
+  padding: 10px;
   border: none;
+  margin-top: 15px;
+  margin-right: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn-secundario:hover {
+  background-color: #0056b3;
+}
+
+.btn-eliminar {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 5px 10px;
   border-radius: 5px;
   cursor: pointer;
 }
-button:hover {
-  background-color: #0056b3;
-}
-.medicamentos {
-  margin-top: 20px;
-}
-.medicamento-item {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
+
+.btn-eliminar:hover {
+  background-color: #c82333;
 }
 </style>
