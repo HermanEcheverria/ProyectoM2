@@ -1,6 +1,6 @@
 package com.unis.controller;
 
-
+import com.unis.model.RecetaDTO;
 import com.unis.service.RecetaService;
 
 import jakarta.annotation.security.RolesAllowed;
