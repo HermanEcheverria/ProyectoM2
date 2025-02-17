@@ -1,8 +1,6 @@
 package com.unis.service;
 
 import com.unis.model.Receta;
-import com.unis.model.RecetaDTO;
-import com.unis.model.DetalleReceta;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
