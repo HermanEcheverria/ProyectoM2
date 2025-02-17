@@ -41,7 +41,7 @@
         <input v-model="med.presentacion" placeholder="Presentación" required />
         <input v-model="med.dosis" placeholder="Dosis" required />
         <input v-model="med.frecuencia" placeholder="Frecuencia (cada X horas)" required />
-        <input v-model="med.duracion" placeholder="Duración (días)" required />
+        <input v-model.number="med.duracion" placeholder="Duración (días)" required />
         <button @click.prevent="eliminarMedicamento(index)" class="btn-eliminar">❌</button>
       </div>
 
@@ -67,7 +67,7 @@ export default {
         observaciones: '',
         estado: 'activa',
         detalleMedicamentos: [
-          { principioActivo: '', concentracion: '', presentacion: '', dosis: '', frecuencia: '', duracion: '' }
+          { principioActivo: '', concentracion: '', presentacion: '', dosis: '', frecuencia: '', duracion: 0 }
         ]
       }
     };
@@ -85,7 +85,7 @@ export default {
         presentacion: '',
         dosis: '',
         frecuencia: '',
-        duracion: ''
+        duracion: 0
       });
     },
     eliminarMedicamento(index) {
@@ -93,11 +93,18 @@ export default {
     },
     async enviarReceta() {
       try {
+        // Convertimos 'duracion' a entero
+        this.receta.detalleMedicamentos = this.receta.detalleMedicamentos.map(med => ({
+          ...med,
+          duracion: parseInt(med.duracion) || 0
+        }));
+
         const response = await fetch('/api/recetas', {
           method: this.modoEdicion ? 'PUT' : 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(this.receta)
         });
+
         const resultado = await response.json();
 
         if (response.ok) {
@@ -119,7 +126,7 @@ export default {
         observaciones: '',
         estado: 'activa',
         detalleMedicamentos: [
-          { principioActivo: '', concentracion: '', presentacion: '', dosis: '', frecuencia: '', duracion: '' }
+          { principioActivo: '', concentracion: '', presentacion: '', dosis: '', frecuencia: '', duracion: 0 }
         ]
       };
     }
@@ -205,3 +212,4 @@ input, select, textarea {
   background-color: #c82333;
 }
 </style>
+

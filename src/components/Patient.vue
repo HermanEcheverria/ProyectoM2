@@ -32,7 +32,8 @@ export default {
     try {
       const idPaciente = this.$store?.state?.user?.idPaciente;
       if (!idPaciente) {
-        throw new Error('ID del paciente no disponible.');
+        alert('ID del paciente no disponible. Asegúrate de iniciar sesión.');
+        return;
       }
 
       const response = await fetch(`/api/recetas/paciente/${idPaciente}`);
@@ -108,3 +109,4 @@ export default {
   font-weight: bold;
 }
 </style>
+
