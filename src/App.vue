@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterLink, RouterView, useRouter } from "vue-router";
-import { userRole, isLoggedIn, logout } from "@/stores/authStore"; // Estado global
+import { userRole, isLoggedIn, logout } from "@/stores/authStore";
 import { onMounted } from "vue";
 
 const router = useRouter();
@@ -15,6 +15,7 @@ onMounted(() => {
 </script>
 
 <template>
+  <!-- Barra de navegación fija -->
   <header class="navbar">
     <div class="navbar-container">
       <div class="brand">
@@ -37,26 +38,29 @@ onMounted(() => {
         <RouterLink to="/contact">Contact Us</RouterLink>
         <RouterLink to="/faq">FAQ</RouterLink>
 
-        <!--  Mostrar "Gestionar" SOLO si el usuario es Admin (rol_id === 1) -->
+        <!-- Mostrar "Gestionar" SOLO si el usuario es Admin -->
         <RouterLink v-if="userRole === 1" to="/admin-portal">Gestionar</RouterLink>
 
-        <!--  Mostrar "Log in" solo si NO está autenticado -->
+        <!-- Mostrar "Log in" solo si NO está autenticado -->
         <RouterLink v-if="!isLoggedIn" to="/login">Log in</RouterLink>
 
         <!-- Botón "Cerrar sesión" si está autenticado -->
-        <button v-if="isLoggedIn" @click="logout(router)" class="logout-btn">Cerrar sesión</button>
+        <button v-if="isLoggedIn" @click="logout(router)" class="logout-btn">
+          Cerrar sesión
+        </button>
       </nav>
     </div>
   </header>
 
-  <main>
+  <!-- 🔹 Contenedor principal de la aplicación -->
+  <main class="app-main">
+    <!-- 🔥 Eliminamos cualquier otro contenedor restrictivo, dejando solo el RouterView -->
     <RouterView />
   </main>
 </template>
 
-
 <style scoped>
-
+/* 🔹 Barra de navegación */
 .navbar {
   position: fixed;
   top: 0;
@@ -67,7 +71,7 @@ onMounted(() => {
   z-index: 999;
 }
 
-/* centrar contenido */
+/* 🔹 Contenedor de la navbar */
 .navbar-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -77,7 +81,7 @@ onMounted(() => {
   padding: 0.5rem 1rem;
 }
 
-/* Sección para el logo y texto */
+/* 🔹 Logo y título */
 .brand {
   display: flex;
   align-items: center;
@@ -88,7 +92,7 @@ onMounted(() => {
   display: block;
 }
 
-/* Estilos del nav */
+/* 🔹 Enlaces de navegación */
 .nav-links {
   display: flex;
   align-items: center;
@@ -101,6 +105,7 @@ onMounted(() => {
   font-weight: 500;
 }
 
+/* 🔹 Botón de logout */
 .logout-btn {
   margin-left: 1rem;
   background-color: #d9534f;
@@ -115,8 +120,15 @@ onMounted(() => {
   background-color: #c9302c;
 }
 
-main {
-  margin-top: 80px;
-  padding: 1rem;
+/* 🔹 Contenedor principal del contenido */
+.app-main {
+  margin-top: 80px; /* Espacio para la navbar fija */
+  min-height: calc(100vh - 80px);
+  background-color: #181818;
+  padding: 2rem;
+  width: 100%; /* 🔥 Ahora ocupa todo el ancho */
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* 🔥 Esto centra el contenido de las vistas */
 }
 </style>
