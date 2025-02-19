@@ -9,6 +9,7 @@
       <button @click="router.push('/admin/doctores-recetas')" class="gestion-button">Recetas médicas</button>
       <button @click="router.push('/admin/doctores-citas')" class="gestion-button">Citas médicas</button>
       <button @click="router.push('/admin/doctores-agenda')" class="gestion-button">Agenda médica</button>
+      <button @click="router.push('/admin/ficha-tecnica')" class="gestion-button">Ficha técnica</button>
       <button @click="router.push('/admin/faq')" class="faq-button">FAQ</button>
       <button @click="router.push('/admin/historia')" class="gestion-button">Historia</button>
 

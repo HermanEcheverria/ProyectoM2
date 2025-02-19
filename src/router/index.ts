@@ -16,6 +16,7 @@ import MedicalSchedule from "../views/doctores/MedicalAppointments.vue";
 import MedicalServices from "../views/MedicalServices.vue";
 import HistoriaView from "@/views/HistoriaView.vue";
 import AdminHistoriaView from "@/views/admin/AdminHistoriaView.vue";
+import FichaTecnicaView from "@/views/FichaTecnicaView.vue";
 
 
 
@@ -45,6 +46,7 @@ const router = createRouter({
     { path: "/servicios-medicos", name: "servicios-medicos", component: MedicalServices },
     { path: "/recetas-pacientes", name: "recetas-pacientes", component: Patient },
     { path: "/historia", name: "historia", component: HistoriaView },
+    { path: "/admin/ficha-tecnica", name: "ficha técnica", component: FichaTecnicaView },
     { path: "/admin-portal", name: "admin-portal", component: AdminPortal, beforeEnter: requireAuthAdmin }, // Solo Admins
     { path: "/admin/faq", name: "admin-faq", component: AdminFaqView, beforeEnter: requireAuthAdmin }, //Editar Faq
     { path: "/admin-usuarios", name: "admin-usuarios", component: AdminUsuarios, beforeEnter: requireAuthAdmin },
