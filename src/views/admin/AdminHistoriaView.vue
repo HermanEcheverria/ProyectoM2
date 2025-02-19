@@ -161,151 +161,140 @@ export default {
 </script>
 
 <style scoped>
-/* Paleta de colores:
-   #DAFDBA (Muy claro, verde pastel)
-   #A4F0C4 (Verde menta claro)
-   #45C4B0 (Teal más vibrante)
-   #13678A (Azul teal más oscuro)
-   #012030 (Muy oscuro, azul grisáceo)
-*/
-
 /* Contenedor principal */
 .admin-historia {
-  padding: 20px;
-  max-width: 800px;
-  margin: auto;
-  background-color: #012030; /* Fondo oscuro principal */
-  color: #DAFDBA;            /* Texto en tono claro */
+  background-color: #0b1b2b; /* Fondo oscuro */
+  color: #b3f5e3;           /* Texto verde claro */
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+/* Título principal */
+.admin-historia h1 {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  color: #b3f5e3;
+}
+
+/* Formulario */
+.admin-historia form {
+  background-color: #102538; /* Caja algo más clara */
+  padding: 1.5rem;
   border-radius: 8px;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Subtítulos (h2) dentro del form */
+.admin-historia h2 {
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  color: #b3f5e3;
 }
 
 /* Grupos de formulario */
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
 }
 
 .form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 600;
+  font-weight: bold;
+  margin-bottom: 0.3rem;
+  color: #b3f5e3;
 }
 
-/* Línea divisoria */
-.divider {
-  border: 0;
-  height: 1px;
-  background: #45C4B0; /* Un teal vibrante */
-  margin: 20px 0;
-}
-
-/* Inputs y Textareas */
+/* Inputs y textareas */
 .form-input,
 .form-textarea {
-  width: 100%;
-  padding: 8px;
-  border-radius: 4px;
-  border: 1px solid #45C4B0;
-  background-color: #A4F0C4; /* Verde menta claro */
-  color: #012030;           /* Texto oscuro para buen contraste */
-  outline: none;
-  font-size: 14px;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.form-input:focus,
-.form-textarea:focus {
-  border-color: #13678A; /* Enfoque más oscuro */
-  box-shadow: 0 0 0 2px rgba(19, 103, 138, 0.2);
-}
-
-/* Botones base */
-button {
-  cursor: pointer;
+  background-color: #b3f5e3; /* Texto editable claro */
+  color: #102538;           /* Texto oscuro */
   border: none;
+  outline: none;
+  padding: 0.6rem;
   border-radius: 4px;
-  font-weight: 600;
-  transition: background-color 0.2s, opacity 0.2s;
+  font-size: 1rem;
+  width: 100%;
 }
 
-button:hover {
-  opacity: 0.9;
+.form-textarea {
+  resize: vertical;
 }
 
-/* Botón para agregar eventos */
-.btn-add {
-  background-color: #45C4B0; /* Teal vibrante */
-  color: #012030;
-  padding: 8px 16px;
-  margin-bottom: 20px;
+/* Divider (la línea de separación) */
+.divider {
+  border: 0;
+  border-top: 1px solid #b3f5e3;
+  margin: 2rem 0;
 }
 
-.btn-add:hover {
-  background-color: #13678A; /* Oscurecer en hover */
-}
-
-/* Botón para guardar */
-.btn-save {
-  background-color: #45C4B0;
-  color: #012030;
-  padding: 10px 20px;
-}
-
-.btn-save:hover {
-  background-color: #13678A;
-}
-
-/* Botón para eliminar */
-.btn-delete {
-  background-color: #13678A;
-  color: #DAFDBA;
-  padding: 5px 10px;
-}
-
-.btn-delete:hover {
-  background-color: #45C4B0;
-  color: #012030;
-}
-
-/* Contenedor de cada evento */
+/* Sección línea del tiempo */
 .timeline-event {
-  background-color: #A4F0C4; /* Mismo color que inputs */
-  color: #012030;           /* Texto oscuro */
-  padding: 15px;
+  background-color: #0b1b2b; /* Igual que el contenedor principal */
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #b3f5e3;
   border-radius: 4px;
-  margin-bottom: 30px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
-/* Encabezado del evento (título + botón eliminar) */
 .event-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 0.5rem;
 }
 
 .event-header h3 {
+  color: #b3f5e3;
   margin: 0;
-  font-size: 1rem;
-  color: #012030;
 }
 
-/* Layout en Grid para acomodar los campos */
+/* Layout para cada evento */
 .event-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 1rem;
 }
 
-/* Para que la descripción ocupe todo el ancho */
 .grid-span {
-  grid-column: 1 / span 2;
+  grid-column: span 2;
 }
 
-.event-grid label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 600;
+/* Botones */
+.btn-add,
+.btn-delete,
+.btn-save {
+  cursor: pointer;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 4px;
+  color: #fff;
+  font-weight: bold;
+}
+
+.btn-add {
+  background-color: #1e90ff;
+  margin-top: 1rem;
+}
+
+.btn-delete {
+  background-color: #d9534f;
+}
+
+.btn-save {
+  background-color: #20b283;
+  margin-top: 1rem;
+}
+
+/* Efectos hover en botones */
+.btn-add:hover {
+  background-color: #1675c7;
+}
+
+.btn-delete:hover {
+  background-color: #c64743;
+}
+
+.btn-save:hover {
+  background-color: #18946d;
 }
 </style>
