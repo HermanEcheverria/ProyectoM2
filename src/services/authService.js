@@ -23,13 +23,13 @@ const sendWelcomeEmail = async (userEmail, userName) => {
   }
 };
 
-// 🔹 Función para enviar el correo de activación
+// Función para enviar el correo de activación
 const sendActivationEmail = async (userEmail, userName, userRole) => {
   try {
     const templateParams = {
       to_email: userEmail,
       to_name: userName,
-      message: `Your account has been activated. Your assigned role is ${userRole}`,
+      message: `Your account has been created and activated successfully. Your assigned role is ${userRole}`,
     };
 
     await emailjs.send(SERVICE_ID, TEMPLATE_ACTIVATION_ID, templateParams, PUBLIC_KEY);

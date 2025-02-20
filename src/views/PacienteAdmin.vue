@@ -24,31 +24,31 @@
         <tr v-for="paciente in pacienteList" :key="paciente.idPaciente">
           <td>{{ paciente.idPaciente }}</td>
 
-          <!--Nombre editable -->
+          <!-- Nombre -->
           <td>
             <input v-if="paciente.editando" v-model="paciente.usuario.nombreUsuario" />
             <span v-else>{{ paciente.usuario.nombreUsuario }}</span>
           </td>
 
-          <!-- Apellido editable -->
+          <!-- Apellido -->
           <td>
             <input v-if="paciente.editando" v-model="paciente.apellido" />
             <span v-else>{{ paciente.apellido }}</span>
           </td>
 
-          <!-- Documento editable -->
+          <!-- Documento -->
           <td>
             <input v-if="paciente.editando" v-model="paciente.documento" />
             <span v-else>{{ paciente.documento }}</span>
           </td>
 
-          <!-- Fecha editable -->
+          <!-- Fecha Nacimiento -->
           <td>
             <input v-if="paciente.editando" v-model="paciente.fechaNacimiento" type="date" />
             <span v-else>{{ paciente.fechaNacimiento }}</span>
           </td>
 
-          <!-- Género editable -->
+          <!-- Género -->
           <td>
             <select v-if="paciente.editando" v-model="paciente.genero">
               <option value="Masculino">Masculino</option>
@@ -57,25 +57,26 @@
             <span v-else>{{ paciente.genero }}</span>
           </td>
 
-          <!-- Teléfono editable -->
+          <!-- Teléfono -->
           <td>
             <input v-if="paciente.editando" v-model="paciente.telefono" />
             <span v-else>{{ paciente.telefono }}</span>
           </td>
 
-          <!-- Correo editable -->
+          <!-- Correo -->
           <td>
             <input v-if="paciente.editando" v-model="paciente.usuario.correo" />
             <span v-else>{{ paciente.usuario.correo }}</span>
           </td>
 
-          <!-- Contraseña editable  -->
+          <!-- Contraseña con opción de mostrar -->
           <td>
-            <input v-if="paciente.editando" type="password" v-model="paciente.usuario.contrasena" />
-            <span v-else>{{ paciente.usuario.contrasena}}</span>
+            <input v-if="paciente.editando" :type="mostrarContrasena ? 'text' : 'password'" v-model="paciente.usuario.contrasena" />
+            <span v-else>{{paciente.usuario.contrasena }}</span>
 
           </td>
 
+          <!-- Botones de acciones -->
           <td>
             <button class="edit-button" @click="paciente.editando = !paciente.editando">
               {{ paciente.editando ? "Cancelar" : "Editar" }}
@@ -87,7 +88,7 @@
       </tbody>
     </table>
 
-    <!-- ✅ Modal para Agregar Paciente -->
+    <!-- Modal para Agregar Paciente -->
     <div v-if="mostrarFormulario" class="modal-overlay">
       <div class="modal-content">
         <h2>Agregar Nuevo Paciente</h2>
@@ -114,12 +115,14 @@
 
 <script>
 import pacienteService from "@/services/pacienteService.js";
+import emailjs from 'emailjs-com';
 
 export default {
   data() {
     return {
       pacienteList: [],
       mostrarFormulario: false,
+      mostrarContrasena: false,
       nuevoPaciente: {
         nombreUsuario: "",
         apellido: "",
@@ -139,7 +142,7 @@ export default {
         this.pacienteList = response.data.map(p => ({ ...p, editando: false }));
       } catch (error) {
         console.error("Error obteniendo pacientes:", error);
-        alert("⚠️ Error al cargar los pacientes.");
+        alert(" Error al cargar los pacientes.");
       }
     },
 
@@ -147,10 +150,10 @@ export default {
       try {
         await pacienteService.updatePaciente(paciente.idPaciente, paciente);
         paciente.editando = false;
-        alert("✅ Paciente actualizado correctamente.");
+        alert(" Paciente actualizado correctamente.");
       } catch (error) {
-        console.error("Error al actualizar paciente:", error);
-        alert("⚠️ Error al actualizar el paciente.");
+        console.error("Error al actualizar paciente, recuerda que no se puede usar el mismo correo electronico:", error);
+        alert(" Error al actualizar el paciente, recuerda que no se puede usar el mismo correo electronico.");
       }
     },
 
@@ -160,10 +163,10 @@ export default {
       try {
         await pacienteService.deletePaciente(id);
         this.pacienteList = this.pacienteList.filter(p => p.idPaciente !== id);
-        alert("✅ Paciente eliminado correctamente.");
+        alert(" Paciente eliminado correctamente.");
       } catch (error) {
         console.error("Error al eliminar paciente:", error);
-        alert("⚠️ Error al eliminar el paciente.");
+        alert("Error al eliminar el paciente.");
       }
     },
 
@@ -178,14 +181,33 @@ export default {
     async registrarPaciente() {
       try {
         await pacienteService.registrarPaciente(this.nuevoPaciente);
+        this.enviarCorreo(this.nuevoPaciente);
         this.cerrarFormulario();
         this.getAllPaciente();
-        alert("✅ Paciente registrado correctamente.");
+        alert("Paciente registrado correctamente.");
       } catch (error) {
         console.error("Error al registrar paciente:", error);
-        alert("⚠️ Error al registrar el paciente.");
+        if (error.response && error.response.status === 400) {
+          alert("Error: El correo ya está registrado.");
+        } else {
+          alert(" Error al registrar el paciente.");
+        }
       }
     },
+
+    enviarCorreo(paciente) {
+      emailjs.send("service_f70s6q3", "template_5cq4vng", {
+        to_name: paciente.nombreUsuario,
+        to_email: paciente.correo,
+        message: `Tu cuenta ha sido creada con éxito.\nTu usuario es: ${paciente.correo}\nContraseña: ${paciente.password}, \nRol: Paciente}`
+      }, "SFAQ9kOAKVFMBgkSC")
+      .then(() => {
+        alert(" Correo de confirmación enviado.");
+      }).catch((error) => {
+        console.error("Error al enviar correo:", error);
+        alert(" No se pudo enviar el correo.");
+      });
+    }
   },
 
   mounted() {
@@ -193,6 +215,7 @@ export default {
   }
 };
 </script>
+
 
 <style scoped>
 .paciente-container {
