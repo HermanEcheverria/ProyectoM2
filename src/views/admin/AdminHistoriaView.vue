@@ -3,7 +3,7 @@
     <h1>Editar Historia de la Institución</h1>
 
     <form @submit.prevent="saveHistoria">
-      <!-- Sección: Nombre, Historia, Méritos -->
+      <!-- Sección: Nombre, Historia -->
       <div class="form-group">
         <label for="nombreEntidad">Nombre de la Entidad:</label>
         <input
@@ -23,61 +23,58 @@
         ></textarea>
       </div>
 
-      <div class="form-group">
-        <label for="meritos">Méritos:</label>
+      <hr class="divider" />
+
+      <!-- Sección para Méritos -->
+      <h2>Méritos</h2>
+      <div v-for="(merito, index) in meritosData" :key="index" class="merito-item">
+        <div class="merito-header">
+          <input
+            type="text"
+            v-model="merito.title"
+            class="form-input"
+            placeholder="Título del mérito"
+          />
+          <button type="button" class="btn-delete" @click="removeMerito(index)">
+            Eliminar
+          </button>
+        </div>
         <textarea
-          id="meritos"
-          v-model="historia.meritos"
+          v-model="merito.description"
           class="form-textarea"
+          placeholder="Descripción del mérito"
         ></textarea>
       </div>
+      <button type="button" class="btn-add" @click="addMerito">Agregar mérito</button>
 
       <hr class="divider" />
 
       <!-- Sección para la Línea del Tiempo -->
       <h2>Línea del Tiempo</h2>
-      <div
-        v-for="(evento, index) in timelineEvents"
-        :key="index"
-        class="timeline-event"
-      >
+      <div v-for="(evento, index) in timelineEvents" :key="index" class="timeline-event">
         <div class="event-header">
-          <h3>Evento {{ index + 1 }}</h3>
+          <input
+            type="text"
+            v-model="evento.year"
+            class="form-input"
+            placeholder="Año"
+          />
           <button type="button" class="btn-delete" @click="removeEvent(index)">
             Eliminar
           </button>
         </div>
-
-        <div class="event-grid">
-          <div>
-            <label>Año:</label>
-            <input
-              type="text"
-              v-model="evento.year"
-              class="form-input"
-              placeholder="Ej: 1970"
-            />
-          </div>
-          <div>
-            <label>Título:</label>
-            <input
-              type="text"
-              v-model="evento.title"
-              class="form-input"
-              placeholder="Ej: Fundación"
-            />
-          </div>
-          <div class="grid-span">
-            <label>Descripción:</label>
-            <textarea
-              v-model="evento.description"
-              class="form-textarea"
-              placeholder="Ej: El hospital se fundó con 50 camas..."
-            ></textarea>
-          </div>
-        </div>
+        <input
+          type="text"
+          v-model="evento.title"
+          class="form-input"
+          placeholder="Título del evento"
+        />
+        <textarea
+          v-model="evento.description"
+          class="form-textarea"
+          placeholder="Descripción del evento"
+        ></textarea>
       </div>
-
       <button type="button" class="btn-add" @click="addEvent">Agregar evento</button>
 
       <hr class="divider" />
@@ -101,7 +98,8 @@ export default {
         meritos: "",
         lineaDelTiempo: ""
       },
-      timelineEvents: [] // Arreglo de eventos
+      timelineEvents: [],
+      meritosData: []
     };
   },
   async created() {
@@ -109,29 +107,45 @@ export default {
   },
   methods: {
     async fetchHistoria() {
-      try {
-        const response = await axios.get("http://localhost:8080/historias");
-        if (response.data && response.data.length > 0) {
-          const historiaDB = response.data[0];
-          this.historia = historiaDB;
+  try {
+    const response = await axios.get("http://localhost:8080/historias");
+    if (response.data && response.data.length > 0) {
+      const historiaDB = response.data[0];
+      this.historia = historiaDB;
 
-          try {
-            this.timelineEvents = JSON.parse(historiaDB.lineaDelTiempo || "[]");
-          } catch (error) {
-            console.error("Error al parsear la línea del tiempo:", error);
-            this.timelineEvents = [];
-          }
+      try {
+        // Si la línea del tiempo no es un JSON válido, inicializar con un array vacío
+        this.timelineEvents = JSON.parse(historiaDB.lineaDelTiempo || "[]");
+      } catch (error) {
+        console.error("Error al parsear la línea del tiempo:", error);
+        this.timelineEvents = [];
+      }
+
+      try {
+        // 🛠️ Si meritos no es un JSON válido, inicializarlo como array vacío
+        if (typeof historiaDB.meritos === "string" && historiaDB.meritos.trim().startsWith("[")) {
+          this.meritosData = JSON.parse(historiaDB.meritos);
+        } else {
+          this.meritosData = [];
         }
       } catch (error) {
-        console.error("Error al obtener la historia:", error);
+        console.error("Error al parsear los méritos:", error);
+        this.meritosData = [];
       }
+    }
+  } catch (error) {
+    console.error("Error al obtener la historia:", error);
+  }
+}
+,
+    addMerito() {
+      this.meritosData.push({ title: "", description: "" });
+    },
+    removeMerito(index) {
+      this.meritosData.splice(index, 1);
     },
     addEvent() {
-      this.timelineEvents.push({
-        year: "",
-        title: "",
-        description: ""
-      });
+      this.timelineEvents.push({ year: "", title: "", description: "" });
     },
     removeEvent(index) {
       this.timelineEvents.splice(index, 1);
@@ -139,16 +153,12 @@ export default {
     async saveHistoria() {
       try {
         this.historia.lineaDelTiempo = JSON.stringify(this.timelineEvents);
+        this.historia.meritos = JSON.stringify(this.meritosData);
+
         if (this.historia.id) {
-          await axios.put(
-            `http://localhost:8080/historias/${this.historia.id}`,
-            this.historia
-          );
+          await axios.put(`http://localhost:8080/historias/${this.historia.id}`, this.historia);
         } else {
-          const response = await axios.post(
-            "http://localhost:8080/historias",
-            this.historia
-          );
+          const response = await axios.post("http://localhost:8080/historias", this.historia);
           this.historia = response.data;
         }
         alert("Historia guardada correctamente.");
@@ -163,13 +173,13 @@ export default {
 <style scoped>
 /* Contenedor principal */
 .admin-historia {
-  background-color: #0b1b2b; /* Fondo oscuro */
-  color: #b3f5e3;           /* Texto verde claro */
+  background-color: #0b1b2b;
+  color: #b3f5e3;
   min-height: 100vh;
   padding: 2rem;
 }
 
-/* Título principal */
+/* Título */
 .admin-historia h1 {
   font-size: 1.8rem;
   margin-bottom: 1.5rem;
@@ -178,19 +188,19 @@ export default {
 
 /* Formulario */
 .admin-historia form {
-  background-color: #102538; /* Caja algo más clara */
+  background-color: #102538;
   padding: 1.5rem;
   border-radius: 8px;
 }
 
-/* Subtítulos (h2) dentro del form */
+/* Subtítulos */
 .admin-historia h2 {
   margin-top: 1.5rem;
   margin-bottom: 1rem;
   color: #b3f5e3;
 }
 
-/* Grupos de formulario */
+/* Grupos del formulario */
 .form-group {
   margin-bottom: 1rem;
   display: flex;
@@ -203,11 +213,11 @@ export default {
   color: #b3f5e3;
 }
 
-/* Inputs y textareas */
+/* Inputs y Textareas */
 .form-input,
 .form-textarea {
-  background-color: #b3f5e3; /* Texto editable claro */
-  color: #102538;           /* Texto oscuro */
+  background-color: #b3f5e3;
+  color: #102538;
   border: none;
   outline: none;
   padding: 0.6rem;
@@ -220,43 +230,27 @@ export default {
   resize: vertical;
 }
 
-/* Divider (la línea de separación) */
+/* Divider */
 .divider {
   border: 0;
   border-top: 1px solid #b3f5e3;
   margin: 2rem 0;
 }
 
-/* Sección línea del tiempo */
-.timeline-event {
-  background-color: #0b1b2b; /* Igual que el contenedor principal */
+/* Méritos */
+.merito-item {
+  background-color: #0b1b2b;
   padding: 1rem;
   margin-bottom: 1rem;
   border: 1px solid #b3f5e3;
   border-radius: 4px;
 }
 
-.event-header {
+.merito-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.5rem;
-}
-
-.event-header h3 {
-  color: #b3f5e3;
-  margin: 0;
-}
-
-/* Layout para cada evento */
-.event-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.grid-span {
-  grid-column: span 2;
 }
 
 /* Botones */
@@ -285,7 +279,6 @@ export default {
   margin-top: 1rem;
 }
 
-/* Efectos hover en botones */
 .btn-add:hover {
   background-color: #1675c7;
 }

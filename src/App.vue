@@ -121,14 +121,16 @@ onMounted(() => {
 }
 
 /* 🔹 Contenedor principal del contenido */
+/* 🔹 Ajustar el contenedor principal */
 .app-main {
   margin-top: 80px; /* Espacio para la navbar fija */
   min-height: calc(100vh - 80px);
   background-color: #181818;
   padding: 2rem;
-  width: 100%; /* 🔥 Ahora ocupa todo el ancho */
+  width: 100%;
   display: flex;
-  flex-direction: column;
-  align-items: center; /* 🔥 Esto centra el contenido de las vistas */
+  justify-content: center; /* Centra el contenido horizontalmente */
+  align-items: flex-start; /* Asegura que el contenido no quede pegado arriba */
 }
+
 </style>
