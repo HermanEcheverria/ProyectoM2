@@ -210,3 +210,50 @@ export default {
   },
 };
 </script>
+
+
+<style scoped>
+.paciente-container {
+  padding: 20px;
+  max-width: 100%;
+}
+
+.add-button {
+  background-color: #28a745;
+  color: white;
+  padding: 12px 18px;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+th, td {
+  padding: 15px;
+  border: 1px solid #444;
+  text-align: center;
+  font-size: 16px;
+}
+
+input, select {
+  padding: 8px;
+  font-size: 16px;
+  width: 100%;
+}
+
+.save-button, .edit-button, .delete-button {
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.edit-button { background-color: #f0ad4e; color: white; }
+.save-button { background-color: #007bff; color: white; }
+.delete-button { background-color: #dc3545; color: white; }
+</style>

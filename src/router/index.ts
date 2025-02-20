@@ -18,6 +18,7 @@ import HistoriaView from "@/views/HistoriaView.vue";
 import AdminHistoriaView from "@/views/admin/AdminHistoriaView.vue";
 import FichaTecnicaView from "@/views/FichaTecnicaView.vue";
 import PacienteAdmin from "../views/PacienteAdmin.vue";
+import EmpleadosAdmin from "../views/EmpleadosAdmin.vue";
 
 // Función para validar si el usuario es administrador antes de entrar
 const requireAuthAdmin = (
@@ -53,7 +54,8 @@ const router = createRouter({
     { path: "/admin/doctores-citas", name: "doctores-citas", component: MedicalAppointments, beforeEnter: requireAuthAdmin },
     { path: "/admin/doctores-agenda", name: "doctores-agenda", component: MedicalSchedule, beforeEnter: requireAuthAdmin },
     { path: "/admin/historia", name: "admin-historia", component: AdminHistoriaView, beforeEnter: requireAuthAdmin },
-    { path: "/admin/pacientes", name: "admin-pacientes", component: PacienteAdmin, beforeEnter: requireAuthAdmin } // ✅ Nueva Ruta
+    { path: "/admin/pacientes", name: "admin-pacientes", component: PacienteAdmin, beforeEnter: requireAuthAdmin },
+    { path: "/admin/empleados", name: "admin-empleados", component: EmpleadosAdmin, beforeEnter: requireAuthAdmin }
   ],
 });
 
