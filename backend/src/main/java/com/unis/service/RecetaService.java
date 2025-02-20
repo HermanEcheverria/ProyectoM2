@@ -1,7 +1,6 @@
 package com.unis.service;
 
 import com.unis.model.Receta;
-import com.unis.model.RecetaDTO;
 import com.unis.model.DetalleReceta;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -20,7 +19,7 @@ public class RecetaService {
 
     // Crear nueva receta con detalles de medicamentos
     @Transactional
-    public void crearReceta(RecetaDTO receta) {
+    public void crearReceta(Receta receta) {
         try {
             Receta nuevaReceta = new Receta();
             nuevaReceta.setIdPaciente(receta.getIdPaciente());
@@ -50,13 +49,13 @@ public class RecetaService {
     }
 
     // Obtener recetas por paciente
-    public List<RecetaDTO> obtenerRecetasPorPaciente(int idPaciente) {
+    public List<Receta> obtenerRecetasPorPaciente(int idPaciente) {
         try {
             return entityManager.createQuery("SELECT r FROM Receta r WHERE r.idPaciente = :idPaciente", Receta.class)
                     .setParameter("idPaciente", idPaciente)
                     .getResultList()
                     .stream()
-                    .map(RecetaDTO::new)
+                    .map(Receta::new)
                     .collect(Collectors.toList());
         } catch (Exception e) {
             e.printStackTrace();

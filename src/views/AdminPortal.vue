@@ -12,6 +12,7 @@
       <button @click="router.push('/admin/ficha-tecnica')" class="gestion-button">Ficha técnica</button>
       <button @click="router.push('/admin/faq')" class="faq-button">FAQ</button>
       <button @click="router.push('/admin/historia')" class="gestion-button">Historia</button>
+      <button @click="router.push('/admin/pacientes')" class="gestion-button">Gestión de Pacientes</button>
 
     </div>
 

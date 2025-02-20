@@ -17,8 +17,7 @@ import MedicalServices from "../views/MedicalServices.vue";
 import HistoriaView from "@/views/HistoriaView.vue";
 import AdminHistoriaView from "@/views/admin/AdminHistoriaView.vue";
 import FichaTecnicaView from "@/views/FichaTecnicaView.vue";
-
-
+import PacienteAdmin from "../views/PacienteAdmin.vue";
 
 // Función para validar si el usuario es administrador antes de entrar
 const requireAuthAdmin = (
@@ -47,16 +46,15 @@ const router = createRouter({
     { path: "/recetas-pacientes", name: "recetas-pacientes", component: Patient },
     { path: "/historia", name: "historia", component: HistoriaView },
     { path: "/admin/ficha-tecnica", name: "ficha técnica", component: FichaTecnicaView },
-    { path: "/admin-portal", name: "admin-portal", component: AdminPortal, beforeEnter: requireAuthAdmin }, // Solo Admins
-    { path: "/admin/faq", name: "admin-faq", component: AdminFaqView, beforeEnter: requireAuthAdmin }, //Editar Faq
+    { path: "/admin-portal", name: "admin-portal", component: AdminPortal, beforeEnter: requireAuthAdmin },
+    { path: "/admin/faq", name: "admin-faq", component: AdminFaqView, beforeEnter: requireAuthAdmin },
     { path: "/admin-usuarios", name: "admin-usuarios", component: AdminUsuarios, beforeEnter: requireAuthAdmin },
     { path: "/admin/doctores-recetas", name: "doctores-recetas", component: MedicalPrescription, beforeEnter: requireAuthAdmin },
     { path: "/admin/doctores-citas", name: "doctores-citas", component: MedicalAppointments, beforeEnter: requireAuthAdmin },
     { path: "/admin/doctores-agenda", name: "doctores-agenda", component: MedicalSchedule, beforeEnter: requireAuthAdmin },
-    { path: "/admin/historia", name: "admin-historia", component: AdminHistoriaView, beforeEnter: requireAuthAdmin }
-
+    { path: "/admin/historia", name: "admin-historia", component: AdminHistoriaView, beforeEnter: requireAuthAdmin },
+    { path: "/admin/pacientes", name: "admin-pacientes", component: PacienteAdmin, beforeEnter: requireAuthAdmin } // ✅ Nueva Ruta
   ],
 });
 
 export default router;
-
