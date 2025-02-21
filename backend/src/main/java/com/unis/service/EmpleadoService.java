@@ -56,7 +56,7 @@ public class EmpleadoService {
         try {
             entityManager.createNativeQuery("BEGIN ACTUALIZAR_EMPLEADO(?, ?, ?, ?, ?, ?, ?, ?, ?, ?); END;")
                 .setParameter(1, id)
-                .setParameter(2, empleado.getUsuario().getNombreUsuario()) // Se agregó el nombre del usuario
+                .setParameter(2, empleado.getUsuario().getNombreUsuario()) 
                 .setParameter(3, empleado.getApellido())
                 .setParameter(4, empleado.getDocumento())
                 .setParameter(5, empleado.getFechaNacimiento())

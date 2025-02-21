@@ -20,6 +20,7 @@ import FichaTecnicaView from "@/views/FichaTecnicaView.vue";
 import PacienteAdmin from "../views/PacienteAdmin.vue";
 import EmpleadosAdmin from "../views/EmpleadosAdmin.vue";
 import AdminServiciosView from "@/views/admin/AdminServiciosView.vue";
+import DoctorAdmin from "../views/DoctorAdmin.vue";
 
 
 // Función para validar si el usuario es administrador antes de entrar
@@ -58,7 +59,8 @@ const router = createRouter({
     { path: "/admin/historia", name: "admin-historia", component: AdminHistoriaView, beforeEnter: requireAuthAdmin },
     { path: "/admin/pacientes", name: "admin-pacientes", component: PacienteAdmin, beforeEnter: requireAuthAdmin },
     { path: "/admin/empleados", name: "admin-empleados", component: EmpleadosAdmin, beforeEnter: requireAuthAdmin },
-    { path: "/admin/servicios", component: AdminServiciosView }
+    { path: "/admin/servicios", component: AdminServiciosView },
+    { path: "/admin/doctor", name: "admin-doctor", component: DoctorAdmin, beforeEnter: requireAuthAdmin }
   ],
 });
 

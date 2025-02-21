@@ -13,7 +13,7 @@ export default {
         nombreUsuario: empleado.nombreUsuario,
         correo: empleado.correo,
         contrasena: empleado.password,
-        rol: { id: 2 } // ROL_ID = 2 para empleados
+        rol: { id: 3} // ROL_ID = 3  para empleados
       },
       apellido: empleado.apellido,
       documento: empleado.documento,
