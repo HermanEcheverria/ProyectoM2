@@ -18,9 +18,19 @@ public class ServicioService {
     public List<Servicio> listarTodos() {
         return servicioRepository.listAll();
     }
+    public Servicio buscarPorId(Long id) {
+    return servicioRepository.findById(id);
+}
+
 
     @Transactional
-    public Servicio agregarServicio(Servicio servicio) {
+    public Servicio agregarServicio(Servicio servicio, Long parentId) {
+        if (parentId != null) {
+            Servicio servicioPadre = servicioRepository.findById(parentId);
+            if (servicioPadre != null) {
+                servicio.servicioPadre = servicioPadre;
+            }
+        }
         servicioRepository.persist(servicio);
         return servicio;
     }
@@ -31,5 +41,10 @@ public class ServicioService {
         if (servicio != null) {
             servicioRepository.delete(servicio);
         }
+    }
+
+    public List<Servicio> listarSubServicios(Long id) {
+        Servicio servicioPadre = servicioRepository.findById(id);
+        return servicioPadre != null ? servicioPadre.subServicios.stream().toList() : List.of();
     }
 }
