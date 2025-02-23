@@ -21,13 +21,7 @@ onMounted(() => {
   <header class="navbar">
     <div class="navbar-container">
       <div class="brand">
-        <img
-          alt="Vue logo"
-          class="logo"
-          src="@/assets/logo.svg"
-          width="50"
-          height="50"
-        />
+        <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="50" height="50" />
         <h1>Hospitals</h1>
       </div>
 
@@ -38,11 +32,8 @@ onMounted(() => {
         <RouterLink to="/contact">Contact Us</RouterLink>
         <RouterLink to="/faq">FAQ</RouterLink>
 
-        <!-- 🔹 Mostrar "My Account" según el rol -->
-        <RouterLink v-if="isLoggedIn && userRole === 1" to="/my-account-admin">Mi Cuenta</RouterLink>
-        <RouterLink v-if="isLoggedIn && userRole === 2" to="/my-account-doctor">Mi Cuenta</RouterLink>
-        <RouterLink v-if="isLoggedIn && userRole === 3" to="/my-account-empleado">Mi Cuenta</RouterLink>
-        <RouterLink v-if="isLoggedIn && userRole === 4" to="/my-account-paciente">Mi Cuenta</RouterLink>
+        <!-- Mostrar "My Account" solo si el usuario está autenticado -->
+        <RouterLink v-if="isLoggedIn" to="/my-account">Mi Cuenta</RouterLink>
 
         <!-- Mostrar "Gestionar" solo si el usuario es Admin -->
         <RouterLink v-if="userRole === 1" to="/admin-portal">Gestionar</RouterLink>
@@ -51,21 +42,26 @@ onMounted(() => {
         <RouterLink v-if="!isLoggedIn" to="/login">Log in</RouterLink>
 
         <!-- Botón "Cerrar sesión" si está autenticado -->
-        <button v-if="isLoggedIn" @click="logout(router)" class="logout-btn">
-          Cerrar sesión
-        </button>
+        <button v-if="isLoggedIn" @click="logout(router)" class="logout-btn">Cerrar sesión</button>
       </nav>
     </div>
   </header>
 
-  <!-- 🔹 Contenedor principal de la aplicación -->
+  <!--  Contenedor principal de la aplicación -->
   <main class="app-main">
     <RouterView />
   </main>
+
+  <!--  Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <p>&copy; {{ new Date().getFullYear() }} Hospitals. Todos los derechos reservados.</p>
+    </div>
+  </footer>
 </template>
 
 <style scoped>
-/* 🔹 Barra de navegación */
+/*  Barra de navegación */
 .navbar {
   position: fixed;
   top: 0;
@@ -76,7 +72,7 @@ onMounted(() => {
   z-index: 999;
 }
 
-/* 🔹 Contenedor de la navbar */
+/*  Contenedor de la navbar */
 .navbar-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -86,7 +82,7 @@ onMounted(() => {
   padding: 0.5rem 1rem;
 }
 
-/* 🔹 Logo y título */
+/* Logo y título */
 .brand {
   display: flex;
   align-items: center;
@@ -97,7 +93,7 @@ onMounted(() => {
   display: block;
 }
 
-/* 🔹 Enlaces de navegación */
+/*  Enlaces de navegación */
 .nav-links {
   display: flex;
   align-items: center;
@@ -110,7 +106,7 @@ onMounted(() => {
   font-weight: 500;
 }
 
-/* 🔹 Botón de logout */
+/* Botón de logout */
 .logout-btn {
   margin-left: 1rem;
   background-color: #d9534f;
@@ -125,7 +121,7 @@ onMounted(() => {
   background-color: #c9302c;
 }
 
-/* 🔹 Contenedor principal del contenido */
+/* Contenedor principal del contenido */
 .app-main {
   margin-top: 80px; /* Espacio para la navbar fija */
   min-height: calc(100vh - 80px);
@@ -135,5 +131,21 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   align-items: flex-start;
+}
+
+/* Footer */
+.footer {
+  background-color: #333;
+  color: white;
+  text-align: center;
+  padding: 1rem 0;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+}
+
+.footer-container {
+  max-width: 1200px;
+  margin: auto;
 }
 </style>
