@@ -7,7 +7,9 @@ const router = useRouter();
 
 onMounted(() => {
   const storedRole = localStorage.getItem("userRole");
-  if (storedRole) {
+  const storedUser = localStorage.getItem("userId");
+
+  if (storedRole && storedUser) {
     userRole.value = parseInt(storedRole);
     isLoggedIn.value = true;
   }
@@ -31,14 +33,18 @@ onMounted(() => {
 
       <nav class="nav-links">
         <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/">Sub Home 1</RouterLink>
-        <RouterLink to="/">Sub Home 2</RouterLink>
         <RouterLink to="/about">About</RouterLink>
         <RouterLink to="/servicios-medicos">Servicios Médicos</RouterLink>
         <RouterLink to="/contact">Contact Us</RouterLink>
         <RouterLink to="/faq">FAQ</RouterLink>
 
-        <!-- Mostrar "Gestionar" SOLO si el usuario es Admin -->
+        <!-- 🔹 Mostrar "My Account" según el rol -->
+        <RouterLink v-if="isLoggedIn && userRole === 1" to="/my-account-admin">Mi Cuenta</RouterLink>
+        <RouterLink v-if="isLoggedIn && userRole === 2" to="/my-account-doctor">Mi Cuenta</RouterLink>
+        <RouterLink v-if="isLoggedIn && userRole === 3" to="/my-account-empleado">Mi Cuenta</RouterLink>
+        <RouterLink v-if="isLoggedIn && userRole === 4" to="/my-account-paciente">Mi Cuenta</RouterLink>
+
+        <!-- Mostrar "Gestionar" solo si el usuario es Admin -->
         <RouterLink v-if="userRole === 1" to="/admin-portal">Gestionar</RouterLink>
 
         <!-- Mostrar "Log in" solo si NO está autenticado -->
@@ -54,7 +60,6 @@ onMounted(() => {
 
   <!-- 🔹 Contenedor principal de la aplicación -->
   <main class="app-main">
-    <!-- 🔥 Eliminamos cualquier otro contenedor restrictivo, dejando solo el RouterView -->
     <RouterView />
   </main>
 </template>
@@ -121,7 +126,6 @@ onMounted(() => {
 }
 
 /* 🔹 Contenedor principal del contenido */
-/* 🔹 Ajustar el contenedor principal */
 .app-main {
   margin-top: 80px; /* Espacio para la navbar fija */
   min-height: calc(100vh - 80px);
@@ -129,8 +133,7 @@ onMounted(() => {
   padding: 2rem;
   width: 100%;
   display: flex;
-  justify-content: center; /* Centra el contenido horizontalmente */
-  align-items: flex-start; /* Asegura que el contenido no quede pegado arriba */
+  justify-content: center;
+  align-items: flex-start;
 }
-
 </style>
