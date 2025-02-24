@@ -1,7 +1,7 @@
 package com.unis.model;
 
 import jakarta.persistence.*;
-import java.sql.Timestamp;
+import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -9,53 +9,152 @@ import java.util.List;
 public class Receta {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID_RECETA")
-    private int idReceta;
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "receta_seq")
+    @SequenceGenerator(name = "receta_seq", sequenceName = "RECETA_SEQ", allocationSize = 1)
+    @Column(name = "ID_RECETA") 
+    private Long idReceta;
+
+    @ManyToOne
+    @JoinColumn(name = "ID_PACIENTE", nullable = false, insertable = false, updatable = false)
+    private Paciente paciente;
 
     @Column(name = "ID_PACIENTE", nullable = false)
-    private int idPaciente;
+    private Long idPaciente;
 
-    @Column(name = "ID_DOCTOR", nullable = false)
-    private int idDoctor;
+    @Column(name = "FECHA") 
+    private Date fecha;
 
-    @Column(name = "DIAGNOSTICO", nullable = false, length = 255)
+    @Column(name = "CODIGO_RECETA") 
+    private String codigoReceta;
+
+    @Column(name = "ID_DOCTOR") 
+    private Long idDoctor;
+
+    @Column(name = "ID_HOSPITAL") 
+    private Long idHospital;
+
+    @Column(name = "ID_SEGURO") 
+    private Long idSeguro;
+
+    @Column(name = "OBSERVACIONES") 
+    private String anotaciones;
+
+    @Column(name = "NOTAS_ESPECIALES") 
+    private String notasEspeciales;
+
+    @Column(name = "DIAGNOSTICO") 
     private String diagnostico;
 
-    @Column(name = "OBSERVACIONES", length = 500)
-    private String observaciones;
-
-    @Column(name = "ESTADO", nullable = false, length = 20)
-    private String estado = "activa";
-
-    @Column(name = "FECHA", nullable = false)
-    private Timestamp fecha;
+    @Column(name = "ESTADO") 
+    private String estado;
 
     @OneToMany(mappedBy = "receta", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<DetalleReceta> detalleMedicamentos;
+    private List<Medicamento> detalleMedicamentos;
 
     // Getters y Setters
-    public int getIdReceta() { return idReceta; }
-    public void setIdReceta(int idReceta) { this.idReceta = idReceta; }
 
-    public int getIdPaciente() { return idPaciente; }
-    public void setIdPaciente(int idPaciente) { this.idPaciente = idPaciente; }
+    public Long getIdReceta() {
+        return idReceta;
+    }
 
-    public int getIdDoctor() { return idDoctor; }
-    public void setIdDoctor(int idDoctor) { this.idDoctor = idDoctor; }
+    public void setIdReceta(Long idReceta) {
+        this.idReceta = idReceta;
+    }
 
-    public String getDiagnostico() { return diagnostico; }
-    public void setDiagnostico(String diagnostico) { this.diagnostico = diagnostico; }
+    public Long getIdPaciente() {
+        return idPaciente;
+    }
 
-    public String getObservaciones() { return observaciones; }
-    public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
+    public void setIdPaciente(Long idPaciente) {
+        this.idPaciente = idPaciente;
+    }
 
-    public String getEstado() { return estado; }
-    public void setEstado(String estado) { this.estado = estado; }
+    public Paciente getPaciente() {
+        return paciente;
+    }
 
-    public Timestamp getFecha() { return fecha; }
-    public void setFecha(Timestamp fecha) { this.fecha = fecha; }
+    public void setPaciente(Paciente paciente) {
+        this.paciente = paciente;
+        this.idPaciente = (paciente != null) ? paciente.getIdPaciente() : null;
+    }
 
-    public List<DetalleReceta> getDetalleMedicamentos() { return detalleMedicamentos; }
-    public void setDetalleMedicamentos(List<DetalleReceta> detalleMedicamentos) { this.detalleMedicamentos = detalleMedicamentos; }
+    public Date getFecha() {
+        return fecha;
+    }
+
+    public void setFecha(Date fecha) {
+        this.fecha = fecha;
+    }
+
+    public String getCodigoReceta() {
+        return codigoReceta;
+    }
+
+    public void setCodigoReceta(String codigoReceta) {
+        this.codigoReceta = codigoReceta;
+    }
+
+    public Long getIdDoctor() {
+        return idDoctor;
+    }
+
+    public void setIdDoctor(Long idDoctor) {
+        this.idDoctor = idDoctor;
+    }
+
+    public Long getIdHospital() {
+        return idHospital;
+    }
+
+    public void setIdHospital(Long idHospital) {
+        this.idHospital = idHospital;
+    }
+
+    public Long getIdSeguro() {
+        return idSeguro;
+    }
+
+    public void setIdSeguro(Long idSeguro) {
+        this.idSeguro = idSeguro;
+    }
+
+    public String getAnotaciones() {
+        return anotaciones;
+    }
+
+    public void setAnotaciones(String anotaciones) {
+        this.anotaciones = anotaciones;
+    }
+
+    public String getNotasEspeciales() {
+        return notasEspeciales;
+    }
+
+    public void setNotasEspeciales(String notasEspeciales) {
+        this.notasEspeciales = notasEspeciales;
+    }
+
+    public String getDiagnostico() {
+        return diagnostico;
+    }
+
+    public void setDiagnostico(String diagnostico) {
+        this.diagnostico = diagnostico;
+    }
+
+    public String getEstado() {
+        return estado;
+    }
+
+    public void setEstado(String estado) {
+        this.estado = estado;
+    }
+
+    public List<Medicamento> getDetalleMedicamentos() {
+        return detalleMedicamentos;
+    }
+
+    public void setDetalleMedicamentos(List<Medicamento> detalleMedicamentos) {
+        this.detalleMedicamentos = detalleMedicamentos;
+    }
 }

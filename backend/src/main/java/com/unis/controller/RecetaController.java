@@ -1,19 +1,10 @@
 package com.unis.controller;
 
 import java.util.List;
-
-import com.unis.model.RecetaDTO;
+import com.unis.model.Receta;
 import com.unis.service.RecetaService;
-
-import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -25,45 +16,66 @@ public class RecetaController {
     @Inject
     RecetaService recetaService;
 
-    // Crear nueva receta
-    @POST
-    @RolesAllowed({"doctor", "administrador"})
-    @Transactional
-    public Response crearReceta(RecetaDTO receta) {
-        try {
-            recetaService.crearReceta(receta);
-            return Response.status(Response.Status.CREATED)
-                           .entity("{\"mensaje\":\"Receta creada exitosamente\"}")
-                           .build();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                           .entity("{\"error\":\"Error al crear receta\",\"detalle\":\"" + e.getMessage() + "\"}")
-                           .type(MediaType.APPLICATION_JSON)
-                           .build();
-        }
+    @GET
+    public List<Receta> getRecetas() {
+        return recetaService.listar();
     }
 
-    // Obtener recetas por paciente
     @GET
-    @Path("/paciente/{idPaciente}")
-    @RolesAllowed({"paciente", "doctor", "empleado", "admin"})
-    public Response obtenerRecetas(@PathParam("idPaciente") int idPaciente) {
-        try {
-            List<RecetaDTO> recetas = recetaService.obtenerRecetasPorPaciente(idPaciente);
-            if (recetas == null || recetas.isEmpty()) {
-                return Response.status(Response.Status.NOT_FOUND)
-                        .entity("{\"mensaje\":\"No se encontraron recetas para el paciente indicado.\"}")
-                        .type(MediaType.APPLICATION_JSON)
-                        .build();
-            }
-            return Response.ok(recetas).build();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Error al obtener recetas\",\"detalle\":\"" + e.getMessage() + "\"}")
-                    .type(MediaType.APPLICATION_JSON)
-                    .build();
+    @Path("/{id}")
+    public Response getReceta(@PathParam("id") Long id) {
+        Receta receta = recetaService.obtenerPorId(id);
+        if (receta == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
         }
+        return Response.ok(receta).build();
+    }
+
+    @GET
+    @Path("/paciente/{idPaciente}/activas")
+    public Response getRecetasActivasPorPaciente(@PathParam("idPaciente") Long idPaciente) {
+    List<Receta> recetas = recetaService.obtenerRecetasPorPacienteYEstado(idPaciente, "activa");
+    if (recetas.isEmpty()) {
+        return Response.status(Response.Status.NO_CONTENT).build();
+    }
+    return Response.ok(recetas).build();
+    }
+
+    @GET
+    @Path("/paciente/{idPaciente}/historial")
+    public Response getHistorialRecetasPorPaciente(@PathParam("idPaciente") Long idPaciente) {
+    List<Receta> recetas = recetaService.obtenerPorPaciente(idPaciente);
+    if (recetas.isEmpty()) {
+        return Response.status(Response.Status.NO_CONTENT).build();
+    }
+    return Response.ok(recetas).build();
+    }
+
+
+    @POST
+    @Path("/crear") 
+    public Response createReceta(Receta receta) {
+        Receta creada = recetaService.crear(receta);
+        return Response.status(Response.Status.CREATED).entity(creada).build();
+    }
+
+    @PUT
+    @Path("/editar/{id}")
+    public Response updateReceta(@PathParam("id") Long id, Receta receta) {
+        Receta actualizada = recetaService.actualizar(id, receta);
+        if (actualizada == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        return Response.ok(actualizada).build();
+    }
+
+    @DELETE
+    @Path("/eliminar/{id}")
+    public Response deleteReceta(@PathParam("id") Long id) {
+        boolean eliminado = recetaService.eliminar(id);
+        if (!eliminado) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        return Response.noContent().build();
     }
 }

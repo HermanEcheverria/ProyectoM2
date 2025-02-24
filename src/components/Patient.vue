@@ -1,22 +1,33 @@
 <template>
   <div class="recetas-paciente">
     <h2>Mis Recetas Médicas</h2>
-    <div v-for="receta in recetas" :key="receta.idReceta" class="receta">
-      <h3>{{ receta.diagnostico }}</h3>
-      <p><strong>Fecha:</strong> {{ formatFecha(receta.fecha) }}</p>
-      <p><strong>Médico:</strong> {{ receta.doctorNombre || 'Desconocido' }}</p>
-      <p><strong>Observaciones:</strong> {{ receta.observaciones }}</p>
-      <p><strong>Estado:</strong>
-        <span :class="estadoClase(receta.estado)">
-          {{ receta.estado }}
-        </span>
-      </p>
-      <h4>Medicamentos</h4>
-      <ul>
-        <li v-for="(med, index) in receta.detalleMedicamentos" :key="index">
-          {{ med.principioActivo }} - {{ med.dosis }} cada {{ med.frecuencia }} por {{ med.duracion }} días
-        </li>
-      </ul>
+
+    <div v-if="cargando">Cargando recetas...</div>
+    <div v-else-if="recetas.length === 0">No tienes recetas activas registradas.</div>
+
+    <div v-else>
+      <div v-for="receta in recetas" :key="receta.idReceta" class="receta">
+        <h3>{{ receta.diagnostico || 'Diagnóstico no especificado' }}</h3>
+        <p><strong>Fecha:</strong> {{ formatFecha(receta.fecha) }}</p>
+        <p><strong>Médico:</strong> {{ receta.doctorNombre || 'Desconocido' }}</p>
+        <p><strong>Observaciones:</strong> {{ receta.observaciones || 'Sin observaciones' }}</p>
+        <p><strong>Estado:</strong>
+          <span :class="estadoClase(receta.estado)">
+            {{ receta.estado || 'Sin estado' }}
+          </span>
+        </p>
+
+        <h4>Medicamentos</h4>
+        <ul v-if="receta.detalleMedicamentos && receta.detalleMedicamentos.length > 0">
+          <li v-for="(med, index) in receta.detalleMedicamentos" :key="index">
+            {{ med.principioActivo || 'Desconocido' }} -
+            {{ med.dosis || 'Dosis no especificada' }} cada
+            {{ med.frecuencia || 'Frecuencia no especificada' }} por
+            {{ med.duracion || 'Duración no especificada' }} días
+          </li>
+        </ul>
+        <p v-else>No hay medicamentos asociados a esta receta.</p>
+      </div>
     </div>
   </div>
 </template>
@@ -25,52 +36,57 @@
 export default {
   data() {
     return {
-      recetas: []
+      recetas: [],
+      cargando: true
     };
   },
   async created() {
-    try {
-      const idPaciente = this.$store?.state?.user?.idPaciente;
-      if (!idPaciente) {
-        alert('ID del paciente no disponible. Asegúrate de iniciar sesión.');
-        return;
-      }
-
-      const response = await fetch(`/api/recetas/paciente/${idPaciente}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.mensaje || 'Error al cargar recetas');
-      }
-
-      this.recetas = await response.json();
-    } catch (error) {
-      console.error(error);
-      alert('Error al cargar recetas. Por favor, inténtelo de nuevo.');
-    }
+    await this.cargarRecetas();
   },
   methods: {
-    // Formatear fecha para que sea más legible
+    async cargarRecetas() {
+      try {
+        const idPaciente = this.$store?.state?.user?.idPaciente;
+        if (!idPaciente) {
+          alert('ID del paciente no disponible. Asegúrate de iniciar sesión.');
+          this.cargando = false;
+          return;
+        }
+
+        // Llamada a la API correcta
+        const response = await fetch("http://localhost:8080/recetas/paciente/${idPaciente}/activas");
+        if (response.status === 204) {
+          this.recetas = [];
+          return;
+        }
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.mensaje || 'Error al cargar recetas');
+        }
+
+        this.recetas = await response.json();
+      } catch (error) {
+        console.error('Error al cargar recetas:', error);
+        alert('Error al obtener recetas. Intenta nuevamente.');
+      } finally {
+        this.cargando = false;
+      }
+    },
     formatFecha(fecha) {
       if (!fecha) return 'Fecha no disponible';
-      const date = new Date(fecha);
-      return date.toLocaleDateString('es-ES', {
+      return new Date(fecha).toLocaleDateString('es-ES', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
       });
     },
-    // Asignar una clase según el estado para mejorar la visualización
     estadoClase(estado) {
-      switch (estado) {
-        case 'activa':
-          return 'estado-activa';
-        case 'completada':
-          return 'estado-completada';
-        case 'cancelada':
-          return 'estado-cancelada';
-        default:
-          return '';
-      }
+      const clases = {
+        activa: 'estado-activa',
+        completada: 'estado-completada',
+        cancelada: 'estado-cancelada'
+      };
+      return clases[estado] || 'estado-desconocido';
     }
   }
 };
@@ -109,4 +125,3 @@ export default {
   font-weight: bold;
 }
 </style>
-
