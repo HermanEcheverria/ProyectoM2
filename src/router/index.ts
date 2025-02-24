@@ -25,6 +25,7 @@ import MyAccountAdmin from "../views/MyAccountAdmin.vue";
 import MyAccountDoctor from "../views/MyAccountDoctor.vue";
 import MyAccountEmpleado from "../views/MyAccountEmpleado.vue";
 import MyAccountPaciente from "../views/MyAccountPaciente.vue";
+import AdminMedicalPrescription from "../views/admin/AdminMedicalPrescription.vue";
 
 // Función para verificar si el usuario está autenticado
 const requireAuth = (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
@@ -78,6 +79,9 @@ const router = createRouter({
     { path: "/admin/empleados", name: "admin-empleados", component: EmpleadosAdmin, beforeEnter: requireRole(1) },
     { path: "/admin/servicios", component: AdminServiciosView, beforeEnter: requireRole(1) },
     { path: "/admin/doctor", name: "admin-doctor", component: DoctorAdmin, beforeEnter: requireRole(1) },
+    { path: "/admin/doctores-crear-recetas", name: "doctores-crear-recetas", component: MedicalPrescription, beforeEnter: requireRole(1) },
+    { path: "/admin/doctores-recetas", name: "admin-doctores-recetas", component: AdminMedicalPrescription, beforeEnter: requireRole(1) },
+    { path: "/admin/servicios", name: "admin-servicios", component: AdminServiciosView, beforeEnter: requireRole(1) },
 
     //  Rutas protegidas de "My Account" según el rol
     { path: "/my-account-admin", name: "my-account-admin", component: MyAccountAdmin, beforeEnter: requireRole(1) },
