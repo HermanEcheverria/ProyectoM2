@@ -25,20 +25,19 @@ import MyAccountAdmin from "../views/MyAccountAdmin.vue";
 import MyAccountDoctor from "../views/MyAccountDoctor.vue";
 import MyAccountEmpleado from "../views/MyAccountEmpleado.vue";
 import MyAccountPaciente from "../views/MyAccountPaciente.vue";
-import AdminMedicalPrescription from "../views/admin/AdminMedicalPrescription.vue";
 
-// Función para verificar si el usuario está autenticado
+// Función para verificar si el usuario está autenticado
 const requireAuth = (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
   const userId = localStorage.getItem("userId");
 
   if (userId) {
     next();
   } else {
-    next("/login"); // Redirige al login si no está autenticado
+    next("/login"); // Redirige al login si no está autenticado
   }
 };
 
-// Función para validar el acceso según el rol
+// Función para validar el acceso según el rol
 const requireRole = (requiredRole: number) => (
   to: RouteLocationNormalized,
   from: RouteLocationNormalized,
@@ -66,8 +65,8 @@ const router = createRouter({
     { path: "/recetas-pacientes", name: "recetas-pacientes", component: Patient },
     { path: "/historia", name: "historia", component: HistoriaView },
 
-    //  Rutas protegidas por autenticación
-    { path: "/admin/ficha-tecnica", name: "ficha-técnica", component: FichaTecnicaView, beforeEnter: requireAuth },
+    //  Rutas protegidas por autenticación
+    { path: "/admin/ficha-tecnica", name: "ficha-técnica", component: FichaTecnicaView, beforeEnter: requireAuth },
     { path: "/admin-portal", name: "admin-portal", component: AdminPortal, beforeEnter: requireRole(1) },
     { path: "/admin/faq", name: "admin-faq", component: AdminFaqView, beforeEnter: requireRole(1) },
     { path: "/admin-usuarios", name: "admin-usuarios", component: AdminUsuarios, beforeEnter: requireRole(1) },
@@ -79,11 +78,8 @@ const router = createRouter({
     { path: "/admin/empleados", name: "admin-empleados", component: EmpleadosAdmin, beforeEnter: requireRole(1) },
     { path: "/admin/servicios", component: AdminServiciosView, beforeEnter: requireRole(1) },
     { path: "/admin/doctor", name: "admin-doctor", component: DoctorAdmin, beforeEnter: requireRole(1) },
-    { path: "/admin/doctores-crear-recetas", name: "doctores-crear-recetas", component: MedicalPrescription, beforeEnter: requireRole(1) },
-    { path: "/admin/doctores-recetas", name: "admin-doctores-recetas", component: AdminMedicalPrescription, beforeEnter: requireRole(1) },
-    { path: "/admin/servicios", name: "admin-servicios", component: AdminServiciosView, beforeEnter: requireRole(1) },
 
-    //  Rutas protegidas de "My Account" según el rol
+    //  Rutas protegidas de "My Account" según el rol
     { path: "/my-account-admin", name: "my-account-admin", component: MyAccountAdmin, beforeEnter: requireRole(1) },
     { path: "/my-account-doctor", name: "my-account-doctor", component: MyAccountDoctor, beforeEnter: requireRole(2) },
     { path: "/my-account-empleado", name: "my-account-empleado", component: MyAccountEmpleado, beforeEnter: requireRole(3) },
@@ -91,4 +87,4 @@ const router = createRouter({
   ]
 });
 
-export default router;
+export default router;

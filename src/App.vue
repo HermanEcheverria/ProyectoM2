@@ -5,6 +5,7 @@ import { onMounted } from "vue";
 
 const router = useRouter();
 
+// Recuperar datos del usuario en el inicio
 onMounted(() => {
   const storedRole = localStorage.getItem("userRole");
   const storedUser = localStorage.getItem("userId");
@@ -14,10 +15,26 @@ onMounted(() => {
     isLoggedIn.value = true;
   }
 });
+
+// Determinar ruta de "Mi Cuenta" según el rol del usuario
+const myAccountRoute = () => {
+  switch (userRole.value) {
+    case 1:
+      return "/my-account-admin";
+    case 2:
+      return "/my-account-doctor";
+    case 3:
+      return "/my-account-empleado";
+    case 4:
+      return "/my-account-paciente";
+    default:
+      return "/login"; // Redirigir al login si no hay rol asignado
+  }
+};
 </script>
 
 <template>
-  <!-- Barra de navegación fija -->
+  <!--  Barra de navegación fija -->
   <header class="navbar">
     <div class="navbar-container">
       <div class="brand">
@@ -32,16 +49,16 @@ onMounted(() => {
         <RouterLink to="/contact">Contact Us</RouterLink>
         <RouterLink to="/faq">FAQ</RouterLink>
 
-        <!-- Mostrar "My Account" solo si el usuario está autenticado -->
-        <RouterLink v-if="isLoggedIn" to="/my-account">Mi Cuenta</RouterLink>
+        <!--  Mostrar "Mi Cuenta" solo si el usuario está autenticado -->
+        <RouterLink v-if="isLoggedIn" :to="myAccountRoute()">Mi Cuenta</RouterLink>
 
-        <!-- Mostrar "Gestionar" solo si el usuario es Admin -->
+        <!--  Mostrar "Gestionar" solo si el usuario es Admin -->
         <RouterLink v-if="userRole === 1" to="/admin-portal">Gestionar</RouterLink>
 
-        <!-- Mostrar "Log in" solo si NO está autenticado -->
+        <!--  Mostrar "Log in" solo si NO está autenticado -->
         <RouterLink v-if="!isLoggedIn" to="/login">Log in</RouterLink>
 
-        <!-- Botón "Cerrar sesión" si está autenticado -->
+        <!--  Botón "Cerrar sesión" si está autenticado -->
         <button v-if="isLoggedIn" @click="logout(router)" class="logout-btn">Cerrar sesión</button>
       </nav>
     </div>
@@ -61,7 +78,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/*  Barra de navegación */
+/* Barra de navegación */
 .navbar {
   position: fixed;
   top: 0;
@@ -82,7 +99,7 @@ onMounted(() => {
   padding: 0.5rem 1rem;
 }
 
-/* Logo y título */
+/*  Logo y título */
 .brand {
   display: flex;
   align-items: center;
@@ -106,7 +123,7 @@ onMounted(() => {
   font-weight: 500;
 }
 
-/* Botón de logout */
+/*  Botón de logout */
 .logout-btn {
   margin-left: 1rem;
   background-color: #d9534f;
@@ -121,10 +138,10 @@ onMounted(() => {
   background-color: #c9302c;
 }
 
-/* Contenedor principal del contenido */
+/*  Contenedor principal del contenido */
 .app-main {
   margin-top: 80px; /* Espacio para la navbar fija */
-  min-height: calc(100vh - 80px);
+  min-height: calc(100vh - 140px); /* Ajustado para dejar espacio al footer */
   background-color: #181818;
   padding: 2rem;
   width: 100%;
@@ -139,8 +156,6 @@ onMounted(() => {
   color: white;
   text-align: center;
   padding: 1rem 0;
-  position: fixed;
-  bottom: 0;
   width: 100%;
 }
 
