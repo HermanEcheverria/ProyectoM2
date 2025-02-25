@@ -3,8 +3,14 @@ import axios from "axios";
 const API_URL = "http://localhost:8080/doctor";
 
 export default {
-  getAllDoctors() {
-    return axios.get(API_URL);
+  async getAllDoctors() {
+    try {
+      const response = await axios.get(API_URL);
+      return response.data; // Extraer los datos correctamente
+    } catch (error) {
+      console.error("Error al obtener la lista de doctores:", error);
+      throw error;
+    }
   },
 
   async registrarDoctor(doctor) {
@@ -13,7 +19,7 @@ export default {
         nombreUsuario: doctor.nombreUsuario,
         correo: doctor.correo,
         contrasena: doctor.password,
-        rol: { id: 2 } // ROL_ID = 2 para Doctores
+        rol: { id: 2 }, // ROL_ID = 2 para Doctores
       },
       apellido: doctor.apellido,
       documento: doctor.documento,
@@ -30,7 +36,7 @@ export default {
     });
   },
 
-  updateDoctor(id, doctor) {
+  async updateDoctor(id, doctor) {
     return axios.put(`${API_URL}/${id}`, {
       usuario: {
         nombreUsuario: doctor.usuario.nombreUsuario,
@@ -53,7 +59,7 @@ export default {
     });
   },
 
-  deleteDoctor(id) {
+  async deleteDoctor(id) {
     return axios.delete(`${API_URL}/${id}`);
   }
 };

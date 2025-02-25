@@ -22,7 +22,7 @@ import EmpleadosAdmin from "../views/EmpleadosAdmin.vue";
 import AdminServiciosView from "@/views/admin/AdminServiciosView.vue";
 import DoctorAdmin from "../views/DoctorAdmin.vue";
 import MyAccountAdmin from "../views/MyAccountAdmin.vue";
-import MyAccountDoctor from "../views/MyAccountDoctor.vue";
+import MyAccountDoctor from "../views/myAccountDoctor.vue";
 import MyAccountEmpleado from "../views/MyAccountEmpleado.vue";
 import MyAccountPaciente from "../views/MyAccountPaciente.vue";
 
