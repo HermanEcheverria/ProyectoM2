@@ -15,6 +15,7 @@
       <button @click="router.push('/admin/pacientes')" class="gestion-button">Gestión de Pacientes</button>
       <button @click="router.push('/admin/empleados')" class="gestion-button">Gestión de Empleados</button>
       <button @click="router.push('/admin/doctor')" class="gestion-button">Gestión de Doctores</button>
+      <button @click="router.push('/admin/usuario-interconexion')" class="gestion-button">Gestión de Usuario Interconexión</button>
 
     </div>
 

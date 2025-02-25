@@ -25,6 +25,9 @@ import MyAccountAdmin from "../views/MyAccountAdmin.vue";
 import MyAccountDoctor from "../views/myAccountDoctor.vue";
 import MyAccountEmpleado from "../views/MyAccountEmpleado.vue";
 import MyAccountPaciente from "../views/MyAccountPaciente.vue";
+import MyAccountUsuarioInter from "@/views/MyAccountUsuarioInter.vue";
+import UsuarioInterAdmin from "@/views/UsuarioInterAdmin.vue";
+
 
 // Función para verificar si el usuario está autenticado
 const requireAuth = (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
@@ -78,13 +81,17 @@ const router = createRouter({
     { path: "/admin/empleados", name: "admin-empleados", component: EmpleadosAdmin, beforeEnter: requireRole(1) },
     { path: "/admin/servicios", component: AdminServiciosView, beforeEnter: requireRole(1) },
     { path: "/admin/doctor", name: "admin-doctor", component: DoctorAdmin, beforeEnter: requireRole(1) },
+    { path: "/admin/usuario-interconexion", name: "admin-usuario-interconexion", component: UsuarioInterAdmin, beforeEnter: requireRole(1) },
 
     //  Rutas protegidas de "My Account" según el rol
     { path: "/my-account-admin", name: "my-account-admin", component: MyAccountAdmin, beforeEnter: requireRole(1) },
     { path: "/my-account-doctor", name: "my-account-doctor", component: MyAccountDoctor, beforeEnter: requireRole(2) },
     { path: "/my-account-empleado", name: "my-account-empleado", component: MyAccountEmpleado, beforeEnter: requireRole(3) },
     { path: "/my-account-paciente", name: "my-account-paciente", component: MyAccountPaciente, beforeEnter: requireRole(4) },
+    { path: "/my-account-interconexion", name: "my-account-interconexion", component: MyAccountUsuarioInter, beforeEnter: requireRole(5) },
   ]
 });
 
 export default router;
+
+

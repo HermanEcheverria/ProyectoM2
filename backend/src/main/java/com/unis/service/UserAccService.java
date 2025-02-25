@@ -5,6 +5,7 @@ import com.unis.repository.UserAccRepository;
 import com.unis.repository.DoctorAccRepository;
 import com.unis.repository.EmpleadoAccRepository;
 import com.unis.repository.PacienteAccRepository;
+import com.unis.repository.UsuarioInterAccRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -24,6 +25,9 @@ public class UserAccService {
 
     @Inject
     PacienteAccRepository pacienteAccRepository;
+
+    @Inject
+    UsuarioInterAccRepository usuarioInterAccRepository;
 
     public Optional<UserAcc> getUserById(Long id) {
         return userAccRepository.findByIdOptional(id);
@@ -57,6 +61,9 @@ public class UserAccService {
                 break;
             case 4:
                 pacienteAccRepository.delete("idUsuario", id);
+                break;
+            case 5:
+                usuarioInterAccRepository.delete("idUsuario", id);
                 break;
         }
 

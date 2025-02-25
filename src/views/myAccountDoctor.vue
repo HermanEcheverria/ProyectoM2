@@ -15,6 +15,7 @@ const rolesMap = {
   2: "Doctor",
   3: "Empleado",
   4: "Paciente",
+  5: "Usuario Interconexión",
 };
 
 // Mapeo de estados

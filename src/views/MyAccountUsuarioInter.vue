@@ -4,12 +4,12 @@ import axios from "axios";
 
 const userId = localStorage.getItem("userId");
 const user = ref(null);
-const empleado = ref(null);
+const usuarioInter = ref(null);
 const loading = ref(true);
 const errorMensaje = ref("");
 const isEditing = ref(false);
 
-//  Mapeo de roles por ID
+// Mapeo de roles por ID
 const rolesMap = {
   1: "Administrador",
   2: "Doctor",
@@ -18,13 +18,13 @@ const rolesMap = {
   5: "Usuario Interconexión",
 };
 
-// Mapeo de estados
+//  Mapeo de estados
 const estadoMap = {
   1: "Activo",
   0: "Inactivo",
 };
 
-//  Cargar datos del usuario y empleado
+// Cargar datos del usuario
 onMounted(async () => {
   if (!userId) {
     errorMensaje.value = "Usuario no encontrado. Intenta iniciar sesión nuevamente.";
@@ -34,16 +34,12 @@ onMounted(async () => {
 
   try {
     const userResponse = await axios.get(`http://localhost:8080/usuarios/${userId}`);
-    const empleadoResponse = await axios.get(`http://localhost:8080/empleados/${userId}`);
+    const usuarioInterResponse = await axios.get(`http://localhost:8080/usuariosinter/${userId}`);
 
-    if (userResponse.data && empleadoResponse.data) {
-      user.value = userResponse.data;
-      empleado.value = empleadoResponse.data;
-    } else {
-      errorMensaje.value = "No se encontraron datos del usuario.";
-    }
+    user.value = userResponse.data;
+    usuarioInter.value = usuarioInterResponse.data;
   } catch (error) {
-    console.error("Error cargando datos:", error);
+    console.error("Error cargando datos del usuario:", error);
     errorMensaje.value = "Error al cargar el perfil. Inténtalo más tarde.";
   } finally {
     loading.value = false;
@@ -57,7 +53,7 @@ const toggleEdit = () => {
 
 // Actualizar perfil
 const updateProfile = async () => {
-  if (!user.value || !empleado.value) return;
+  if (!user.value || !usuarioInter.value) return;
 
   try {
     await axios.put(`http://localhost:8080/usuarios/${userId}`, {
@@ -66,13 +62,12 @@ const updateProfile = async () => {
       contrasena: user.value.contrasena,
     });
 
-    await axios.put(`http://localhost:8080/empleados/${userId}`, {
-      apellido: empleado.value.apellido,
-      documento: empleado.value.documento,
-      fechaNacimiento: empleado.value.fechaNacimiento,
-      genero: empleado.value.genero,
-      telefono: empleado.value.telefono,
-      puesto: empleado.value.puesto,
+    await axios.put(`http://localhost:8080/usuariosinter/${userId}`, {
+      apellido: usuarioInter.value.apellido,
+      documento: usuarioInter.value.documento,
+      fechaNacimiento: usuarioInter.value.fechaNacimiento,
+      genero: usuarioInter.value.genero,
+      telefono: usuarioInter.value.telefono,
     });
 
     alert("Perfil actualizado correctamente.");
@@ -86,16 +81,16 @@ const updateProfile = async () => {
 
 <template>
   <div class="account-container">
-    <h2>Mi Cuenta (Empleado)</h2>
+    <h2>Mi Cuenta (Usuario Interconexión)</h2>
 
-    <!--  Mostrar mensaje de carga -->
+    <!-- Mostrar mensaje de carga -->
     <p v-if="loading">Cargando datos...</p>
 
-    <!--  Mostrar mensaje de error si hay problemas -->
+    <!-- Mostrar mensaje de error si hay problemas -->
     <p v-if="errorMensaje" class="error">{{ errorMensaje }}</p>
 
-    <!--  Mostrar el formulario si los datos están disponibles -->
-    <form v-if="user && empleado" @submit.prevent="updateProfile">
+    <!-- Mostrar el formulario si los datos están disponibles -->
+    <form v-if="user && usuarioInter" @submit.prevent="updateProfile">
       <label><b>Nombre:</b></label>
       <input v-model="user.nombreUsuario" :disabled="!isEditing" required />
 
@@ -120,26 +115,19 @@ const updateProfile = async () => {
       <hr />
 
       <label><b>Apellido:</b></label>
-      <input v-model="empleado.apellido" :disabled="!isEditing" required />
+      <input v-model="usuarioInter.apellido" :disabled="!isEditing" required />
 
       <label><b>Documento:</b></label>
-      <input v-model="empleado.documento" :disabled="!isEditing" required />
+      <input v-model="usuarioInter.documento" :disabled="!isEditing" required />
 
       <label><b>Fecha de Nacimiento:</b></label>
-      <input type="date" v-model="empleado.fechaNacimiento" :disabled="!isEditing" required />
+      <input type="date" v-model="usuarioInter.fechaNacimiento" :disabled="!isEditing" required />
 
       <label><b>Género:</b></label>
-      <select v-model="empleado.genero" :disabled="!isEditing" required>
-        <option value="Masculino">Masculino</option>
-        <option value="Femenino">Femenino</option>
-        <option value="Otro">Otro</option>
-      </select>
+      <input v-model="usuarioInter.genero" :disabled="!isEditing" required />
 
       <label><b>Teléfono:</b></label>
-      <input v-model="empleado.telefono" :disabled="!isEditing" required />
-
-      <label><b>Puesto:</b></label>
-      <input v-model="empleado.puesto" :disabled="!isEditing" required />
+      <input v-model="usuarioInter.telefono" :disabled="!isEditing" required />
 
       <button v-if="isEditing" type="submit">Guardar Cambios</button>
       <button v-else type="button" @click="toggleEdit">Editar</button>
@@ -158,8 +146,8 @@ const updateProfile = async () => {
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
 }
 
-/*  Estilo de los inputs */
-input, select {
+/* Estilo de los inputs */
+input {
   width: 100%;
   padding: 10px;
   margin: 5px 0;
@@ -167,22 +155,22 @@ input, select {
   border-radius: 5px;
 }
 
-/*  Estilo para campos no editables */
+/* Estilo para campos no editables */
 .readonly-field {
   background-color: #e0e0e0;
   color: #555;
 }
 
-/*  Estilo de etiquetas */
+/* Estilo de etiquetas */
 label {
   display: block;
   margin-top: 10px;
   font-size: 14px;
   color: #333;
-  font-weight: bold;
+  font-weight: bold; /* Ahora los títulos están en negrita */
 }
 
-/*  Botón de edición */
+/* Botón de edición */
 button {
   width: 100%;
   padding: 10px;
