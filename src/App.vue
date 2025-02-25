@@ -45,7 +45,7 @@ const myAccountRoute = () => {
       <nav class="nav-links">
         <RouterLink to="/">Home</RouterLink>
         <RouterLink to="/about">About</RouterLink>
-        <RouterLink to="/servicios-medicos">Servicios Médicos</RouterLink>
+
         <RouterLink to="/contact">Contact Us</RouterLink>
         <RouterLink to="/faq">FAQ</RouterLink>
 
@@ -54,6 +54,7 @@ const myAccountRoute = () => {
 
         <!--  Mostrar "Gestionar" solo si el usuario es Admin -->
         <RouterLink v-if="userRole === 1" to="/admin-portal">Gestionar</RouterLink>
+        <RouterLink v-if="userRole === 1" to="/servicios-medicos">Servicios Médicos</RouterLink>
 
         <!--  Mostrar "Log in" solo si NO está autenticado -->
         <RouterLink v-if="!isLoggedIn" to="/login">Log in</RouterLink>
