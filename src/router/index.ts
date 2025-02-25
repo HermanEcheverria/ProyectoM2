@@ -27,6 +27,7 @@ import MyAccountEmpleado from "../views/MyAccountEmpleado.vue";
 import MyAccountPaciente from "../views/MyAccountPaciente.vue";
 import MyAccountUsuarioInter from "@/views/MyAccountUsuarioInter.vue";
 import UsuarioInterAdmin from "@/views/UsuarioInterAdmin.vue";
+import AdminFichasTecnicas from "@/views/admin/AdminFichasTecnicas.vue";
 
 
 // Función para verificar si el usuario está autenticado
@@ -69,7 +70,7 @@ const router = createRouter({
     { path: "/historia", name: "historia", component: HistoriaView },
 
     //  Rutas protegidas por autenticación
-    { path: "/admin/ficha-tecnica", name: "ficha-técnica", component: FichaTecnicaView, beforeEnter: requireAuth },
+    { path: "/admin/crear-ficha-tecnica", name: "ficha-técnica", component: FichaTecnicaView, beforeEnter: requireAuth },
     { path: "/admin-portal", name: "admin-portal", component: AdminPortal, beforeEnter: requireRole(1) },
     { path: "/admin/faq", name: "admin-faq", component: AdminFaqView, beforeEnter: requireRole(1) },
     { path: "/admin-usuarios", name: "admin-usuarios", component: AdminUsuarios, beforeEnter: requireRole(1) },
@@ -82,6 +83,7 @@ const router = createRouter({
     { path: "/admin/servicios", component: AdminServiciosView, beforeEnter: requireRole(1) },
     { path: "/admin/doctor", name: "admin-doctor", component: DoctorAdmin, beforeEnter: requireRole(1) },
     { path: "/admin/usuario-interconexion", name: "admin-usuario-interconexion", component: UsuarioInterAdmin, beforeEnter: requireRole(1) },
+    { path: "/admin/fichas-tecnicas", name: "admin-fichas-tecnicas", component: AdminFichasTecnicas, beforeEnter: requireRole(1) },
 
     //  Rutas protegidas de "My Account" según el rol
     { path: "/my-account-admin", name: "my-account-admin", component: MyAccountAdmin, beforeEnter: requireRole(1) },

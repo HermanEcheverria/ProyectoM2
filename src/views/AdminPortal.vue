@@ -9,14 +9,13 @@
       <button @click="router.push('/admin/doctores-recetas')" class="gestion-button">Recetas médicas</button>
       <button @click="router.push('/admin/doctores-citas')" class="gestion-button">Citas médicas</button>
       <button @click="router.push('/admin/doctores-agenda')" class="gestion-button">Agenda médica</button>
-      <button @click="router.push('/admin/ficha-tecnica')" class="gestion-button">Ficha técnica</button>
       <button @click="router.push('/admin/faq')" class="faq-button">FAQ</button>
       <button @click="router.push('/admin/historia')" class="gestion-button">Historia</button>
       <button @click="router.push('/admin/pacientes')" class="gestion-button">Gestión de Pacientes</button>
       <button @click="router.push('/admin/empleados')" class="gestion-button">Gestión de Empleados</button>
       <button @click="router.push('/admin/doctor')" class="gestion-button">Gestión de Doctores</button>
       <button @click="router.push('/admin/usuario-interconexion')" class="gestion-button">Gestión de Usuario Interconexión</button>
-
+      <button @click="router.push('/admin/fichas-tecnicas')" class="gestion-button">Gestión de Fichas Tecnicas</button>
     </div>
 
     <!-- Vista dinámica según la ruta -->

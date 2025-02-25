@@ -1,216 +1,263 @@
 <template>
-  <div class="formulario-receta">
-    <h2>Ficha Técnica de Pacientes</h2>
+  <div class="container">
+    <!-- Título -->
+    <div class="header">ADMINISTRACIÓN DE FICHAS TÉCNICAS</div>
 
-    <!-- Campo: Nombre -->
-    <div class="form-group">
-      <label for="nombre">Nombre:</label>
-      <input
-        type="text"
-        id="nombre"
-        v-model="paciente.nombre"
-        placeholder="Ingresa el nombre completo"
-      />
+    <!-- Opciones de Gestión -->
+    <div class="actions">
+      <button @click="crearFicha">🆕 Crear Nueva Ficha</button>
+      <button @click="editarFicha">✏️ Editar Ficha</button>
+      <button @click="eliminarFicha">🗑️ Eliminar Ficha</button>
+      <button @click="verFicha">📄 Ver Ficha</button>
+      <input v-model="buscarId" placeholder="🔍 Buscar Ficha por ID">
+      <button @click="buscarFicha">🔎 Buscar</button>
     </div>
 
-    <!-- Campo: DPI -->
-    <div class="form-group">
-      <label for="dpi">DPI:</label>
-      <input
-        type="text"
-        id="dpi"
-        v-model="paciente.dpi"
-        placeholder="Ingresa el número de DPI"
-      />
+    <!-- Listado de Fichas Técnicas -->
+    <div class="section">
+      <h3>📋 LISTADO DE FICHAS TÉCNICAS</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Fecha Creada</th>
+            <th>Última Modif.</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="ficha in fichas" :key="ficha.id">
+            <td>{{ ficha.id }}</td>
+            <td>{{ ficha.nombre }}</td>
+            <td>{{ ficha.fechaCreada }}</td>
+            <td>{{ ficha.ultimaModif }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
-    <!-- Campo: Fecha de nacimiento -->
-    <div class="form-group">
-      <label for="fechaNacimiento">Fecha de nacimiento:</label>
-      <input
-        type="date"
-        id="fechaNacimiento"
-        v-model="paciente.fechaNacimiento"
-      />
+    <!-- Datos del Paciente -->
+    <div class="section">
+      <h3>🧑‍⚕️ DATOS DEL PACIENTE</h3>
+      <div class="form-group">
+        <label>Nombre:</label>
+        <input v-model="paciente.nombre">
+        <label>ID:</label>
+        <input v-model="paciente.id">
+      </div>
+      <div class="form-group">
+        <label>Fecha de Nacimiento:</label>
+        <input type="date" v-model="paciente.fechaNacimiento">
+      </div>
+      <div class="form-group">
+        <label>Fotografía:</label>
+        <input type="file">
+      </div>
+      <div class="form-group">
+        <label>Documento de Identificación:</label>
+        <input v-model="paciente.documentoIdentidad">
+      </div>
+      <div class="form-group">
+        <label>Número de Afiliación al Seguro:</label>
+        <input v-model="paciente.afiliacionSeguro">
+        <label>Código de Seguro:</label>
+        <input v-model="paciente.codigoSeguro">
+      </div>
+      <div class="form-group">
+        <label>Número de Carnet de Seguro:</label>
+        <input v-model="paciente.afiliacionSeguro">
+        <label>Código de Seguro:</label>
+        <input v-model="paciente.codigoSeguro">
+      </div>
     </div>
 
-    <!-- Campo: Fotografía -->
-    <div class="form-group">
-      <label for="fotografia">Fotografía:</label>
-      <input
-        type="file"
-        id="fotografia"
-        accept="image/*"
-        @change="onFileSelected"
-      />
+    <!-- Historial de Servicios Médicos -->
+    <div class="section">
+      <h3>🏥 HISTORIAL DE SERVICIOS MÉDICOS</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Servicio</th>
+            <th>Médico</th>
+            <th>Costo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="servicio in historial" :key="servicio.fecha">
+            <td>{{ servicio.fecha }}</td>
+            <td>{{ servicio.servicio }}</td>
+            <td>{{ servicio.medico }}</td>
+            <td>Q{{ servicio.costo }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
-    <!-- Campo: Número de afiliación -->
-    <div class="form-group">
-      <label for="numAfiliacion">Número de afiliación:</label>
-      <input
-        type="text"
-        id="numAfiliacion"
-        v-model="paciente.numeroAfiliacion"
-        placeholder="Ingresa el número de afiliación"
-      />
+    <!-- Comentarios Médicos -->
+    <div class="section">
+      <h3>💬 COMENTARIOS MÉDICOS Y SEGUIMIENTO</h3>
+      <div v-for="comentario in comentarios" :key="comentario.id" class="comentario">
+        <b>{{ comentario.autor }}</b> ({{ comentario.fecha }}): {{ comentario.texto }}
+      </div>
+      <button @click="agregarComentario">💬 Agregar Comentario</button>
     </div>
 
-    <!-- Campo: Código de compañía de seguro (opcional) -->
-    <div class="form-group">
-      <label for="codigoSeguro">Código de compañía del seguro:</label>
-      <input
-        type="text"
-        id="codigoSeguro"
-        v-model="paciente.codigoCompania"
-        placeholder="Ingresa el código (si aplica)"
-      />
+    <!-- Botones de Acción -->
+    <div class="actions">
+      <button @click="guardarFicha">💾 Guardar</button>
+      <button @click="editarFicha">🖊️ Editar</button>
+      <button @click="eliminarFicha">🗑️ Eliminar</button>
+      <button @click="exportarPDF">📄 Exportar PDF</button>
+      <button @click="volver">⬅️ Volver</button>
     </div>
-
-    <!-- Campo: Número de carné (opcional) -->
-    <div class="form-group">
-      <label for="numeroCarne">Número de carné:</label>
-      <input
-        type="text"
-        id="numeroCarne"
-        v-model="paciente.numeroCarne"
-        placeholder="Ingresa el número de carné (si aplica)"
-      />
-    </div>
-
-    <!-- Campo: Historial de servicios prestados -->
-    <!-- Podría ser un textarea o una lista dinámica; aquí se usa un textarea sencillo. -->
-    <div class="form-group">
-      <label for="historialServicios">Historial de servicios prestados:</label>
-      <textarea
-        id="historialServicios"
-        rows="4"
-        v-model="paciente.historialServicios"
-        placeholder="Describe brevemente los servicios prestados al paciente"
-      ></textarea>
-    </div>
-
-    <!-- Botón para enviar/guardar el formulario -->
-    <button class="btn-primario" @click="guardarFicha">Guardar Ficha</button>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'FichaTecnicaPacientes',
   data() {
     return {
+      buscarId: "",
+      fichas: [
+        { id: "001", nombre: "Juan Pérez", fechaCreada: "12/02/2025", ultimaModif: "18/02/2025" },
+        { id: "002", nombre: "María López", fechaCreada: "14/02/2025", ultimaModif: "17/02/2025" },
+        { id: "003", nombre: "Carlos Gómez", fechaCreada: "16/02/2025", ultimaModif: "20/02/2025" },
+      ],
       paciente: {
-        nombre: '',
-        dpi: '',
-        fechaNacimiento: '',
-        fotografia: null,         // Se guardará el objeto File
-        numeroAfiliacion: '',
-        codigoCompania: '',
-        numeroCarne: '',
-        historialServicios: ''
-      }
+        nombre: "Juan Pérez",
+        id: "001",
+        fechaNacimiento: "1990-01-15",
+        documentoIdentidad: "DPI-123456789",
+        afiliacionSeguro: "987654",
+        codigoSeguro: "A1B2C3",
+      },
+      historial: [
+        { fecha: "10/02/2025", servicio: "Consulta General", medico: "Dr. Pérez", costo: "200.00" },
+        { fecha: "15/02/2025", servicio: "Examen de Sangre", medico: "Dr. Gómez", costo: "150.00" },
+        { fecha: "20/02/2025", servicio: "Cirugía", medico: "Dr. López", costo: "5000.00" },
+      ],
+      comentarios: [
+        { id: 1, autor: "Dr. Pérez", fecha: "10/02/2025", texto: "El paciente muestra mejoría." },
+        { id: 2, autor: "Enfermera López", fecha: "11/02/2025", texto: "Se han ajustado los medicamentos según lo indicado." },
+      ],
     };
   },
   methods: {
-    /**
-     * Maneja la selección de un archivo (imagen) para la fotografía,
-     * guardando la información en el atributo fotografia.
-     */
-    onFileSelected(event) {
-      const file = event.target.files[0];
-      this.paciente.fotografia = file || null;
-    },
-    /**
-     * Aquí iría la lógica para enviar los datos al backend (Quarkus con Hibernate)
-     * o bien para validarlos antes de proceder.
-     */
-    guardarFicha() {
-      // Lógica de envío de datos (fetch / axios / etc.)
-      console.log('Datos del paciente:', this.paciente);
-      alert('Ficha de paciente guardada (ejemplo).');
-    }
+    crearFicha() { alert("Crear nueva ficha en desarrollo."); },
+    editarFicha() { alert("Editar ficha en desarrollo."); },
+    eliminarFicha() { alert("Eliminar ficha en desarrollo."); },
+    verFicha() { alert("Ver ficha en desarrollo."); },
+    buscarFicha() { alert(`Buscando ficha con ID: ${this.buscarId}`); },
+    agregarComentario() { alert("Agregar comentario en desarrollo."); },
+    guardarFicha() { alert("Guardar ficha en desarrollo."); },
+    exportarPDF() { alert("Exportar a PDF en desarrollo."); },
+    volver() { alert("Volviendo a la lista."); },
   }
 };
 </script>
 
 <style scoped>
-.formulario-receta {
-  max-width: 700px;
-  margin: 20px auto;
-  padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 12px;
-  background-color: #f4f4f4;
+/* Estilos generales */
+.container {
+    max-width: 900px;
+    margin: auto;
+    font-family: Arial, sans-serif;
+    background: #0D1B2A;  /* Fondo oscuro */
+    color: #E0E1DD;  /* Texto claro */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.2);
 }
 
-.form-group {
-  margin-bottom: 15px;
+/* Cabecera */
+.header {
+    text-align: center;
+    font-size: 22px;
+    font-weight: bold;
+    background: #1B263B;  /* Azul oscuro */
+    color: #E0E1DD;
+    padding: 15px;
+    border-radius: 5px;
 }
 
-input,
-select,
-textarea {
-  width: 100%;
-  padding: 10px;
-  margin-top: 5px;
-  border-radius: 5px;
-  border: 1px solid #ddd;
-  box-sizing: border-box;
+/* Secciones */
+.section {
+    background: #1B263B;
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 5px;
+    border: 1px solid #415A77;
 }
 
-.medicamento-item {
-  margin-bottom: 10px;
-  border: 1px solid #ccc;
-  padding: 10px;
-  border-radius: 6px;
-  background-color: #eef5ff;
-  display: flex;
-  gap: 5px;
-  flex-wrap: wrap;
+/* Botones */
+.actions {
+    display: flex;
+    justify-content: space-around;
+    padding: 10px;
 }
 
-.btn-primario {
-  background-color: #28a745;
-  color: white;
-  padding: 10px;
-  border: none;
-  margin-top: 15px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s;
+button {
+    background: #00A86B; /* Verde resplandeciente */
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
 }
 
-.btn-primario:hover {
-  background-color: #218838;
+button:hover {
+    background: #009f5c;
 }
 
-.btn-secundario {
-  background-color: #007bff;
-  color: white;
-  padding: 10px;
-  border: none;
-  margin-top: 15px;
-  margin-right: 10px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s;
+/* Botón de eliminar */
+button.eliminar {
+    background: #D72638; /* Rojo */
 }
 
-.btn-secundario:hover {
-  background-color: #0056b3;
+button.eliminar:hover {
+    background: #C21010;
 }
 
-.btn-eliminar {
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 5px;
-  cursor: pointer;
+/* Tablas */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    background: #0D1B2A;
 }
 
-.btn-eliminar:hover {
-  background-color: #c82333;
+th, td {
+    border: 1px solid #415A77;
+    padding: 8px;
+    text-align: center;
+    color: #E0E1DD;
 }
+
+th {
+    background: #415A77;
+    font-weight: bold;
+}
+
+/* Inputs y formularios */
+input, select, textarea {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #415A77;
+    background: #0D1B2A;
+    color: #E0E1DD;
+    border-radius: 5px;
+}
+
+/* Comentarios */
+.comentario {
+    background: #1B263B;
+    padding: 10px;
+    margin: 5px 0;
+    border-left: 4px solid #00A86B;
+    border-radius: 5px;
+}
+
 </style>
