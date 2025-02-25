@@ -56,7 +56,7 @@ onMounted(() => {
   <!-- Banner con 3 imágenes en carrusel automático -->
   <div class="banner-container">
     <img :src="bannerImages[currentBannerIndex]" alt="Centro Médico" class="banner-image" />
-    <div class="banner-text">Guatemala UNIS:<br>Centro MédicO UNIS</div>
+    <div class="banner-text">Guatemala UNIS:<br>Centro Médico UNIS</div>
   </div>
 
   <div class="content">
