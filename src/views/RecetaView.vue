@@ -2,7 +2,6 @@
   <div class="recetas-container">
     <h1>Gestión de Recetas</h1>
 
-    <!-- Formulario para crear receta -->
     <div v-if="!recetaGenerada" class="form-receta">
       <h3>Nueva Receta</h3>
 
@@ -15,8 +14,9 @@
         </option>
       </select>
 
-      <p>📌 Paciente Asignado (ID): {{ nuevaReceta.idPaciente || 'No asignado' }}</p>
-      <p>📌 Doctor Asignado (ID): {{ nuevaReceta.idDoctor || 'No asignado' }}</p>
+      <p style="color: gray;">Receta ID: {{ nuevaReceta.idReceta }}</p>
+      <p style="color: gray;">Paciente Asignado (ID): {{ nuevaReceta.idPaciente || 'No asignado' }}</p>
+      <p style="color: gray;">Doctor Asignado (ID): {{ nuevaReceta.idDoctor || 'No asignado' }}</p>
 
       <textarea v-model="nuevaReceta.anotaciones" placeholder="Anotaciones"></textarea>
       <textarea v-model="nuevaReceta.notasEspeciales" placeholder="Notas Especiales"></textarea>
@@ -24,10 +24,9 @@
       <button @click="generarReceta" class="btn-guardar">Generar Receta</button>
     </div>
 
-    <!-- Sección para agregar medicamentos (solo si la receta ya fue creada) -->
     <div v-if="recetaGenerada" class="form-medicamentos">
       <h3>Agregar Medicamentos</h3>
-      <p>📌 Receta ID: {{ nuevaReceta.idReceta }}</p>
+      <p style="color: gray;">Receta ID: {{ nuevaReceta.idReceta }}</p>
 
       <select v-model="medicamentoSeleccionado">
         <option value="" disabled>Seleccione Medicamento</option>
@@ -46,7 +45,7 @@
       <ul v-if="nuevaReceta.medicamentos.length > 0">
         <li v-for="(med, index) in nuevaReceta.medicamentos" :key="index">
           Medicamento ID: {{ med.idMedicamento }} | Dosis: {{ med.dosis }}, Frecuencia: {{ med.frecuencia }}, Duración: {{ med.duracion }}
-          <button @click="eliminarMedicamento(index)" class="btn-eliminar">❌</button>
+          <button @click="eliminarMedicamento(index)" class="btn-eliminar">Eliminar</button>
         </li>
       </ul>
     </div>
@@ -59,9 +58,9 @@ import recetaService from "@/services/recetaService.js";
 import { obtenerCitas, obtenerMedicamentos } from "@/services/selectService.js";
 
 const recetas = ref([]);
-const recetaGenerada = ref(false); // ✅ Controla si la receta ya fue creada
+const recetaGenerada = ref(false);
 const nuevaReceta = ref({
-  idReceta: null, // ✅ Guardará el ID de la receta creada
+  idReceta: null,
   codigoReceta: "",
   idCita: "",
   idPaciente: "",
@@ -80,80 +79,30 @@ const frecuencia = ref("");
 const duracion = ref("");
 const diagnostico = ref("");
 
-// 📌 Cargar datos iniciales
 onMounted(async () => {
   citas.value = await obtenerCitas();
   medicamentos.value = await obtenerMedicamentos();
 });
 
-// 📌 Cargar datos de la cita seleccionada
 const cargarDatosDeCita = () => {
   const citaSeleccionada = citas.value.find(cita => cita.idCita === nuevaReceta.value.idCita);
   if (citaSeleccionada) {
     nuevaReceta.value.idPaciente = citaSeleccionada.idPaciente;
     nuevaReceta.value.idDoctor = citaSeleccionada.idDoctor;
-    console.log("📌 ID Paciente asignado:", nuevaReceta.value.idPaciente);
-    console.log("📌 ID Doctor asignado:", nuevaReceta.value.idDoctor);
   }
 };
 
-// 📌 Paso 1: Crear la Receta
 const generarReceta = async () => {
   try {
-    console.log("📌 Enviando datos para crear receta:", JSON.stringify(nuevaReceta.value, null, 2));
     const respuesta = await recetaService.crearReceta(nuevaReceta.value);
-
-    // ✅ Guardar el ID de la receta
     nuevaReceta.value.idReceta = respuesta.idReceta;
-    recetaGenerada.value = true; // ✅ Ahora podemos agregar medicamentos
-
-    console.log("✅ Receta creada con ID:", nuevaReceta.value.idReceta);
+    recetaGenerada.value = true;
+    alert("Receta guardada con éxito");
   } catch (error) {
-    console.error("❌ Error generando receta:", error);
+    console.error("Error generando receta:", error);
   }
-};
-
-// 📌 Paso 2: Agregar Medicamentos
-const agregarMedicamento = async () => {
-  if (!medicamentoSeleccionado.value) {
-    alert("Seleccione un medicamento.");
-    return;
-  }
-
-  const nuevoMedicamento = {
-    idReceta: nuevaReceta.value.idReceta, // ✅ Asigna el ID de la receta
-    idMedicamento: medicamentoSeleccionado.value,
-    dosis: dosis.value,
-    frecuencia: frecuencia.value,
-    duracion: duracion.value,
-    diagnostico: diagnostico.value,
-  };
-
-  try {
-    console.log("📌 Enviando medicamento:", JSON.stringify(nuevoMedicamento, null, 2));
-    await recetaService.agregarMedicamento(nuevoMedicamento);
-    nuevaReceta.value.medicamentos.push(nuevoMedicamento);
-
-    alert("✅ Medicamento agregado con éxito.");
-
-    // Limpiar campos
-    medicamentoSeleccionado.value = "";
-    dosis.value = "";
-    frecuencia.value = "";
-    duracion.value = "";
-    diagnostico.value = "";
-  } catch (error) {
-    console.error("❌ Error agregando medicamento:", error);
-    alert("Error al agregar medicamento.");
-  }
-};
-
-// 📌 Eliminar medicamento de la lista antes de guardar
-const eliminarMedicamento = (index) => {
-  nuevaReceta.value.medicamentos.splice(index, 1);
 };
 </script>
-
 <style scoped>
 .recetas-container {
   max-width: 600px;
