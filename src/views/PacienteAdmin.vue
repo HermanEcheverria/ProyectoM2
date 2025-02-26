@@ -2,7 +2,7 @@
   <div class="paciente-container">
     <h1>Gestión de Pacientes</h1>
 
-    <!-- Botón para agregar un paciente -->
+    <!-- Botón par agregar un paciente -->
     <button class="add-button" @click="abrirFormulario">Agregar Paciente</button>
 
     <table>
