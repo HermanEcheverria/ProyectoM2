@@ -1,0 +1,92 @@
+import axios from "axios";
+
+const API_URL = "http://localhost:8080/recetas";
+
+export default {
+  // Obtener todas las recetas
+  async obtenerTodasLasRecetas() {
+    try {
+      const response = await axios.get(API_URL);
+      return response.data;
+    } catch (error) {
+      console.error("Error obteniendo recetas:", error);
+      return [];
+    }
+  },
+
+  // Obtener receta por ID
+  async obtenerRecetaPorId(id) {
+    try {
+      const response = await axios.get(`${API_URL}/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error obteniendo la receta con ID ${id}:`, error);
+      return null;
+    }
+  },
+
+  // Crear una nueva receta con múltiples medicamentos
+  async crearReceta(receta) {
+    try {
+      const requestData = {
+        codigoReceta: receta.codigoReceta,
+        idCita: receta.idCita,
+        idPaciente: receta.idPaciente,
+        idDoctor: receta.idDoctor,
+        anotaciones: receta.anotaciones,
+        notasEspeciales: receta.notasEspeciales
+      };
+
+      console.log("📌 JSON enviado:", JSON.stringify(requestData, null, 2)); // 📌 Debugging
+      const response = await axios.post(API_URL, requestData, {
+        headers: { "Content-Type": "application/json" },
+      });
+
+      console.log("✅ Receta creada con ID:", response.data.idReceta); // ✅ Debugging
+      return response.data;
+    } catch (error) {
+      console.error("❌ Error creando receta:", error.response?.data || error);
+      throw error;
+    }
+  },
+
+  // Eliminar una receta
+  async eliminarReceta(id) {
+    try {
+      await axios.delete(`${API_URL}/${id}`);
+    } catch (error) {
+      console.error(`Error eliminando la receta con ID ${id}:`, error);
+      throw error;
+    }
+  },
+
+  // ✅ Agregar un medicamento a una receta existente
+  async agregarMedicamento(medicamento) {
+    try {
+      if (!medicamento.idReceta || !medicamento.idMedicamento) {
+        throw new Error("❌ Error: idReceta y idMedicamento son obligatorios.");
+      }
+
+      const requestData = {
+        receta: { idReceta: medicamento.idReceta },
+        medicamento: { idMedicamento: medicamento.idMedicamento },
+        dosis: medicamento.dosis,
+        frecuencia: medicamento.frecuencia,
+        duracion: medicamento.duracion,
+        diagnostico: medicamento.diagnostico || null // Asegurar que puede ser nulo
+      };
+
+      console.log("📌 JSON enviado para agregar medicamento:", JSON.stringify(requestData, null, 2));
+
+      const response = await axios.post(`${API_URL}/medicamentos`, requestData, {
+        headers: { "Content-Type": "application/json" },
+      });
+
+      console.log("✅ Medicamento agregado:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("❌ Error agregando medicamento:", error.response?.data || error);
+      throw error;
+    }
+  },
+};
