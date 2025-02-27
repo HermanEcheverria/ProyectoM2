@@ -48,6 +48,7 @@ const myAccountRoute = () => {
 
         <RouterLink to="/contact">Contact Us</RouterLink>
         <RouterLink to="/faq">FAQ</RouterLink>
+        <RouterLink to="/doctores">Doctores</RouterLink>
 
         <!--  Mostrar "Mi Cuenta" solo si el usuario está autenticado -->
         <RouterLink v-if="isLoggedIn" :to="myAccountRoute()">Mi Cuenta</RouterLink>
