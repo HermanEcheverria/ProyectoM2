@@ -114,9 +114,21 @@ export default {
   },
   methods: {
     async getAllDoctors() {
-      const response = await doctorService.getAllDoctors();
-      this.doctorList = response.data.map(d => ({ ...d, editando: false }));
-    },
+  try {
+    const doctors = await doctorService.getAllDoctors(); // NO uses response.data aquí
+    console.log("Datos recibidos en getAllDoctors:", doctors); // 🛠️ Depuración
+
+    if (!Array.isArray(doctors)) {
+      console.error("La API no devolvió una lista válida de doctores:", doctors);
+      return;
+    }
+
+    this.doctorList = doctors.map(d => ({ ...d, editando: false }));
+  } catch (error) {
+    console.error("Error al obtener doctores:", error);
+  }
+},
+
 
     async registrarDoctor() {
       try {

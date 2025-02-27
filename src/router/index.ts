@@ -27,6 +27,7 @@ import MyAccountEmpleado from "../views/MyAccountEmpleado.vue";
 import MyAccountPaciente from "../views/MyAccountPaciente.vue";
 import RecetaView from "../views/RecetaView.vue";
 import MyAccountUsuarioInter from "@/views/MyAccountUsuarioInter.vue";
+import CatalogoDoctores from '../views/CatalogoDoctores.vue';
 import UsuarioInterAdmin from "@/views/UsuarioInterAdmin.vue";
 import AdminFichasTecnicas from "@/views/admin/AdminFichasTecnicas.vue";
 
@@ -70,6 +71,7 @@ const router = createRouter({
     { path: "/servicios-medicos", name: "servicios-medicos", component: MedicalServices },
     { path: "/recetas-pacientes", name: "recetas-pacientes", component: Patient },
     { path: "/historia", name: "historia", component: HistoriaView },
+    { path: "/doctores", name: "CatalogoDoctores", component: CatalogoDoctores },
 
     //  Rutas protegidas por autenticación
     { path: "/admin/crear-ficha-tecnica", name: "ficha-técnica", component: FichaTecnicaView, beforeEnter: requireAuth },
