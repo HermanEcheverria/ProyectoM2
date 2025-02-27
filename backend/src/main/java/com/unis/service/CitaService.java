@@ -24,7 +24,6 @@ public class CitaService {
 
     /**
      * Obtiene la lista de todas las citas registradas.
-     * @return Lista de citas.
      */
     public List<Cita> obtenerCitas() {
         return citaRepository.listAll();
@@ -32,56 +31,46 @@ public class CitaService {
 
     /**
      * Obtiene una cita por su ID.
-     * @param id Identificador de la cita.
-     * @return La cita encontrada o null si no existe.
      */
     public Cita obtenerCitaPorId(Long id) {
         return citaRepository.findById(id);
     }
 
     /**
-     * Agenda una nueva cita médica, validando que la información esté completa.
-     * @param cita Objeto Cita con los datos a guardar.
+     * Agenda una nueva cita médica, validando la información.
      */
-   @Transactional
-public void agendarCita(Cita cita) {
-    System.out.println("📌 Datos recibidos en el backend: " + cita);
-    System.out.println("📌 ID Doctor recibido: " + cita.getIdDoctor());
-    System.out.println("📌 ID Paciente recibido: " + cita.getIdPaciente());
+    @Transactional
+    public void agendarCita(Cita cita) {
+        System.out.println("📌 Datos recibidos en el backend: " + cita);
+        System.out.println("📌 ID Doctor recibido: " + cita.getIdDoctor());
+        System.out.println("📌 ID Paciente recibido: " + cita.getIdPaciente());
 
-    if (cita.getIdDoctor() == null) {
-        throw new IllegalArgumentException("⚠️ Error: El ID del doctor es obligatorio.");
+        if (cita.getIdDoctor() == null) {
+            throw new IllegalArgumentException("⚠️ Error: El ID del doctor es obligatorio.");
+        }
+        if (cita.getIdPaciente() == null) {
+            throw new IllegalArgumentException("⚠️ Error: El ID del paciente es obligatorio.");
+        }
+
+        Doctor doctor = entityManager.find(Doctor.class, cita.getIdDoctor());
+        Paciente paciente = entityManager.find(Paciente.class, cita.getIdPaciente());
+
+        if (doctor == null) {
+            throw new IllegalArgumentException("⚠️ Error: No se encontró el doctor con ID " + cita.getIdDoctor());
+        }
+        if (paciente == null) {
+            throw new IllegalArgumentException("⚠️ Error: No se encontró el paciente con ID " + cita.getIdPaciente());
+        }
+
+        cita.setDoctor(doctor);
+        cita.setPaciente(paciente);
+
+        System.out.println("✅ Doctor y Paciente asignados correctamente.");
+        citaRepository.persist(cita);
     }
-    if (cita.getIdPaciente() == null) {
-        throw new IllegalArgumentException("⚠️ Error: El ID del paciente es obligatorio.");
-    }
-
-    // Buscar doctor y paciente en la BD
-    Doctor doctor = entityManager.find(Doctor.class, cita.getIdDoctor());
-    Paciente paciente = entityManager.find(Paciente.class, cita.getIdPaciente());
-
-    if (doctor == null) {
-        throw new IllegalArgumentException("⚠️ Error: No se encontró el doctor con ID " + cita.getIdDoctor());
-    }
-
-    if (paciente == null) {
-        throw new IllegalArgumentException("⚠️ Error: No se encontró el paciente con ID " + cita.getIdPaciente());
-    }
-
-    // Asignar el doctor y paciente
-    cita.setDoctor(doctor);
-    cita.setPaciente(paciente);
-
-    System.out.println("✅ Doctor y Paciente asignados correctamente.");
-
-    // Guardar la cita
-    citaRepository.persist(cita);
-}
-
 
     /**
      * Cancela una cita médica por su ID.
-     * @param id Identificador de la cita a eliminar.
      */
     @Transactional
     public void cancelarCita(Long id) {
@@ -91,5 +80,26 @@ public void agendarCita(Cita cita) {
         } else {
             throw new IllegalArgumentException("⚠️ Error: No se encontró la cita con ID " + id);
         }
+    }
+
+    /**
+     * Actualiza una cita médica, por ejemplo para procesarla (cambiar estado, agregar diagnóstico y resultados).
+     */
+    @Transactional
+    public void actualizarCita(Long id, Cita citaActualizada) {
+        Cita cita = citaRepository.findById(id);
+        if (cita == null) {
+            throw new IllegalArgumentException("⚠️ Error: No se encontró la cita con ID " + id);
+        }
+        if (citaActualizada.getEstado() != null) {
+            cita.setEstado(citaActualizada.getEstado());
+        }
+        if (citaActualizada.getDiagnostico() != null) {
+            cita.setDiagnostico(citaActualizada.getDiagnostico());
+        }
+        if (citaActualizada.getResultados() != null) {
+            cita.setResultados(citaActualizada.getResultados());
+        }
+        // Se pueden actualizar otros campos según se requiera.
     }
 }

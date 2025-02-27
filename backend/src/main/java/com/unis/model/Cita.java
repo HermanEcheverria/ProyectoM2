@@ -32,11 +32,11 @@ public class Cita {
     @JoinColumn(name = "ID_PACIENTE", insertable = false, updatable = false)
     private Paciente paciente;
 
-    @JsonProperty("idDoctor")  // 🔹 Asegura que se mapea correctamente desde el JSON
+    @JsonProperty("idDoctor")
     @Column(name = "ID_DOCTOR")
     private Long idDoctor;
 
-    @JsonProperty("idPaciente")  // 🔹 Asegura que se mapea correctamente desde el JSON
+    @JsonProperty("idPaciente")
     @Column(name = "ID_PACIENTE")
     private Long idPaciente;
 
@@ -59,98 +59,100 @@ public class Cita {
     @Column(name = "MOTIVO")
     private String motivo;
 
-    // Getters y Setters
+    // NUEVOS CAMPOS PARA PROCESAMIENTO DE LA CITA
+    @Column(name = "DIAGNOSTICO")
+    private String diagnostico;
+
+    @Column(name = "RESULTADOS")
+    private String resultados;
+
+    // Getters y Setters existentes...
+
     public Long getIdCita() {
         return idCita;
     }
-
     public void setIdCita(Long idCita) {
         this.idCita = idCita;
     }
-
     public Doctor getDoctor() {
         return doctor;
     }
-
     public void setDoctor(Doctor doctor) {
         this.doctor = doctor;
         if (doctor != null) {
             this.idDoctor = doctor.getIdDoctor();
         }
     }
-
     public Paciente getPaciente() {
         return paciente;
     }
-
     public void setPaciente(Paciente paciente) {
         this.paciente = paciente;
         if (paciente != null) {
             this.idPaciente = paciente.getIdPaciente();
         }
     }
-
     public Long getIdDoctor() {
         return idDoctor;
     }
-
     public void setIdDoctor(Long idDoctor) {
         this.idDoctor = idDoctor;
     }
-
     public Long getIdPaciente() {
         return idPaciente;
     }
-
     public void setIdPaciente(Long idPaciente) {
         this.idPaciente = idPaciente;
     }
-
     public LocalDate getFecha() {
         return fecha;
     }
-
     public void setFecha(LocalDate fecha) {
         this.fecha = fecha;
     }
-
     public String getHoraInicio() {
         return horaInicio;
     }
-
     public void setHoraInicio(String horaInicio) {
         this.horaInicio = horaInicio;
     }
-
     public String getHoraFin() {
         return horaFin;
     }
-
     public void setHoraFin(String horaFin) {
         this.horaFin = horaFin;
     }
-
     public Long getIdHospital() {
         return idHospital;
     }
-
     public void setIdHospital(Long idHospital) {
         this.idHospital = idHospital;
     }
-
-    public EstadoCita getEstado() {  
+    public EstadoCita getEstado() {
         return estado;
     }
-
-    public void setEstado(EstadoCita estado) {  
+    public void setEstado(EstadoCita estado) {
         this.estado = estado;
     }
-
     public String getMotivo() {
         return motivo;
     }
-
     public void setMotivo(String motivo) {
         this.motivo = motivo;
+    }
+
+    // Getters y setters para los nuevos campos
+
+    public String getDiagnostico() {
+        return diagnostico;
+    }
+    public void setDiagnostico(String diagnostico) {
+        this.diagnostico = diagnostico;
+    }
+    public String getResultados() {
+        return resultados;
+    }
+    public void setResultados(String resultados) {
+        this.resultados = resultados;
     }
 }

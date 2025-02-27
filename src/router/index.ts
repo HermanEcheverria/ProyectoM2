@@ -12,7 +12,7 @@ import Patient from "../../src/components/Patient.vue";
 import AdminUsuarios from "../components/AdminUsuarios.vue";
 import MedicalAppointments from "../views/doctores/MedicalAppointments.vue";
 import MedicalPrescription from "../views/doctores/MedicalPrescription.vue";
-import MedicalSchedule from "../views/doctores/MedicalAppointments.vue";
+import MedicalSchedule from "../views/doctores/MedicalSchedule.vue";
 import MedicalServices from "../views/MedicalServices.vue";
 import HistoriaView from "@/views/HistoriaView.vue";
 import AdminHistoriaView from "@/views/admin/AdminHistoriaView.vue";
