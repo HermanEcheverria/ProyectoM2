@@ -44,6 +44,8 @@ const myAccountRoute = () => {
 
       <nav class="nav-links">
         <RouterLink to="/">Home</RouterLink>
+        <RouterLink to="/">Home2</RouterLink>
+        <RouterLink to="/">Home3</RouterLink>
         <RouterLink to="/about">About</RouterLink>
 
         <RouterLink to="/contact">Contact Us</RouterLink>
