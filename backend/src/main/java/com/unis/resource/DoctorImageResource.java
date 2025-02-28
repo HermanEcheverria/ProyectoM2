@@ -1,9 +1,8 @@
 package com.unis.resource;
 
+import com.unis.model.DoctorImage;
 import com.unis.service.DoctorImageService;
-import com.unis.service.UserAccService;
-import com.unis.model.UserAcc;
-import com.unis.repository.DoctorAccRepository;
+import com.unis.service.DoctorAccService;
 import com.unis.model.DoctorAcc;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -22,43 +21,42 @@ public class DoctorImageResource {
     DoctorImageService doctorImageService;
 
     @Inject
-    UserAccService userAccService;
-
-    @Inject
-    DoctorAccRepository doctorAccRepository; // Agregado para obtener la información del doctor
+    DoctorAccService doctorAccService;
 
     @GET
     @Path("/{id}")
-    public Response getDoctorData(@PathParam("id") Long id) {
-        return doctorImageService.getDoctorImageById(id).map(doctorImage -> {
+    public Response getDoctorImage(@PathParam("id") Long idDoctor) {
+        Optional<DoctorImage> imageOpt = doctorImageService.getDoctorImageByDoctorId(idDoctor);
+        Optional<DoctorAcc> doctorOpt = doctorAccService.getDoctorById(idDoctor);
+
+        if (imageOpt.isPresent() && doctorOpt.isPresent()) {
+            DoctorImage image = imageOpt.get();
+            DoctorAcc doctor = doctorOpt.get();
+
             Map<String, Object> response = new HashMap<>();
-            response.put("idDoctor", doctorImage.getIdDoctor());
-            response.put("fotografia", doctorImage.getFotografia());
-            response.put("fotoTitulo", doctorImage.getFotoTitulo());
-
-            // Obtener la información del doctor desde la tabla DOCTOR_ACC
-            Optional<DoctorAcc> doctorAccOpt = doctorAccRepository.find("idDoctor", id).firstResultOptional();
-            if (doctorAccOpt.isPresent()) {
-                DoctorAcc doctorAcc = doctorAccOpt.get();
-                response.put("apellido", doctorAcc.getApellido());
-
-                // Obtener el usuario basado en el ID del doctor
-                Optional<UserAcc> userOpt = userAccService.getUserById(doctorAcc.getIdUsuario());
-                if (userOpt.isPresent()) {
-                    UserAcc user = userOpt.get();
-                    response.put("nombre", user.getNombreUsuario());
-                    response.put("correo", user.getCorreo());
-                } else {
-                    response.put("nombre", "Desconocido");
-                    response.put("correo", "No disponible");
-                }
-            } else {
-                response.put("apellido", "No disponible");
-                response.put("nombre", "Desconocido");
-                response.put("correo", "No disponible");
-            }
+            response.put("idDoctor", doctor.getIdDoctor());
+            response.put("numeroColegiado", doctor.getNumeroColegiado());
+            response.put("fotografia", image.getFotografia());
+            response.put("fotoTitulo", image.getFotoTitulo());
 
             return Response.ok(response).build();
-        }).orElse(Response.status(Response.Status.NOT_FOUND).build());
+        }
+
+        return Response.status(Response.Status.NOT_FOUND).build();
+    }
+
+    @PUT
+    @Path("/{id}/update")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public Response updateDoctorImage(@PathParam("id") Long idDoctor, byte[] fotografia, byte[] fotoTitulo) {
+        doctorImageService.updateDoctorImage(idDoctor, fotografia, fotoTitulo);
+        return Response.ok("Imagen actualizada correctamente").build();
+    }
+
+    @DELETE
+    @Path("/{id}/delete")
+    public Response deleteDoctorImage(@PathParam("id") Long idDoctor) {
+        doctorImageService.deleteDoctorImage(idDoctor);
+        return Response.ok("Imagen eliminada").build();
     }
 }

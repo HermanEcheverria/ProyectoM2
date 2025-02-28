@@ -89,7 +89,7 @@ const router = createRouter({
     { path: "/admin/doctor", name: "admin-doctor", component: DoctorAdmin, beforeEnter: requireRole(1) },
     { path: "/admin/usuario-interconexion", name: "admin-usuario-interconexion", component: UsuarioInterAdmin, beforeEnter: requireRole(1) },
     { path: "/admin/fichas-tecnicas", name: "admin-fichas-tecnicas", component: AdminFichasTecnicas, beforeEnter: requireRole(1) },
-    { path: "/doctor/imagen", name: "doctor-imagen", component: DoctorImageView, beforeEnter: requireAuth },
+    { path: "/doctorimagen", name: "doctor-imagen", component: DoctorImageView, beforeEnter: requireAuth },
 
     //  Rutas protegidas de "My Account" según el rol
     { path: "/my-account-admin", name: "my-account-admin", component: MyAccountAdmin, beforeEnter: requireRole(1) },

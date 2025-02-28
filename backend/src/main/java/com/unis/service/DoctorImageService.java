@@ -13,36 +13,23 @@ public class DoctorImageService {
     @Inject
     DoctorImageRepository doctorImageRepository;
 
-    /**
-     * Obtiene la imagen del doctor basado en el ID del doctor
-     */
-    public Optional<DoctorImage> getDoctorImageById(Long id) {
-        return doctorImageRepository.findByIdOptional(id);
+    public Optional<DoctorImage> getDoctorImageByDoctorId(Long idDoctor) {
+        return doctorImageRepository.find("doctor.idDoctor", idDoctor).firstResultOptional();
     }
 
-    /**
-     * Actualiza la imagen y el título de la imagen de un doctor
-     */
     @Transactional
-    public void updateDoctorImage(Long id, byte[] fotografia, byte[] fotoTitulo) {
-        DoctorImage doctorImage = doctorImageRepository.findById(id);
-        if (doctorImage != null) {
+    public void updateDoctorImage(Long idDoctor, byte[] fotografia, byte[] fotoTitulo) {
+        Optional<DoctorImage> existingImage = doctorImageRepository.find("doctor.idDoctor", idDoctor).firstResultOptional();
+        if (existingImage.isPresent()) {
+            DoctorImage doctorImage = existingImage.get();
             doctorImage.setFotografia(fotografia);
             doctorImage.setFotoTitulo(fotoTitulo);
-            doctorImageRepository.persist(doctorImage); // Guardar cambios en BD
+            doctorImageRepository.persist(doctorImage);
         }
     }
 
-    /**
-     * Elimina la imagen de un doctor
-     */
     @Transactional
-    public void deleteDoctorImages(Long id) {
-        DoctorImage doctorImage = doctorImageRepository.findById(id);
-        if (doctorImage != null) {
-            doctorImage.setFotografia(null);
-            doctorImage.setFotoTitulo(null);
-            doctorImageRepository.persist(doctorImage); // Guardar cambios en BD
-        }
+    public void deleteDoctorImage(Long idDoctor) {
+        doctorImageRepository.delete("doctor.idDoctor", idDoctor);
     }
 }
