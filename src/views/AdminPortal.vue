@@ -16,6 +16,7 @@
       <button @click="router.push('/admin/doctor')" class="gestion-button">Gestión de Doctores</button>
       <button @click="router.push('/admin/usuario-interconexion')" class="gestion-button">Gestión de Usuario Interconexión</button>
       <button @click="router.push('/admin/fichas-tecnicas')" class="gestion-button">Gestión de Fichas Tecnicas</button>
+      <button @click="router.push('/admin/servicios')" class="gestion-button"> Gestion de Servicios </button>
     </div>
 
     <!-- Vista dinámica según la ruta -->

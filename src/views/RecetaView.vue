@@ -54,7 +54,7 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import recetaService from "../services/recetaService.js";
+import recetaService from "../services/RecetaService.js";
 import { obtenerCitas, obtenerMedicamentos } from "@/services/selectService.js";
 
 const recetas = ref([]);
