@@ -5,7 +5,6 @@ import { onMounted } from "vue";
 
 const router = useRouter();
 
-// Recuperar datos del usuario en el inicio
 onMounted(() => {
   const storedRole = localStorage.getItem("userRole");
   const storedUser = localStorage.getItem("userId");
@@ -16,7 +15,6 @@ onMounted(() => {
   }
 });
 
-// Determinar ruta de "Mi Cuenta" según el rol del usuario
 const myAccountRoute = () => {
   switch (userRole.value) {
     case 1:
@@ -28,13 +26,12 @@ const myAccountRoute = () => {
     case 4:
       return "/my-account-paciente";
     default:
-      return "/login"; // Redirigir al login si no hay rol asignado
+      return "/login";
   }
 };
 </script>
 
 <template>
-  <!--  Barra de navegación fija -->
   <header class="navbar">
     <div class="navbar-container">
       <div class="brand">
@@ -47,33 +44,23 @@ const myAccountRoute = () => {
         <RouterLink to="/subhome1">Home2</RouterLink>
         <RouterLink to="/subhome2">Home3</RouterLink>
         <RouterLink to="/about">About</RouterLink>
-
+        <RouterLink to="/historia">Historia</RouterLink>
         <RouterLink to="/contact">Contact Us</RouterLink>
         <RouterLink to="/faq">FAQ</RouterLink>
         <RouterLink to="/doctores">Doctores</RouterLink>
-
-        <!--  Mostrar "Mi Cuenta" solo si el usuario está autenticado -->
         <RouterLink v-if="isLoggedIn" :to="myAccountRoute()">Mi Cuenta</RouterLink>
-
-        <!--  Mostrar "Gestionar" solo si el usuario es Admin -->
         <RouterLink v-if="userRole === 1" to="/admin-portal">Gestionar</RouterLink>
         <RouterLink v-if="userRole === 1" to="/servicios-medicos">Servicios Médicos</RouterLink>
-
-        <!--  Mostrar "Log in" solo si NO está autenticado -->
         <RouterLink v-if="!isLoggedIn" to="/login">Log in</RouterLink>
-
-        <!--  Botón "Cerrar sesión" si está autenticado -->
         <button v-if="isLoggedIn" @click="logout(router)" class="logout-btn">Cerrar sesión</button>
       </nav>
     </div>
   </header>
 
-  <!--  Contenedor principal de la aplicación -->
   <main class="app-main">
     <RouterView />
   </main>
 
-  <!--  Footer -->
   <footer class="footer">
     <div class="footer-container">
       <p>&copy; {{ new Date().getFullYear() }} Hospitals. Todos los derechos reservados.</p>
@@ -82,84 +69,89 @@ const myAccountRoute = () => {
 </template>
 
 <style scoped>
-/* Barra de navegación */
 .navbar {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  background-color: #fff;
-  border-bottom: 1px solid #ccc;
-  z-index: 999;
+  background-color: #ffffff;
+  border-bottom: 2px solid #e0e0e0;
+  z-index: 1000;
+  padding: 10px 0;
+  box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-/*  Contenedor de la navbar */
 .navbar-container {
-  max-width: 1200px;
+  max-width: 1500px;
   margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.5rem 1rem;
+  padding: 0 20px;
 }
 
-/*  Logo y título */
 .brand {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 10px;
 }
 
-.brand .logo {
-  display: block;
+.brand h1 {
+  font-size: 24px;
+  font-weight: bold;
+  color: #2c3e50;
+  margin: 0;
 }
 
-/*  Enlaces de navegación */
 .nav-links {
   display: flex;
   align-items: center;
+  gap: 15px;
 }
 
 .nav-links a {
-  margin-left: 1rem;
   text-decoration: none;
-  color: #333;
+  color: #2c3e50;
   font-weight: 500;
+  padding: 8px 12px;
+  transition: color 0.3s ease-in-out;
 }
 
-/*  Botón de logout */
+.nav-links a:hover {
+  color: #42b983;
+}
+
 .logout-btn {
-  margin-left: 1rem;
   background-color: #d9534f;
   color: white;
   border: none;
-  padding: 8px 12px;
+  padding: 8px 15px;
   cursor: pointer;
-  border-radius: 5px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: background 0.3s;
 }
 
 .logout-btn:hover {
   background-color: #c9302c;
 }
 
-/*  Contenedor principal del contenido */
 .app-main {
-  margin-top: 80px; /* Espacio para la navbar fija */
-  min-height: calc(100vh - 140px); /* Ajustado para dejar espacio al footer */
-  background-color: #181818;
-  padding: 2rem;
+  margin-top: 80px;
+  min-height: calc(100vh - 140px);
+  background-color: #324159;
+  padding: 20px;
   width: 100%;
   display: flex;
   justify-content: center;
   align-items: flex-start;
 }
 
-/* Footer */
 .footer {
-  background-color: #333;
+  background-color: #2c3e50;
   color: white;
   text-align: center;
-  padding: 1rem 0;
+  padding: 15px 0;
   width: 100%;
 }
 

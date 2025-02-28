@@ -29,10 +29,11 @@ import RecetaView from "../views/RecetaView.vue";
 import DoctorImageView from "../views/DoctorImageView.vue";
 import MyAccountUsuarioInter from "@/views/MyAccountUsuarioInter.vue";
 import CatalogoDoctores from '../views/CatalogoDoctores.vue';
+import SubhomeUView from "../views/SubhomeUView.vue"
+import SubhomeDView from "../views/SubhomeUView.vue"
 import UsuarioInterAdmin from "@/views/UsuarioInterAdmin.vue";
 import AdminFichasTecnicas from "@/views/admin/AdminFichasTecnicas.vue";
-import SubhomeUView from "@/views/SubhomeUVIEW.vue"
-import SubhomeDView from "@/views/SubhomeDView.vue";
+
 
 
 // Función para verificar si el usuario está autenticado
