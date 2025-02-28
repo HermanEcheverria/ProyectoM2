@@ -1,103 +1,198 @@
-<script lang="js" setup>
-import { ref } from "vue";
-import { enviarPregunta } from "@/services/faqService.js";
-
-// ✅ Variables reactivas
-const nombre = ref("");
-const correo = ref("");
-const mensaje = ref("");
-const mensajeExito = ref("");
-
-// ✅ Función para enviar el formulario
-const enviarFormulario = async () => {
-  if (!nombre.value.trim() || !correo.value.trim() || !mensaje.value.trim()) {
-    mensajeExito.value = "⚠ Todos los campos son obligatorios.";
-    return;
-  }
-
-  try {
-    await enviarPregunta(nombre.value, correo.value, mensaje.value);
-    mensajeExito.value = "✅ ¡Pregunta enviada con éxito!";
-
-    // Limpiar los campos después de enviar
-    nombre.value = "";
-    correo.value = "";
-    mensaje.value = "";
-  } catch (error) {
-    console.error("❌ Error al enviar la pregunta:", error);
-    mensajeExito.value = "❌ Hubo un error al enviar tu pregunta. Intenta nuevamente.";
-  }
-};
-</script>
-
 <template>
-  <div class="contact-page">
-    <h2>Contáctanos</h2>
-    <p>¿Tienes preguntas? Completa el formulario y te responderemos.</p>
-
-    <div class="form-group">
-      <label for="nombre">Nombre</label>
-      <input v-model="nombre" placeholder="Nombre" required />
+  <div class="contact-container">
+    <!-- Hero Section -->
+    <div class="hero">
+      <div class="overlay">
+        <h1>Contacto</h1>
+        <p>Estamos aquí para ayudarte. Contáctanos para cualquier consulta médica o información adicional.</p>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label for="correo">Correo electrónico</label>
-      <input v-model="correo" type="email" placeholder="Correo electrónico" required />
+
+
+    <!-- Sección de Contacto -->
+    <div class="contact-section">
+      <h2>Información de Contacto</h2>
+      <p>Puedes comunicarte con nosotros a través de los siguientes medios:</p>
+
+      <div class="contact-details">
+        <div class="contact-item">
+          <i class="fas fa-phone"></i>
+          <p><strong>Teléfono:</strong> +502 1234 5678</p>
+        </div>
+        <div class="contact-item">
+          <i class="fas fa-envelope"></i>
+          <p><strong>Correo:</strong> contacto@hospitalgt.com</p>
+        </div>
+        <div class="contact-item">
+          <i class="fas fa-map-marker-alt"></i>
+          <p><strong>Dirección:</strong> 7a. Avenida 9-20, Zona 11, Guatemala</p>
+        </div>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label for="mensaje">Mensaje</label>
-      <textarea v-model="mensaje" placeholder="Mensaje" required></textarea>
-    </div>
 
-    <button @click="enviarFormulario">Enviar</button>
-
-    <p v-if="mensajeExito" class="mensaje">{{ mensajeExito }}</p>
   </div>
 </template>
 
+
 <style scoped>
-.contact-page {
+/* Estilos Generales */
+.contact-container {
+  color: white;
+  background: #0d1b2a;
+  padding: 0;
+  margin: 0;
+}
+
+/* Hero Section */
+.hero {
+  background: url("https://drcastelazooncologia.com/wp-content/uploads/2020/10/proctologo-oncologo-en-cdmx.jpg") no-repeat center center/cover;
+  height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+}
+
+.hero .overlay {
+  background: rgba(0, 0, 0, 0.6);
+  padding: 50px;
+  border-radius: 10px;
   max-width: 600px;
-  margin: 0 auto;
+}
+
+.hero h1 {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.hero p {
+  font-size: 1.2rem;
+  opacity: 0.9;
+}
+
+/* Información de Contacto */
+.contact-info {
+  padding: 50px 20px;
+  max-width: 1000px;
+  margin: 40px auto;
+  background: #1b263b;
+  border-radius: 10px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
   text-align: center;
 }
 
-.form-group {
-  margin-bottom: 1.25rem;
-  text-align: left;
+.contact-info h2 {
+  font-size: 2rem;
+  margin-bottom: 15px;
 }
 
-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
+.contact-info p {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  line-height: 1.6;
 }
 
-input, textarea {
+/* Estilos para el mapa */
+.map-container {
+  margin-top: 20px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* Sección de Información de Contacto */
+.contact-section {
+  text-align: center;
+  padding: 50px 20px;
+  max-width: 800px;
+  margin: 40px auto;
+  background: #1b263b;
+  border-radius: 10px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.contact-details {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 1.2rem;
+}
+
+.contact-item i {
+  font-size: 1.5rem;
+  color: #00a6fb;
+}
+
+/* Formulario de Contacto */
+.contact-form {
+  text-align: center;
+  padding: 50px 20px;
+  max-width: 600px;
+  margin: 40px auto;
+  background: #1b263b;
+  border-radius: 10px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.contact-form h2 {
+  font-size: 2rem;
+  margin-bottom: 15px;
+}
+
+.contact-form form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.contact-form input,
+.contact-form textarea {
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  font-size: 1rem;
   width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-sizing: border-box;
 }
 
-button {
-  margin-top: 1rem;
-  padding: 0.75rem 1.5rem;
-  cursor: pointer;
-  background-color: #007bff;
+.contact-form textarea {
+  resize: none;
+  height: 120px;
+}
+
+.contact-form button {
+  background: #00a6fb;
   color: white;
   border: none;
-  border-radius: 5px;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: 0.3s;
 }
 
-button:hover {
-  background-color: #0056b3;
+.contact-form button:hover {
+  background: #0061a8;
 }
 
-.mensaje {
-  margin-top: 1rem;
-  font-weight: bold;
+/* Responsive */
+@media (max-width: 768px) {
+  .hero h1 {
+    font-size: 3rem;
+  }
+
+  .hero p {
+    font-size: 2rem;
+  }
 }
 </style>
