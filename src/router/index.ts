@@ -26,6 +26,7 @@ import MyAccountDoctor from "../views/myAccountDoctor.vue";
 import MyAccountEmpleado from "../views/MyAccountEmpleado.vue";
 import MyAccountPaciente from "../views/MyAccountPaciente.vue";
 import RecetaView from "../views/RecetaView.vue";
+import DoctorImageView from "../views/DoctorImageView.vue";
 import MyAccountUsuarioInter from "@/views/MyAccountUsuarioInter.vue";
 import CatalogoDoctores from '../views/CatalogoDoctores.vue';
 import UsuarioInterAdmin from "@/views/UsuarioInterAdmin.vue";
@@ -88,6 +89,7 @@ const router = createRouter({
     { path: "/admin/doctor", name: "admin-doctor", component: DoctorAdmin, beforeEnter: requireRole(1) },
     { path: "/admin/usuario-interconexion", name: "admin-usuario-interconexion", component: UsuarioInterAdmin, beforeEnter: requireRole(1) },
     { path: "/admin/fichas-tecnicas", name: "admin-fichas-tecnicas", component: AdminFichasTecnicas, beforeEnter: requireRole(1) },
+    { path: "/doctor/imagen", name: "doctor-imagen", component: DoctorImageView, beforeEnter: requireAuth },
 
     //  Rutas protegidas de "My Account" según el rol
     { path: "/my-account-admin", name: "my-account-admin", component: MyAccountAdmin, beforeEnter: requireRole(1) },
@@ -96,6 +98,8 @@ const router = createRouter({
     { path: "/my-account-paciente", name: "my-account-paciente", component: MyAccountPaciente, beforeEnter: requireRole(4) },
     { path: "/my-account-interconexion", name: "my-account-interconexion", component: MyAccountUsuarioInter, beforeEnter: requireRole(5) },
     { path: "/recetas", name: "recetas", component: RecetaView, beforeEnter: requireRole(1) },
+
+
 
   ]
 });
