@@ -4,7 +4,7 @@ export const userRole = ref<number | null>(null);
 export const isLoggedIn = ref<boolean>(false);
 export const userId = ref<string | null>(null);
 
-// 🔹 Función para establecer el usuario después del login
+//  Función para establecer el usuario después del login
 export const setUser = (id: string, roleId: number, router) => {
   userRole.value = roleId;
   isLoggedIn.value = true;
