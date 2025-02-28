@@ -29,6 +29,8 @@ import RecetaView from "../views/RecetaView.vue";
 import DoctorImageView from "../views/DoctorImageView.vue";
 import MyAccountUsuarioInter from "@/views/MyAccountUsuarioInter.vue";
 import CatalogoDoctores from '../views/CatalogoDoctores.vue';
+import SubhomeUView from "../views/SubhomeUView.vue"
+import SubhomeDView from "../views/SubhomeUView.vue"
 import UsuarioInterAdmin from "@/views/UsuarioInterAdmin.vue";
 import AdminFichasTecnicas from "@/views/admin/AdminFichasTecnicas.vue";
 
@@ -64,6 +66,8 @@ const router = createRouter({
   routes: [
     //  Rutas generales
     { path: "/", name: "home", component: HomeView },
+    { path: "/subhome1", name: "subhome 1", component: SubhomeUView },
+    { path: "/subhome2", name: "subhome 2", component: SubhomeDView },
     { path: "/about", name: "about", component: AboutView },
     { path: "/signup", name: "signup", component: SignUp },
     { path: "/login", name: "login", component: Login },
