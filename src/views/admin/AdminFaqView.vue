@@ -61,6 +61,7 @@
 
 <script>
 import axios from "axios";
+import API_URL from "@/config";
 
 export default {
   name: "AdminFaqView",
@@ -87,7 +88,7 @@ export default {
      */
     async fetchFaqs() {
       try {
-        const resp = await axios.get("http://localhost:8080/faq");
+        const resp = await axios.get(`${API_URL}/faq`);
         if (Array.isArray(resp.data)) {
           this.faqs = resp.data;
         } else {
@@ -107,10 +108,10 @@ export default {
       try {
         if (this.faq.id) {
           // Actualizar (PUT)
-          await axios.put(`http://localhost:8080/faq/editar/${this.faq.id}`, this.faq);
+          await axios.put(`${API_URL}/faq/editar/${this.faq.id}`, this.faq);
         } else {
           // Crear (POST)
-          await axios.post("http://localhost:8080/faq/crear", this.faq);
+          await axios.post(`${API_URL}/faq/crear`, this.faq);
         }
         alert("FAQ guardada correctamente.");
 
@@ -137,7 +138,7 @@ export default {
     async deleteFaq(id) {
       if (!confirm("¿Estás seguro de eliminar esta pregunta?")) return;
       try {
-        await axios.delete(`http://localhost:8080/faq/eliminar/${id}`);
+        await axios.delete(`${API_URL}/faq/eliminar/${id}`);
         alert("FAQ eliminada correctamente.");
         this.fetchFaqs();
       } catch (error) {
@@ -159,6 +160,7 @@ export default {
   }
 };
 </script>
+
 
 <style scoped>
 /* Contenedor principal oscuro (similar a tu "Historia") */

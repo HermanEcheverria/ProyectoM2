@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import axios from "axios";
+import API_URL from "../config"; // Importamos API_URL desde config.ts
 
 const userId = localStorage.getItem("userId");
 const user = ref(null);
@@ -33,8 +34,8 @@ onMounted(async () => {
   }
 
   try {
-    const userResponse = await axios.get(`http://localhost:8080/usuarios/${userId}`);
-    const doctorResponse = await axios.get(`http://localhost:8080/doctores/${userId}`);
+    const userResponse = await axios.get(`${API_URL}/usuarios/${userId}`);
+    const doctorResponse = await axios.get(`${API_URL}/doctores/${userId}`);
 
     if (userResponse.data && doctorResponse.data) {
       user.value = userResponse.data;
@@ -60,13 +61,13 @@ const updateProfile = async () => {
   if (!user.value || !doctor.value) return;
 
   try {
-    await axios.put(`http://localhost:8080/usuarios/${userId}`, {
+    await axios.put(`${API_URL}/usuarios/${userId}`, {
       nombreUsuario: user.value.nombreUsuario,
       correo: user.value.correo,
       contrasena: user.value.contrasena,
     });
 
-    await axios.put(`http://localhost:8080/doctores/${userId}`, {
+    await axios.put(`${API_URL}/doctores/${userId}`, {
       apellido: doctor.value.apellido,
       documento: doctor.value.documento,
       fechaNacimiento: doctor.value.fechaNacimiento,
@@ -87,6 +88,7 @@ const updateProfile = async () => {
   }
 };
 </script>
+
 
 <template>
   <div class="account-container">

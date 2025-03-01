@@ -1,13 +1,14 @@
 import axios from "axios";
+import API_URL from "../config"; // Ajusta la ruta según sea necesario
 
-const API_URL = "http://localhost:8080/doctores";
+const DOCTORES_API = `${API_URL}/doctores`;
 
 export default {
   getDoctorById(userId) {
-    return axios.get(`${API_URL}/${userId}`);
+    return axios.get(`${DOCTORES_API}/${userId}`);
   },
 
   updateDoctor(userId, doctorData) {
-    return axios.put(`${API_URL}/${userId}`, doctorData);
+    return axios.put(`${DOCTORES_API}/${userId}`, doctorData);
   }
 };

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import axios from "axios";
+import API_URL from "../config"; // Importamos API_URL desde config.ts
 
 const userId = localStorage.getItem("userId");
 const user = ref(null);
@@ -32,7 +33,7 @@ onMounted(async () => {
   }
 
   try {
-    const response = await axios.get(`http://localhost:8080/usuarios/${userId}`);
+    const response = await axios.get(`${API_URL}/usuarios/${userId}`);
     if (response.data) {
       user.value = response.data;
     } else {
@@ -46,17 +47,17 @@ onMounted(async () => {
   }
 });
 
-//  Alternar modo edición
+// Alternar modo edición
 const toggleEdit = () => {
   isEditing.value = !isEditing.value;
 };
 
-//  Actualizar perfil
+// Actualizar perfil
 const updateProfile = async () => {
   if (!user.value) return;
 
   try {
-    await axios.put(`http://localhost:8080/usuarios/${userId}`, {
+    await axios.put(`${API_URL}/usuarios/${userId}`, {
       nombreUsuario: user.value.nombreUsuario,
       correo: user.value.correo,
       contrasena: user.value.contrasena,
@@ -70,6 +71,7 @@ const updateProfile = async () => {
   }
 };
 </script>
+
 
 <template>
   <div class="account-container">

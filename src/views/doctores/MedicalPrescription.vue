@@ -86,6 +86,8 @@
 </template>
 
 <script>
+import API_URL from '@/config';
+
 export default {
   data() {
     return {
@@ -126,7 +128,7 @@ export default {
   methods: {
     async cargarRecetas() {
       try {
-        const response = await fetch('http://localhost:8080/recetas');
+        const response = await fetch(`${API_URL}/recetas`);
         const recetas = await response.json();
         this.hospitales = recetas.map(r => ({ id: r.idHospital, codigo: `H-${r.idHospital}` }));
         this.seguros = recetas.map(r => ({ id: r.idSeguro, codigo: `S-${r.idSeguro}` }));
@@ -136,7 +138,7 @@ export default {
     },
     async cargarMedicamentos() {
       try {
-        const response = await fetch('http://localhost:8080/medicamentos');
+        const response = await fetch(`${API_URL}/medicamentos`);
         this.medicamentos = await response.json();
       } catch (error) {
         console.error('Error cargando medicamentos:', error);
@@ -177,8 +179,8 @@ export default {
       try {
         const metodo = this.modoEdicion ? 'PUT' : 'POST';
         const url = this.modoEdicion
-          ? `http://localhost:8080/recetas/editar/${this.receta.idReceta}`
-          : 'http://localhost:8080/recetas/crear';
+          ? `${API_URL}/recetas/editar/${this.receta.idReceta}`
+          : `${API_URL}/recetas/crear`;
 
         const response = await fetch(url, {
           method: metodo,
@@ -214,6 +216,7 @@ export default {
   }
 };
 </script>
+
 
 
 <style scoped>

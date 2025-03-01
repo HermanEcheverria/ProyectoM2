@@ -86,6 +86,7 @@
 
 <script>
 import axios from "axios";
+import API_URL from "@/config";
 
 export default {
   name: "AdminHistoriaView",
@@ -107,37 +108,37 @@ export default {
   },
   methods: {
     async fetchHistoria() {
-  try {
-    const response = await axios.get("http://localhost:8080/historias");
-    if (response.data && response.data.length > 0) {
-      const historiaDB = response.data[0];
-      this.historia = historiaDB;
-
       try {
-        // Si la línea del tiempo no es un JSON válido, inicializar con un array vacío
-        this.timelineEvents = JSON.parse(historiaDB.lineaDelTiempo || "[]");
-      } catch (error) {
-        console.error("Error al parsear la línea del tiempo:", error);
-        this.timelineEvents = [];
-      }
+        const response = await axios.get(`${API_URL}/historias`);
+        if (response.data && response.data.length > 0) {
+          const historiaDB = response.data[0];
+          this.historia = historiaDB;
 
-      try {
-        // 🛠️ Si meritos no es un JSON válido, inicializarlo como array vacío
-        if (typeof historiaDB.meritos === "string" && historiaDB.meritos.trim().startsWith("[")) {
-          this.meritosData = JSON.parse(historiaDB.meritos);
-        } else {
-          this.meritosData = [];
+          try {
+            // Si la línea del tiempo no es un JSON válido, inicializar con un array vacío
+            this.timelineEvents = JSON.parse(historiaDB.lineaDelTiempo || "[]");
+          } catch (error) {
+            console.error("Error al parsear la línea del tiempo:", error);
+            this.timelineEvents = [];
+          }
+
+          try {
+            // 🛠️ Si meritos no es un JSON válido, inicializarlo como array vacío
+            if (typeof historiaDB.meritos === "string" && historiaDB.meritos.trim().startsWith("[")) {
+              this.meritosData = JSON.parse(historiaDB.meritos);
+            } else {
+              this.meritosData = [];
+            }
+          } catch (error) {
+            console.error("Error al parsear los méritos:", error);
+            this.meritosData = [];
+          }
         }
       } catch (error) {
-        console.error("Error al parsear los méritos:", error);
-        this.meritosData = [];
+        console.error("Error al obtener la historia:", error);
       }
-    }
-  } catch (error) {
-    console.error("Error al obtener la historia:", error);
-  }
-}
-,
+    },
+
     addMerito() {
       this.meritosData.push({ title: "", description: "" });
     },
@@ -156,9 +157,9 @@ export default {
         this.historia.meritos = JSON.stringify(this.meritosData);
 
         if (this.historia.id) {
-          await axios.put(`http://localhost:8080/historias/${this.historia.id}`, this.historia);
+          await axios.put(`${API_URL}/historias/${this.historia.id}`, this.historia);
         } else {
-          const response = await axios.post("http://localhost:8080/historias", this.historia);
+          const response = await axios.post(`${API_URL}/historias`, this.historia);
           this.historia = response.data;
         }
         alert("Historia guardada correctamente.");
@@ -169,6 +170,7 @@ export default {
   }
 };
 </script>
+
 
 <style scoped>
 /* Contenedor principal */

@@ -45,6 +45,7 @@
 
 <script>
 import axios from "axios";
+import API_URL from "../config"; // Importamos API_URL desde config.ts
 
 export default {
   name: "HistoriaView",
@@ -62,7 +63,7 @@ export default {
   },
   async created() {
     try {
-      const response = await axios.get("http://localhost:8080/historias");
+      const response = await axios.get(`${API_URL}/historias`); // Reemplazamos la URL fija
       if (response.data && response.data.length > 0) {
         this.historia = response.data[0];
 
@@ -92,6 +93,7 @@ export default {
   }
 };
 </script>
+
 
 <style scoped>
 .historia-container {

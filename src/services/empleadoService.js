@@ -1,19 +1,20 @@
 import axios from "axios";
+import API_URL from "../config"; // Ajusta la ruta según la ubicación del archivo
 
-const API_URL = "http://localhost:8080/empleado";
+const EMPLEADO_API = `${API_URL}/empleado`;
 
 export default {
   getAllEmpleados() {
-    return axios.get(API_URL);
+    return axios.get(EMPLEADO_API);
   },
 
   async registrarEmpleado(empleado) {
-    return await axios.post(API_URL, {
+    return await axios.post(EMPLEADO_API, {
       usuario: {
         nombreUsuario: empleado.nombreUsuario,
         correo: empleado.correo,
         contrasena: empleado.password,
-        rol: { id: 3} // ROL_ID = 3  para empleados
+        rol: { id: 3 } // ROL_ID = 3 para empleados
       },
       apellido: empleado.apellido,
       documento: empleado.documento,
@@ -27,10 +28,10 @@ export default {
   },
 
   updateEmpleado(id, empleado) {
-    return axios.put(`${API_URL}/${id}`, empleado);
+    return axios.put(`${EMPLEADO_API}/${id}`, empleado);
   },
 
   deleteEmpleado(id) {
-    return axios.delete(`${API_URL}/${id}`);
+    return axios.delete(`${EMPLEADO_API}/${id}`);
   }
 };

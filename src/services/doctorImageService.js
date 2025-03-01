@@ -1,10 +1,11 @@
 import axios from "axios";
+import API_URL from "../config";
 
-const API_URL = "http://localhost:8080/api/doctor-images";
+const DOCTOR_IMAGES_API = `${API_URL}/api/doctor-images`;
 
 export default {
   async getDoctorImage(idDoctor) {
-    return await axios.get(`${API_URL}/${idDoctor}`);
+    return await axios.get(`${DOCTOR_IMAGES_API}/${idDoctor}`);
   },
 
   async updateDoctorImage(idDoctor, file, fileTitle) {
@@ -12,12 +13,12 @@ export default {
     formData.append("fotografia", file);
     formData.append("fotoTitulo", fileTitle);
 
-    return await axios.put(`${API_URL}/${idDoctor}/update`, formData, {
+    return await axios.put(`${DOCTOR_IMAGES_API}/${idDoctor}/update`, formData, {
       headers: { "Content-Type": "multipart/form-data" }
     });
   },
 
   async deleteDoctorImage(idDoctor) {
-    return await axios.delete(`${API_URL}/${idDoctor}/delete`);
+    return await axios.delete(`${DOCTOR_IMAGES_API}/${idDoctor}/delete`);
   }
 };

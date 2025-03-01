@@ -1,18 +1,17 @@
 import axios from "axios";
-
-const API_BASE_URL = "http://localhost:8080";
+import API_URL from "../config"; // Ajusta la ruta si es necesario
 
 export default {
   async getCatalogoDoctores() {
     try {
       // Obtener lista de doctores
-      const doctorResponse = await axios.get(`${API_BASE_URL}/doctor`);
+      const doctorResponse = await axios.get(`${API_URL}/doctor`);
       const doctorList = doctorResponse.data;
 
       // Obtener nombres de usuario para cada doctor
       const promises = doctorList.map(async (doctor) => {
         try {
-          const userResponse = await axios.get(`${API_BASE_URL}/usuarios/${doctor.idUsuario}`);
+          const userResponse = await axios.get(`${API_URL}/usuarios/${doctor.idUsuario}`);
           return {
             ...doctor,
             nombreUsuario: userResponse.data.nombreUsuario || "Sin Nombre"

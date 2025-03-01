@@ -1,14 +1,15 @@
 import axios from "axios";
+import API_URL from "../config"; // Ajusta la ruta según la ubicación del archivo
 
-const API_URL = "http://localhost:8080/usuariointer";
+const USUARIO_INTER_API = `${API_URL}/usuariointer`;
 
 export default {
   obtenerUsuarioInter() {
-    return axios.get(API_URL);
+    return axios.get(USUARIO_INTER_API);
   },
 
   async registrarUsuarioInter(usuarioInter) {
-    return await axios.post(API_URL, {
+    return await axios.post(USUARIO_INTER_API, {
       usuario: {
         nombreUsuario: usuarioInter.nombreUsuario,
         correo: usuarioInter.correo,
@@ -25,21 +26,11 @@ export default {
     });
   },
 
-
-
   actualizarUsuario(id, usuarioInter) {
-    return axios.put(`${API_URL}/${id}`, usuarioInter);
+    return axios.put(`${USUARIO_INTER_API}/${id}`, usuarioInter);
   },
 
   eliminarUsuario(id) {
-    return axios.delete(`${API_URL}/${id}`);  // Asegúrate de que el ID se está pasando correctamente aquí
+    return axios.delete(`${USUARIO_INTER_API}/${id}`);
   },
-
-
 };
-
-
-
-
-
-

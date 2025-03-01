@@ -126,97 +126,100 @@
   </template>
 
 <script>
-  export default {
-    data() {
-      return {
-        recetas: [],
-        recetaSeleccionada: null,
-        medicamentoSeleccionado: null,
-        medicamentosVisibles: {} // Controla la visibilidad de los medicamentos por receta
-      };
-    },
-    async created() {
-      await this.cargarRecetas();
-    },
-    methods: {
-      async cargarRecetas() {
-        try {
-          const response = await fetch("http://localhost:8080/recetas");
-          if (!response.ok) throw new Error("Error al cargar recetas.");
-          this.recetas = await response.json();
-        } catch (error) {
-          console.error(error);
-          alert("Error al obtener las recetas.");
-        }
-      },
-      toggleMedicamentos(idReceta) {
-        this.$set(this.medicamentosVisibles, idReceta, !this.medicamentosVisibles[idReceta]);
-      },
-      editarReceta(receta) {
-        this.recetaSeleccionada = { ...receta };
-      },
-      editarMedicamento(medicamento) {
-        this.medicamentoSeleccionado = { ...medicamento };
-      },
-      async actualizarReceta() {
-        try {
-          const response = await fetch(`http://localhost:8080/recetas/editar/${this.recetaSeleccionada.idReceta}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(this.recetaSeleccionada)
-          });
+import API_URL from "../config"; // Importamos API_URL desde config.ts
 
-          if (!response.ok) throw new Error("Error al actualizar la receta.");
-          alert("Receta actualizada correctamente.");
-          this.recetaSeleccionada = null;
-          await this.cargarRecetas();
-        } catch (error) {
-          console.error(error);
-          alert("Error al actualizar la receta.");
-        }
-      },
-      async actualizarMedicamento() {
-        try {
-          const response = await fetch(`http://localhost:8080/medicamentos/editar/${this.medicamentoSeleccionado.idMedicamento}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(this.medicamentoSeleccionado)
-          });
-
-          if (!response.ok) throw new Error("Error al actualizar el medicamento.");
-          alert("Medicamento actualizado correctamente.");
-          this.medicamentoSeleccionado = null;
-          await this.cargarRecetas();
-        } catch (error) {
-          console.error(error);
-          alert("Error al actualizar el medicamento.");
-        }
-      },
-      async eliminarReceta(idReceta) {
-        if (!confirm("¿Estás seguro de que quieres eliminar esta receta?")) return;
-
-        try {
-          const response = await fetch(`http://localhost:8080/recetas/eliminar/${idReceta}`, {
-            method: "DELETE"
-          });
-
-          if (!response.ok) throw new Error("Error al eliminar la receta.");
-          alert("Receta eliminada correctamente.");
-          await this.cargarRecetas();
-        } catch (error) {
-          console.error(error);
-          alert("Error al eliminar la receta.");
-        }
-      },
-      cerrarModal() {
-        this.recetaSeleccionada = null;
-      },
-      cerrarModalMedicamento() {
-        this.medicamentoSeleccionado = null;
+export default {
+  data() {
+    return {
+      recetas: [],
+      recetaSeleccionada: null,
+      medicamentoSeleccionado: null,
+      medicamentosVisibles: {} // Controla la visibilidad de los medicamentos por receta
+    };
+  },
+  async created() {
+    await this.cargarRecetas();
+  },
+  methods: {
+    async cargarRecetas() {
+      try {
+        const response = await fetch(`${API_URL}/recetas`);
+        if (!response.ok) throw new Error("Error al cargar recetas.");
+        this.recetas = await response.json();
+      } catch (error) {
+        console.error(error);
+        alert("Error al obtener las recetas.");
       }
+    },
+    toggleMedicamentos(idReceta) {
+      this.$set(this.medicamentosVisibles, idReceta, !this.medicamentosVisibles[idReceta]);
+    },
+    editarReceta(receta) {
+      this.recetaSeleccionada = { ...receta };
+    },
+    editarMedicamento(medicamento) {
+      this.medicamentoSeleccionado = { ...medicamento };
+    },
+    async actualizarReceta() {
+      try {
+        const response = await fetch(`${API_URL}/recetas/editar/${this.recetaSeleccionada.idReceta}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(this.recetaSeleccionada)
+        });
+
+        if (!response.ok) throw new Error("Error al actualizar la receta.");
+        alert("Receta actualizada correctamente.");
+        this.recetaSeleccionada = null;
+        await this.cargarRecetas();
+      } catch (error) {
+        console.error(error);
+        alert("Error al actualizar la receta.");
+      }
+    },
+    async actualizarMedicamento() {
+      try {
+        const response = await fetch(`${API_URL}/medicamentos/editar/${this.medicamentoSeleccionado.idMedicamento}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(this.medicamentoSeleccionado)
+        });
+
+        if (!response.ok) throw new Error("Error al actualizar el medicamento.");
+        alert("Medicamento actualizado correctamente.");
+        this.medicamentoSeleccionado = null;
+        await this.cargarRecetas();
+      } catch (error) {
+        console.error(error);
+        alert("Error al actualizar el medicamento.");
+      }
+    },
+    async eliminarReceta(idReceta) {
+      if (!confirm("¿Estás seguro de que quieres eliminar esta receta?")) return;
+
+      try {
+        const response = await fetch(`${API_URL}/recetas/eliminar/${idReceta}`, {
+          method: "DELETE"
+        });
+
+        if (!response.ok) throw new Error("Error al eliminar la receta.");
+        alert("Receta eliminada correctamente.");
+        await this.cargarRecetas();
+      } catch (error) {
+        console.error(error);
+        alert("Error al eliminar la receta.");
+      }
+    },
+    cerrarModal() {
+      this.recetaSeleccionada = null;
+    },
+    cerrarModalMedicamento() {
+      this.medicamentoSeleccionado = null;
     }
-  };
+  }
+};
 </script>
+
 
   <style scoped>
   .admin-recetas {

@@ -1,5 +1,5 @@
 import axios from "axios";
-const API_URL = "http://localhost:8080";
+import API_URL from "../config"; // Ajusta la ruta según la ubicación del archivo
 
 export const obtenerCitas = async () => {
   const response = await axios.get(`${API_URL}/citas`);

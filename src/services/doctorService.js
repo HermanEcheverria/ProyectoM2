@@ -1,11 +1,12 @@
 import axios from "axios";
+import API_URL from "../config"; // Ajusta la ruta si es necesario
 
-const API_URL = "http://localhost:8080/doctor";
+const DOCTOR_API = `${API_URL}/doctor`;
 
 export default {
   async getAllDoctors() {
     try {
-      const response = await axios.get(API_URL);
+      const response = await axios.get(DOCTOR_API);
       return response.data; // Extraer los datos correctamente
     } catch (error) {
       console.error("Error al obtener la lista de doctores:", error);
@@ -14,7 +15,7 @@ export default {
   },
 
   async registrarDoctor(doctor) {
-    return await axios.post(API_URL, {
+    return await axios.post(DOCTOR_API, {
       usuario: {
         nombreUsuario: doctor.nombreUsuario,
         correo: doctor.correo,
@@ -37,7 +38,7 @@ export default {
   },
 
   async updateDoctor(id, doctor) {
-    return axios.put(`${API_URL}/${id}`, {
+    return axios.put(`${DOCTOR_API}/${id}`, {
       usuario: {
         nombreUsuario: doctor.usuario.nombreUsuario,
         correo: doctor.usuario.correo,
@@ -60,6 +61,6 @@ export default {
   },
 
   async deleteDoctor(id) {
-    return axios.delete(`${API_URL}/${id}`);
+    return axios.delete(`${DOCTOR_API}/${id}`);
   }
 };

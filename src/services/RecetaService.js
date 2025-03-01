@@ -1,12 +1,13 @@
 import axios from "axios";
+import API_URL from "../config"; // Ajusta la ruta según la ubicación del archivo
 
-const API_URL = "http://localhost:8080/recetas";
+const RECETAS_API = `${API_URL}/recetas`;
 
 export default {
   // Obtener todas las recetas
   async obtenerTodasLasRecetas() {
     try {
-      const response = await axios.get(API_URL);
+      const response = await axios.get(RECETAS_API);
       return response.data;
     } catch (error) {
       console.error("Error obteniendo recetas:", error);
@@ -17,7 +18,7 @@ export default {
   // Obtener receta por ID
   async obtenerRecetaPorId(id) {
     try {
-      const response = await axios.get(`${API_URL}/${id}`);
+      const response = await axios.get(`${RECETAS_API}/${id}`);
       return response.data;
     } catch (error) {
       console.error(`Error obteniendo la receta con ID ${id}:`, error);
@@ -38,7 +39,7 @@ export default {
       };
 
       console.log("📌 JSON enviado:", JSON.stringify(requestData, null, 2)); // 📌 Debugging
-      const response = await axios.post(API_URL, requestData, {
+      const response = await axios.post(RECETAS_API, requestData, {
         headers: { "Content-Type": "application/json" },
       });
 
@@ -53,7 +54,7 @@ export default {
   // Eliminar una receta
   async eliminarReceta(id) {
     try {
-      await axios.delete(`${API_URL}/${id}`);
+      await axios.delete(`${RECETAS_API}/${id}`);
     } catch (error) {
       console.error(`Error eliminando la receta con ID ${id}:`, error);
       throw error;
@@ -78,7 +79,7 @@ export default {
 
       console.log("📌 JSON enviado para agregar medicamento:", JSON.stringify(requestData, null, 2));
 
-      const response = await axios.post(`${API_URL}/medicamentos`, requestData, {
+      const response = await axios.post(`${RECETAS_API}/medicamentos`, requestData, {
         headers: { "Content-Type": "application/json" },
       });
 

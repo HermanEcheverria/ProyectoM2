@@ -1,6 +1,7 @@
 package com.unis.config;
 
 import java.io.IOException;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
@@ -18,9 +19,10 @@ public class CorsFilter implements ContainerResponseFilter {
         responseContext.getHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         responseContext.getHeaders().add("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization");
 
-        // Para solicitudes OPTIONS (preflight)
+        // Manejo adecuado para solicitudes OPTIONS (preflight)
         if ("OPTIONS".equalsIgnoreCase(requestContext.getMethod())) {
-            responseContext.setStatus(200);
+            responseContext.setStatus(204); // No Content (mejor para preflight)
+            responseContext.setEntity(""); // Asegura que no haya contenido en la respuesta
         }
     }
 }

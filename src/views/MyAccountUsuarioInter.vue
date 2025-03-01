@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import axios from "axios";
+import API_URL from "../config"; // Importamos API_URL desde config.ts
 
 const userId = localStorage.getItem("userId");
 const user = ref(null);
@@ -33,8 +34,8 @@ onMounted(async () => {
   }
 
   try {
-    const userResponse = await axios.get(`http://localhost:8080/usuarios/${userId}`);
-    const usuarioInterResponse = await axios.get(`http://localhost:8080/usuariosinter/${userId}`);
+    const userResponse = await axios.get(`${API_URL}/usuarios/${userId}`);
+    const usuarioInterResponse = await axios.get(`${API_URL}/usuariosinter/${userId}`);
 
     user.value = userResponse.data;
     usuarioInter.value = usuarioInterResponse.data;
@@ -56,13 +57,13 @@ const updateProfile = async () => {
   if (!user.value || !usuarioInter.value) return;
 
   try {
-    await axios.put(`http://localhost:8080/usuarios/${userId}`, {
+    await axios.put(`${API_URL}/usuarios/${userId}`, {
       nombreUsuario: user.value.nombreUsuario,
       correo: user.value.correo,
       contrasena: user.value.contrasena,
     });
 
-    await axios.put(`http://localhost:8080/usuariosinter/${userId}`, {
+    await axios.put(`${API_URL}/usuariosinter/${userId}`, {
       apellido: usuarioInter.value.apellido,
       documento: usuarioInter.value.documento,
       fechaNacimiento: usuarioInter.value.fechaNacimiento,
@@ -78,6 +79,7 @@ const updateProfile = async () => {
   }
 };
 </script>
+
 
 <template>
   <div class="account-container">

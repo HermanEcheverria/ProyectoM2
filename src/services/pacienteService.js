@@ -1,19 +1,20 @@
 import axios from "axios";
+import API_URL from "../config"; // Ajusta la ruta según la ubicación del archivo
 
-const API_URL = "http://localhost:8080/paciente";
+const PACIENTE_API = `${API_URL}/paciente`;
 
 export default {
   getAllPaciente() {
-    return axios.get(API_URL);
+    return axios.get(PACIENTE_API);
   },
 
   async registrarPaciente(paciente) {
-    return await axios.post(API_URL, {
+    return await axios.post(PACIENTE_API, {
       usuario: {
         nombreUsuario: paciente.nombreUsuario,
         correo: paciente.correo,
         contrasena: paciente.password,
-        rol: { id: 4 }
+        rol: { id: 4 } // ROL_ID = 4 para pacientes
       },
       apellido: paciente.apellido,
       documento: paciente.documento,
@@ -26,10 +27,10 @@ export default {
   },
 
   updatePaciente(id, paciente) {
-    return axios.put(`${API_URL}/${id}`, paciente);
+    return axios.put(`${PACIENTE_API}/${id}`, paciente);
   },
 
   deletePaciente(id) {
-    return axios.delete(`${API_URL}/${id}`);
+    return axios.delete(`${PACIENTE_API}/${id}`);
   }
 };
