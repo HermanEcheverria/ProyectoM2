@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <!-- Título -->
-    <div class="header">ADMINISTRACIÓN DE FICHAS TÉCNICAS</div>
+    <div class="header">CREAR NUEVA FICHA TÉCNICA</div>
 
     <!-- Opciones de Gestión -->
     <div class="actions">
@@ -9,8 +9,10 @@
       <button @click="editarFicha">✏️ Editar Ficha</button>
       <button @click="eliminarFicha">🗑️ Eliminar Ficha</button>
       <button @click="verFicha">📄 Ver Ficha</button>
+      <div class="search-container">
       <input v-model="buscarId" placeholder="🔍 Buscar Ficha por ID">
       <button @click="buscarFicha">🔎 Buscar</button>
+      </div>
     </div>
 
     <!-- Listado de Fichas Técnicas -->
@@ -158,106 +160,165 @@ export default {
 </script>
 
 <style scoped>
-/* Estilos generales */
+
 .container {
-    max-width: 900px;
-    margin: auto;
-    font-family: Arial, sans-serif;
-    background: #0D1B2A;  /* Fondo oscuro */
-    color: #E0E1DD;  /* Texto claro */
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.2);
+  max-width: 95%;
+  margin:  auto;
+  font-family: Arial, sans-serif;
+  background: #f9f9f9;
+  color: #e0e1dd;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 
-/* Cabecera */
+/* ============================= */
+/* Cabecera (Título)            */
+/* ============================= */
 .header {
-    text-align: center;
-    font-size: 22px;
-    font-weight: bold;
-    background: #1B263B;  /* Azul oscuro */
-    color: #E0E1DD;
-    padding: 15px;
-    border-radius: 5px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: bold;
+  background: #45C4B0;
+  color: white;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
 
-/* Secciones */
+/* ============================= */
+/* Secciones (Card / Box)       */
+/* ============================= */
 .section {
-    background: #1B263B;
-    padding: 15px;
-    margin: 15px 0;
-    border-radius: 5px;
-    border: 1px solid #415A77;
+  background: var(--color-teal-oscuro);
+  padding: 15px;
+  margin: 15px 0;
+  border-radius: 5px;
+  border: 1px solid var(--color-teal-medio);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
 
-/* Botones */
+/* ============================= */
+/* Barra de acciones            */
+/* ============================= */
 .actions {
-    display: flex;
-    justify-content: space-around;
-    padding: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-around;
+  margin-bottom: 1rem;
 }
 
+/* ============================= */
+/* Botones Generales            */
+/* ============================= */
 button {
-    background: #00A86B; /* Verde resplandeciente */
-    color: white;
-    padding: 10px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: 0.3s;
+  background: #B2F2BB;
+  color: #012030;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 
 button:hover {
-    background: #009f5c;
+  background: #DAFDBA;
+}
+button:active {
+  transform: scale(0.97);
 }
 
-/* Botón de eliminar */
+/* Botón de Eliminar (rojo) */
 button.eliminar {
-    background: #D72638; /* Rojo */
+  background: #ff8a7d;  /* Rojo Alizarin */
+  color: #fff;
 }
-
 button.eliminar:hover {
-    background: #C21010;
+  background: #ff8a7d;  /* Rojo más oscuro */
 }
 
-/* Tablas */
+/* ============================= */
+/* Tablas                        */
+/* ============================= */
 table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-    background: #0D1B2A;
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  background: #13678A;
+  color: white;
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
 
-th, td {
-    border: 1px solid #415A77;
-    padding: 8px;
-    text-align: center;
-    color: #E0E1DD;
-}
-
+/* Encabezados de tabla */
 th {
-    background: #415A77;
-    font-weight: bold;
+  background: #01324b;
+  color: var(--color-texto-claro);
+  font-weight: bold;
+  padding: 12px;
+  text-align: center;
+  border: 1px solid #DAFDBA;
+  white-space: nowrap;
 }
 
-/* Inputs y formularios */
+/* Celdas */
+td {
+  border: 1px solid var(--color-teal-medio);
+  padding: 10px;
+  text-align: center;
+  white-space: nowrap;
+  border: 1px solid #DAFDBA;
+}
+
+/* Zebra rows (opcional) */
+tbody tr:nth-child(even) {
+  background-color: rgba(255,255,255,0.04);
+}
+
+/* ============================= */
+/* Inputs, selects, textareas   */
+/* ============================= */
 input, select, textarea {
-    width: 100%;
-    padding: 8px;
-    margin-top: 5px;
-    border: 1px solid #415A77;
-    background: #0D1B2A;
-    color: #E0E1DD;
-    border-radius: 5px;
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border: 1px solid var(--color-teal-medio);
+  background: var(--color-azul-noche);
+  color: var(--color-verde-pastel);
+  border-radius: 5px;
+  font-size: 1rem;
+  box-sizing: border-box;
 }
 
-/* Comentarios */
+.search-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* Alinea el buscador a la derecha */
+  gap: 10px; /* Espaciado entre el input y el botón */
+  width: 100%;
+}
+
+/* ============================= */
+/* Comentarios                  */
+/* ============================= */
 .comentario {
-    background: #1B263B;
-    padding: 10px;
-    margin: 5px 0;
-    border-left: 4px solid #00A86B;
-    border-radius: 5px;
+  background: var(--color-azul-noche);
+  padding: 10px;
+  margin: 5px 0;
+  border-left: 4px solid var(--color-verde-menta);
+  border-radius: 5px;
 }
-
+.comentario b {
+  color: var(--color-verde-pastel);
+}
 </style>
+
+

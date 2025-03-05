@@ -20,10 +20,10 @@
           <tr>
             <th>ID</th>
             <th>Nombre</th>
-            <th>Documento de identificación</th>
+            <th>DPI</th>
             <th>Afiliación de seguro</th>
             <th>Código de seguro</th>
-            <th>Número de carnet de seguro</th>
+            <th># de carnet de seguro</th>
             <th>Fecha Creada</th>
             <th>Estado</th>
             <th>Acciones</th>
@@ -116,10 +116,11 @@ export default {
   max-width: 95%; /* Extender a casi todo el ancho de la pantalla */
   margin: auto;
   font-family: Arial, sans-serif;
-  background: #0d1b2a;
+  background: #f9f9f9;
   color: #e0e1dd;
   padding: 20px;
   border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 
 /* Estilo del Título */
@@ -127,10 +128,11 @@ export default {
   text-align: center;
   font-size: 22px;
   font-weight: bold;
-  background: #007bff;
+  background: #45C4B0;
   color: white;
   padding: 12px;
   border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 
 /* Estilo de Botones */
@@ -150,14 +152,15 @@ export default {
 input {
   padding: 7px;
   width: 250px;
+  background: #B2F2BB;
   border-radius: 5px;
   border: none;
   text-align: center;
 }
 
 button {
-  background: #00a86b;
-  color: white;
+  background: #B2F2BB;
+  color: #012030;
   padding: 10px 15px;
   border: none;
   border-radius: 5px;
@@ -165,15 +168,15 @@ button {
 }
 
 button:hover {
-  background: #007a5a;
+  background: #B2F2BB;
 }
 
 /* Sección de Tablas */
 .section {
-  border: 1px solid #ccc;
+  border: 1px solid #45C4B0;
   padding: 15px;
   margin: 10px 0;
-  background: #1b263b;
+  background: #13678a;
   border-radius: 8px;
 }
 
@@ -182,13 +185,13 @@ table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 10px;
-  background: #415a77;
+  background: #13678A;
   color: white;
   table-layout: fixed; /* Mantiene el ancho fijo y evita distorsiones */
 }
 
 th, td {
-  border: 1px solid #ccc;
+  border: 1px solid #DAFDBA;
   padding: 12px;
   text-align: center;
   min-width: 100px; /* Evita que las columnas se achiquen demasiado */
@@ -196,7 +199,7 @@ th, td {
 }
 
 th {
-  background: #778da9;
+  background: #01324b;
 }
 
 /* Ajuste de los botones dentro de la celda de Acciones */
@@ -215,12 +218,12 @@ td .actions button {
 
 /* Estado de Ficha Activa/Inactiva */
 .activa {
-  color: #0f0;
+  color: #DAFDBA;
   font-weight: bold;
 }
 
 .inactiva {
-  color: #f00;
+  color: #ff8a7d;
   font-weight: bold;
 }
 

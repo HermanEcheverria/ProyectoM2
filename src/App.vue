@@ -139,7 +139,7 @@ const myAccountRoute = () => {
 .app-main {
   margin-top: 80px;
   min-height: calc(100vh - 140px);
-  background-color: #324159;
+  background-color: #012030;
   padding: 20px;
   width: 100%;
   display: flex;
@@ -148,7 +148,7 @@ const myAccountRoute = () => {
 }
 
 .footer {
-  background-color: #2c3e50;
+  background-color: #13678a;
   color: white;
   text-align: center;
   padding: 15px 0;

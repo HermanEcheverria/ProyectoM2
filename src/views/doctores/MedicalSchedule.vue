@@ -210,26 +210,148 @@ export default {
 };
 </script>
 
-<style scoped>
-.schedule-portal {
-  max-width: 900px;
-  margin: auto;
-  padding: 20px;
+<style>
+/* =========================
+   Variables globales
+========================= */
+:root {
+  --color-verde-claro:  #DAFDBA;
+  --color-menta:        #B2F2BB;
+  --color-teal:         #45C4B0;
+  --color-teal-oscuro:  #13678A;
+  --color-azul-noche:   #012030;
+
+  --color-texto-claro:  #FFFFFF;
+  --color-texto-oscuro: #1C1C1C;
 }
+
+/* =========================
+   Estilo general del body
+========================= */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-azul-noche); /* Fondo total de la página */
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--color-texto-claro);
+}
+
+/* =========================
+   Contenedor principal
+   Extendemos ancho y damos
+   un look tipo "card"
+========================= */
+.schedule-portal {
+  margin: 2rem auto;
+  padding: 2rem;
+  max-width: 90%; /* Ajusta si quieres más (100%) o menos (por ejemplo 80%) */
+  background: linear-gradient(to bottom, var(--color-teal-oscuro), var(--color-azul-noche));
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+  color: var(--color-texto-claro);
+}
+
+/* Título centrado con algo de estilo */
+.schedule-portal h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  text-align: center;
+  font-size: 2rem;
+  color: var(--color-menta);
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+/* =========================
+   Tabla de citas
+========================= */
+.schedule-list {
+  overflow-x: auto; /* por si se desborda en pantallas pequeñas */
+}
+
+/* Contenedor de la tabla */
 .schedule-list table {
   width: 100%;
   border-collapse: collapse;
+  border-radius: 8px; /* esquinas redondeadas */
+  overflow: hidden;   /* para que el thead respete el radio */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
-.schedule-list th,
-.schedule-list td {
-  padding: 10px;
-  border: 1px solid #ddd;
+
+/* Encabezado */
+.schedule-list thead {
+  background-color: var(--color-teal);
+}
+.schedule-list thead th {
+  padding: 1rem;
+  font-weight: 600;
   text-align: left;
+  color: var(--color-texto-claro);
+  font-size: 1rem;
+  border-bottom: 2px solid var(--color-teal-oscuro);
 }
+
+/* Cuerpo */
+.schedule-list tbody tr {
+  background-color: var(--color-azul-noche);
+  transition: background-color 0.2s;
+}
+.schedule-list td {
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  color: var(--color-verde-claro);
+  border-bottom: 1px solid var(--color-teal-oscuro);
+}
+
+/* Efecto hover en filas */
+.schedule-list tbody tr:hover {
+  background-color: var(--color-teal-oscuro);
+}
+
+/* =========================
+   BOTONES
+========================= */
+
+/* Quita estilos básicos */
 button {
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
   margin-right: 5px;
   cursor: pointer;
+  font-weight: 600;
+  transition: filter 0.2s, background-color 0.2s;
 }
+
+/* Botón para "Procesar" */
+.btn-procesar {
+  background-color: #2ecc71; /* verde clarito (puedes cambiar) */
+  color: #fff;
+}
+.btn-procesar:hover {
+  filter: brightness(110%);
+}
+
+/* Botón para "Cancelar" */
+.btn-cancelar {
+  background-color: #e74c3c; /* rojo */
+  color: #fff;
+}
+.btn-cancelar:hover {
+  filter: brightness(110%);
+}
+
+/* Botón para "Reasignar" */
+.btn-reasignar {
+  background-color: #f1c40f; /* amarillo/mostaza */
+  color: #1C1C1C;
+}
+.btn-reasignar:hover {
+  filter: brightness(110%);
+}
+
+/* =========================
+   MODALES (Procesar / Reasignar)
+========================= */
 .modal {
   position: fixed;
   top: 0;
@@ -240,21 +362,35 @@ button {
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 999;
 }
+
 .modal-content {
-  background: #fff;
+  background: var(--color-verde-claro);
+  color: var(--color-texto-oscuro);
   padding: 20px;
   border-radius: 10px;
   width: 400px;
+  max-width: 90%;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
+
 .form-group {
   margin-bottom: 15px;
+}
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
 }
 input, textarea, select {
   width: 100%;
   padding: 8px;
   margin-top: 5px;
   border-radius: 5px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-teal-oscuro);
+  font-size: 1rem;
 }
+
+
 </style>

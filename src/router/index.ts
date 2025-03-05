@@ -36,6 +36,9 @@ import AdminFichasTecnicas from "@/views/admin/AdminFichasTecnicas.vue";
 //componentes simulados
 import HistorialPagos from "@/views/vistasSimuladas/HistorialPagos.vue";
 import PacienteHistorialPagos from "@/views/vistasSimuladas/PacienteHistorialPagos.vue";
+import PacienteReportes from "@/views/vistasSimuladas/PacienteReportes.vue";
+import Reportes from "@/views/vistasSimuladas/Reportes.vue";
+import StockMedicamentos from "@/views/vistasSimuladas/StockMedicamentos.vue";
 
 
 // Función para verificar si el usuario está autenticado
@@ -81,6 +84,7 @@ const router = createRouter({
     { path: "/doctores", name: "CatalogoDoctores", component: CatalogoDoctores },
     //componentes simulados
     { path: "/historial-pagos-pacientes", name: "historial-pagos-pacientes", component: PacienteHistorialPagos },
+    { path: "/reportes-pacientes", name: "reportes-pacientes", component: PacienteReportes },
     //  Rutas protegidas por autenticación
     { path: "/admin/crear-ficha-tecnica", name: "ficha-técnica", component: FichaTecnicaView, beforeEnter: requireAuth },
     { path: "/admin-portal", name: "admin-portal", component: AdminPortal, beforeEnter: requireRole(1) },
@@ -97,9 +101,10 @@ const router = createRouter({
     { path: "/admin/usuario-interconexion", name: "admin-usuario-interconexion", component: UsuarioInterAdmin, beforeEnter: requireRole(1) },
     { path: "/admin/fichas-tecnicas", name: "admin-fichas-tecnicas", component: AdminFichasTecnicas, beforeEnter: requireRole(1) },
     { path: "/doctorimagen", name: "doctor-imagen", component: DoctorImageView, beforeEnter: requireAuth },
-    //componentes simulados
+    //componentes simulados de admin
     { path: "/admin/historial-pago", name: "historial-pago", component: HistorialPagos, beforeEnter: requireAuth },
-
+    { path: "/admin/reportes", name: "reportes", component: Reportes, beforeEnter: requireAuth },
+    { path: "/admin/stock-medicamentos", name: "stock-medicamentos", component: StockMedicamentos, beforeEnter: requireAuth },
     //  Rutas protegidas de "My Account" según el rol
     { path: "/my-account-admin", name: "my-account-admin", component: MyAccountAdmin, beforeEnter: requireRole(1) },
     { path: "/my-account-doctor", name: "my-account-doctor", component: MyAccountDoctor, beforeEnter: requireRole(2) },

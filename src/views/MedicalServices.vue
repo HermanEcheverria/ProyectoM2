@@ -8,6 +8,7 @@
       <button @click="router.push('/admin/doctores-citas')" class="gestion-button">Citas médicas</button>
       <button @click="router.push('/admin/doctores-agenda')" class="gestion-button">Agenda médica</button>
       <button @click="router.push('/historial-pagos-pacientes')" class="gestion-button">Historial de pagos del paciente</button>
+      <button @click="router.push('/reportes-pacientes')" class="gestion-button">Reportes del paciente</button>
     </div>
 
     <!-- Vista dinámica según la ruta -->
