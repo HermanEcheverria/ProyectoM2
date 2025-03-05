@@ -1,10 +1,11 @@
 <template>
   <div class="empleado-container">
-    <h1>Gestión de Empleados</h1>
+    <div class="header">Gestión de Empleados</div>
 
     <!-- Botón para agregar un empleado -->
     <button class="add-button" @click="abrirFormulario">Agregar Empleado</button>
 
+    <div class="section">
     <table>
       <thead>
         <tr>
@@ -98,6 +99,7 @@
       </div>
     </div>
   </div>
+</div>
 </template>
 
 <script>
@@ -213,18 +215,40 @@ export default {
 
 
 <style scoped>
-.paciente-container {
+.empleado-container {
   padding: 20px;
-  max-width: 100%;
+  background: #f9f9f9;
+  color: #e0e1dd;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .add-button {
-  background-color: #28a745;
-  color: white;
+  background-color: #DAFDBA;
+  color: #012030;
   padding: 12px 18px;
   font-size: 16px;
   border-radius: 8px;
   cursor: pointer;
+}
+
+.header {
+  text-align: center;
+  font-size: 22px;
+  font-weight: bold;
+  background: #45C4B0;
+  color: white;
+  padding: 12px;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.section {
+  border: 1px solid #45C4B0;
+  padding: 15px;
+  margin: 10px 0;
+  background: #13678a;
+  border-radius: 8px;
 }
 
 table {
@@ -234,10 +258,14 @@ table {
 }
 
 th, td {
-  padding: 15px;
-  border: 1px solid #444;
-  text-align: center;
-  font-size: 16px;
+  padding: 12px;
+  border: 1px solid #DAFDBA;
+  text-align: center; /* Alinear al centro */
+  vertical-align: middle; /* Centrar contenido verticalmente */
+}
+
+th {
+  background: #01324b;
 }
 
 input, select {
@@ -255,5 +283,5 @@ input, select {
 
 .edit-button { background-color: #f0ad4e; color: white; }
 .save-button { background-color: #007bff; color: white; }
-.delete-button { background-color: #dc3545; color: white; }
+.delete-button { background-color: #ff8a7d; color: white; }
 </style>

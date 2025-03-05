@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <h2>Módulo de Reportes y Analítica</h2>
+    <div class="header">Módulo de Reportes y Analítica</div>
     <div class="filters">
       <input type="date" v-model="fechaInicio">
       <input type="date" v-model="fechaFin">
@@ -17,7 +17,8 @@
       <button class="btn-download" @click="descargarPDF">Descargar PDF</button>
     </div>
 
-    <table class="report-table">
+    <div class="section">
+    <table>
       <thead>
         <tr>
           <th>Fecha</th>
@@ -36,6 +37,7 @@
       </tbody>
     </table>
   </div>
+</div>
 </template>
 
 <script>
@@ -80,17 +82,31 @@ export default {
 
 <style scoped>
 .container {
-  width: 90%;
-  margin: auto;
   padding: 20px;
-  background-color: #e3f2fd;
-  border-radius: 8px;
+  background: #f9f9f9;
+  color: #e0e1dd;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
-h2 {
+.header {
   text-align: center;
-  margin-bottom: 15px;
-  color: #1565c0;
+  font-size: 22px;
+  font-weight: bold;
+  background: #45C4B0;
+  color: white;
+  padding: 12px;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+
+.section {
+  border: 1px solid #45C4B0;
+  padding: 15px;
+  margin: 10px 0;
+  background: #13678a;
+  border-radius: 8px;
 }
 
 .filters {
@@ -113,13 +129,13 @@ input, select {
 }
 
 .btn-generate {
-  background-color: #1565c0;
-  color: white;
+  background-color: #DAFDBA;
+  color: #012030;
 }
 
 .btn-download {
-  background-color: #2e7d32;
-  color: white;
+  background-color: #abff92;
+  color: #012030;
 }
 
 .report-table {
@@ -130,12 +146,12 @@ input, select {
 
 th, td {
   padding: 12px;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
+  border: 1px solid #DAFDBA;
+  text-align: center; /* Alinear al centro */
+  vertical-align: middle;
 }
 
 th {
-  background-color: #1976d2;
-  color: white;
+  background: #01324b;
 }
 </style>

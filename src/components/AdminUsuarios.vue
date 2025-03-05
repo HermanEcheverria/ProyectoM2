@@ -1,7 +1,8 @@
 <template>
   <div class="admin-usuarios">
-    <h1>Administración de Usuarios</h1>
+    <div class="header">Administración de Usuarios</div>
 
+    <div class="section">
     <table>
       <thead>
         <tr>
@@ -50,6 +51,7 @@
         </tr>
       </tbody>
     </table>
+  </div>
   </div>
 </template>
 
@@ -179,11 +181,20 @@ onMounted(() => {
 <style scoped>
 .admin-usuarios {
   padding: 20px;
-  background: #181818;
-  color: #ffffff;
+  background: #f9f9f9;
+  color: #e0e1dd;
   border-radius: 10px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
+
+.section {
+  border: 1px solid #45C4B0;
+  padding: 15px;
+  margin: 10px 0;
+  background: #13678a;
+  border-radius: 8px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -192,14 +203,13 @@ table {
 
 th, td {
   padding: 12px;
-  border: 1px solid #444;
+  border: 1px solid #DAFDBA;
   text-align: center; /* Alinear al centro */
   vertical-align: middle; /* Centrar contenido verticalmente */
 }
 
 th {
-  background-color: #333;
-  color: white;
+  background: #01324b;
 }
 
 td select {
@@ -214,7 +224,7 @@ td select {
 
 td button {
   padding: 8px 15px;
-  background-color: #28a745;
+  background-color: #DAFDBA;
   border: none;
   color: white;
   cursor: pointer;
@@ -223,21 +233,32 @@ td button {
 }
 
 button.desactivar {
-  background-color: #dc3545;
+  background-color: #ff8a7d;
 }
 
 button:hover {
   opacity: 0.8;
 }
 
+.header {
+  text-align: center;
+  font-size: 22px;
+  font-weight: bold;
+  background: #45C4B0;
+  color: white;
+  padding: 12px;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
 /* Estilos para Estado */
 .activo {
-  color: #28a745;
+  color: #DAFDBA;
   font-weight: bold;
 }
 
 .inactivo {
-  color: #dc3545;
+  color: #ff8a7d;
   font-weight: bold;
 }
 

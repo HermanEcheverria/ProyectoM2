@@ -1,10 +1,11 @@
 <template>
   <div class="doctor-container">
-    <h1>Gestión de Doctores</h1>
+    <div class="header">Gestión de Doctores</div>
 
     <!-- Botón para agregar un doctor -->
     <button class="add-button" @click="abrirFormulario">Agregar Doctor</button>
 
+    <div class="section">
     <table>
       <thead>
         <tr>
@@ -48,9 +49,9 @@
           <td><input v-if="doctor.editando" v-model="doctor.usuario.correo" /> <span v-else>{{ doctor.usuario.correo }}</span></td>
           <td><input v-if="doctor.editando" type="password" v-model="doctor.usuario.contrasena" /> <span v-else>********</span></td>
           <td>
-            <button v-if="!doctor.editando" @click="doctor.editando = true">Editar</button>
-            <button v-if="doctor.editando" @click="updateDoctor(doctor)">Guardar</button>
-            <button @click="deleteDoctor(doctor.idDoctor)">Eliminar</button>
+            <button class="edit-button" v-if="!doctor.editando" @click="doctor.editando = true">Editar</button>
+            <button class="edit-button" v-if="doctor.editando" @click="updateDoctor(doctor)">Guardar</button>
+            <button class="delete-button" @click="deleteDoctor(doctor.idDoctor)">Eliminar</button>
           </td>
         </tr>
       </tbody>
@@ -83,6 +84,7 @@
         </div>
       </div>
     </div>
+  </div>
   </div>
 </template>
 
@@ -192,12 +194,28 @@ export default {
 <style scoped>
 .doctor-container {
   padding: 20px;
-  max-width: 100%;
+  background: #f9f9f9;
+  color: #e0e1dd;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
-.add-button {
-  background-color: #28a745;
+.header {
+  text-align: center;
+  font-size: 22px;
+  font-weight: bold;
+  background: #45C4B0;
   color: white;
+  padding: 12px;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+
+
+.add-button {
+  background-color: #DAFDBA;
+  color: #012030;
   padding: 12px 18px;
   font-size: 16px;
   border-radius: 8px;
@@ -211,10 +229,14 @@ table {
 }
 
 th, td {
-  padding: 15px;
-  border: 1px solid #444;
-  text-align: center;
-  font-size: 16px;
+  padding: 12px;
+  border: 1px solid #DAFDBA;
+  text-align: center; /* Alinear al centro */
+  vertical-align: middle; /* Centrar contenido verticalmente */
+}
+
+th {
+  background: #01324b;
 }
 
 input, select {
@@ -222,6 +244,15 @@ input, select {
   font-size: 16px;
   width: 100%;
 }
+
+.section {
+  border: 1px solid #45C4B0;
+  padding: 15px;
+  margin: 10px 0;
+  background: #13678a;
+  border-radius: 8px;
+}
+
 
 .save-button, .edit-button, .delete-button {
   padding: 10px;
@@ -232,5 +263,5 @@ input, select {
 
 .edit-button { background-color: #f0ad4e; color: white; }
 .save-button { background-color: #007bff; color: white; }
-.delete-button { background-color: #dc3545; color: white; }
+.delete-button { background-color: #ff8a7d; color: white; }
 </style>

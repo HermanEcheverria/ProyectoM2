@@ -1,7 +1,9 @@
 <template>
   <div class="container">
-    <h2>Historial de pagos y facturación</h2>
-    <table class="payment-table">
+    <div class="header">Historial de pagos y facturación</div>
+
+    <div class="section">
+    <table >
       <thead>
         <tr>
           <th>ID Pago</th>
@@ -35,6 +37,7 @@
       </tbody>
     </table>
   </div>
+</div>
 </template>
 
 <script>
@@ -55,48 +58,61 @@ export default {
 
 <style scoped>
 .container {
-  width: 90%;
-  margin: 20px auto;
   padding: 20px;
-  background-color: #e8f5e9;
-  border-radius: 8px;
-  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+  background: #f9f9f9;
+  color: #e0e1dd;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
-h2 {
+.header {
   text-align: center;
-  margin-bottom: 15px;
-  color: #2e7d32;
+  font-size: 22px;
+  font-weight: bold;
+  background: #45C4B0;
+  color: white;
+  padding: 12px;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.section {
+  border: 1px solid #45C4B0;
+  padding: 15px;
+  margin: 10px 0;
+  background: #13678a;
+  border-radius: 8px;
 }
 
 .payment-table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
+  margin-top: 15px;
 }
 
 th, td {
   padding: 12px;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
+  border: 1px solid #DAFDBA;
+  text-align: center; /* Alinear al centro */
+  vertical-align: middle; /* Centrar contenido verticalmente */
+
 }
 
 th {
-  background-color: #1b5e20;
-  color: white;
+  background: #01324b;
 }
 
 .status-paid {
-  color: green;
+  color: #DAFDBA;
   font-weight: bold;
 }
 
 .status-pending {
-  color: red;
+  color: #ff8a7d;
   font-weight: bold;
 }
+
+
 
 .btn-detail, .btn-invoice {
   padding: 5px 10px;
@@ -107,20 +123,21 @@ th {
 }
 
 .btn-detail {
-  background-color: #1976d2;
+  background-color: #f0ad4e;
   color: white;
 }
 
 .btn-invoice {
-  background-color: #388e3c;
-  color: white;
+  background-color: #DAFDBA;
+  color: #012030;
 }
 
 .btn-detail:hover {
-  background-color: #1565c0;
+  background-color: #f0ad4e;
 }
 
 .btn-invoice:hover {
-  background-color: #2e7d32;
+  background-color: #DAFDBA;
+  color: #012030;
 }
 </style>

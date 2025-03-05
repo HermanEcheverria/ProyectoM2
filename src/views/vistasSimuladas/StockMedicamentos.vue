@@ -1,7 +1,9 @@
 <template>
   <div class="container">
-    <h2>📦 Control de Stock de Medicamentos</h2>
-    <table class="stock-table">
+    <div class="header">📦 Control de Stock de Medicamentos</div>
+
+    <div class="section">
+    <table>
       <thead>
         <tr>
           <th>Medicamento</th>
@@ -27,6 +29,7 @@
     </table>
     <button class="btn-update" @click="actualizarInventario">🔄 Actualizar Inventario</button>
   </div>
+</div>
 </template>
 
 <script>
@@ -52,59 +55,70 @@ export default {
 
 <style scoped>
 .container {
-  width: 90%;
-  margin: 20px auto;
   padding: 20px;
-  background-color: #e8f5e9;
-  border-radius: 8px;
-  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
-  text-align: center;
+  background: #f9f9f9;
+  color: #e0e1dd;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
-h2 {
-  color: #2e7d32;
-  margin-bottom: 15px;
+.header {
+  text-align: center;
+  font-size: 22px;
+  font-weight: bold;
+  background: #45C4B0;
+  color: white;
+  padding: 12px;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.section {
+  border: 1px solid #45C4B0;
+  padding: 15px;
+  margin: 10px 0;
+  background: #13678a;
+  border-radius: 8px;
 }
 
 .stock-table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
+  margin-top: 15px;
 }
 
 th, td {
   padding: 12px;
-  text-align: center;
-  border-bottom: 1px solid #ddd;
+  border: 1px solid #DAFDBA;
+  text-align: center; /* Alinear al centro */
+  vertical-align: middle;
 }
 
 th {
-  background-color: #1b5e20;
-  color: white;
+  background: #01324b;
 }
 
 .low-stock {
-  color: red;
+  color: ff8a7d;
   font-weight: bold;
 }
 
 .status-low {
-  color: red;
+  color: ff8a7d;
   font-weight: bold;
 }
 
 .status-sufficient {
-  color: green;
+  color: #DAFDBA;
   font-weight: bold;
+
 }
 
 .btn-update {
   margin-top: 15px;
   padding: 10px 15px;
-  background-color: #388e3c;
-  color: white;
+  background-color: #DAFDBA;
+  color: #01324b;
   border: none;
   cursor: pointer;
   border-radius: 5px;

@@ -1,10 +1,11 @@
 <template>
   <div class="usuariointer-container">
-    <h1>Gestión de Usuarios Interconexión</h1>
+    <div class="header">Gestión de Usuarios Interconexión</div>
 
     <!-- Botón para agregar un usuario interconexion -->
     <button class="add-button" @click="abrirFormulario">Agregar Usuario Interconexión</button>
 
+    <div class="section">
     <table>
       <thead>
         <tr>
@@ -84,7 +85,7 @@
             </button>
             <button class="save-button" v-if="usuarioInter.editando" @click=" actualizarUsuario(usuarioInter)">Guardar</button>
             <button class="delete-button" @click="eliminarUsuario(usuarioInter.idInterconexion)">Eliminar</button>
-          </td>             
+          </td>
         </tr>
       </tbody>
     </table>
@@ -111,6 +112,7 @@
         </div>
       </div>
     </div>
+  </div>
   </div>
 </template>
 
@@ -142,7 +144,7 @@ export default {
         const response = await usuarioInterService.obtenerUsuarioInter();
         console.log("Respuesta de la API:", response.data);
         this.usuarioInterList = response.data.map(p => ({ ...p, editando: false }));
-        console.log("Lista de usuarios después de asignar:", this.usuarioInterList); 
+        console.log("Lista de usuarios después de asignar:", this.usuarioInterList);
       } catch (error) {
         console.error("Error obteniendo usuarios:", error);
         alert(" Error al cargar los usuarios.");
@@ -230,12 +232,35 @@ async actualizarUsuario(usuarioInter) {
 <style scoped>
 .usuariointer-container {
   padding: 20px;
-  max-width: 100%;
+  background: #f9f9f9;
+  color: #e0e1dd;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.header {
+  text-align: center;
+  font-size: 22px;
+  font-weight: bold;
+  background: #45C4B0;
+  color: white;
+  padding: 12px;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+
+.section {
+  border: 1px solid #45C4B0;
+  padding: 15px;
+  margin: 10px 0;
+  background: #13678a;
+  border-radius: 8px;
 }
 
 .add-button {
-  background-color: #28a745;
-  color: white;
+  background-color: #DAFDBA;
+  color: #012030;
   padding: 12px 18px;
   font-size: 16px;
   border-radius: 8px;
@@ -249,11 +274,16 @@ table {
 }
 
 th, td {
-  padding: 15px;
-  border: 1px solid #444;
-  text-align: center;
-  font-size: 16px;
+  padding: 12px;
+  border: 1px solid #DAFDBA;
+  text-align: center; /* Alinear al centro */
+  vertical-align: middle;
 }
+
+th {
+  background: #01324b;
+}
+
 
 input, select {
   padding: 8px;
@@ -270,5 +300,5 @@ input, select {
 
 .edit-button { background-color: #f0ad4e; color: white; }
 .save-button { background-color: #007bff; color: white; }
-.delete-button { background-color: #dc3545; color: white; }
+.delete-button { background-color: #ff8a7d; color: white; }
 </style>

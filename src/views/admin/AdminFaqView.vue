@@ -1,6 +1,6 @@
 <template>
   <div class="admin-faq">
-    <h1>Administrar Preguntas Frecuentes (FAQ)</h1>
+    <div class="header">Administrar Preguntas Frecuentes (FAQ)</div>
 
     <!-- Form para Crear/Editar FAQ -->
     <form @submit.prevent="saveFaq" class="faq-form">
@@ -32,6 +32,7 @@
 
     <hr class="divider" />
 
+    <div class="section">
     <!-- Tabla de FAQs existentes -->
     <table class="faq-table">
       <thead>
@@ -56,6 +57,7 @@
         </tr>
       </tbody>
     </table>
+  </div>
   </div>
 </template>
 
@@ -165,10 +167,11 @@ export default {
 <style scoped>
 /* Contenedor principal oscuro (similar a tu "Historia") */
 .admin-faq {
-  background-color: #0b1b2b; /* Fondo oscuro */
-  color: #b3f5e3;           /* Texto verde/menta */
+  background: #f9f9f9;
+  color: #e0e1dd;          /* Texto verde/menta */
   min-height: 100vh;
   padding: 2rem;
+  border-radius: 10px;
   max-width: 900px;
   margin: 0 auto;
 }
@@ -182,7 +185,7 @@ export default {
 
 /* Formulario estilo */
 .faq-form {
-  background-color: #102538; /* Bloque más claro */
+  background-color: #13678a; /* Bloque más claro */
   padding: 1.5rem;
   border-radius: 8px;
   margin-bottom: 2rem;
@@ -197,15 +200,22 @@ export default {
 .form-group label {
   font-weight: bold;
   margin-bottom: 0.3rem;
-  color: #b3f5e3;
+  color: #f9f9f9;
+}
+
+.section {
+  border: 1px solid #45C4B0;
+  padding: 15px;
+  margin: 10px 0;
+  background: #13678a;
+  border-radius: 8px;
 }
 
 .form-group input,
 .form-group textarea {
-  background-color: #b3f5e3; /* Campos claros */
+  background-color: #13678a; /* Campos claros */
   color: #102538;           /* Texto oscuro */
-  border: none;
-  outline: none;
+  border: 1px solid #45C4B0;
   padding: 0.6rem;
   border-radius: 4px;
   font-size: 1rem;
@@ -227,21 +237,32 @@ export default {
   cursor: pointer;
 }
 
+.header {
+  text-align: center;
+  font-size: 22px;
+  font-weight: bold;
+  background: #45C4B0;
+  color: white;
+  padding: 12px;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
 .btn-save {
-  background-color: #20b283;
-  color: #fff;
+  background-color: #DAFDBA;
+  color: #012030;
   margin-right: 1rem;
 }
 .btn-save:hover {
-  background-color: #18946d;
+  background-color: #DAFDBA;
 }
 
 .btn-reset {
-  background-color: #f44336;
+  background-color: #ff8a7d;
   color: #fff;
 }
 .btn-reset:hover {
-  background-color: #d6382c;
+  background-color: #ff8a7d;
 }
 
 /* Separador */
@@ -255,7 +276,7 @@ export default {
 .faq-table {
   width: 100%;
   border-collapse: collapse;
-  color: #b3f5e3; /* Texto claro */
+  color: #f9f9f9; /* Texto claro */
 }
 
 .faq-table th,
@@ -285,9 +306,9 @@ export default {
 
 /* Botón Editar */
 .btn-edit {
-  background-color: #5bc0de; /* celeste */
+  background-color: #f0ad4e; /* celeste */
 }
 .btn-delete {
-  background-color: #d9534f; /* rojo */
+  background-color: #ff8a7d; /* rojo */
 }
 </style>

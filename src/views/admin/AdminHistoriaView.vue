@@ -1,6 +1,6 @@
 <template>
   <div class="admin-historia">
-    <h1>Editar Historia de la Institución</h1>
+    <div class="header">Editar Historia de la Institución</div>
 
     <form @submit.prevent="saveHistoria">
       <!-- Sección: Nombre, Historia -->
@@ -175,10 +175,24 @@ export default {
 <style scoped>
 /* Contenedor principal */
 .admin-historia {
-  background-color: #0b1b2b;
-  color: #b3f5e3;
+  background: #f9f9f9;
+  color: #e0e1dd;          /* Texto verde/menta */
   min-height: 100vh;
   padding: 2rem;
+  border-radius: 10px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.header {
+  text-align: center;
+  font-size: 22px;
+  font-weight: bold;
+  background: #45C4B0;
+  color: white;
+  padding: 12px;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 
 /* Título */
@@ -190,7 +204,7 @@ export default {
 
 /* Formulario */
 .admin-historia form {
-  background-color: #102538;
+  background-color: #13678a;
   padding: 1.5rem;
   border-radius: 8px;
 }
@@ -212,20 +226,18 @@ export default {
 .form-group label {
   font-weight: bold;
   margin-bottom: 0.3rem;
-  color: #b3f5e3;
+  color: #f9f9f9;
 }
 
 /* Inputs y Textareas */
 .form-input,
 .form-textarea {
-  background-color: #b3f5e3;
-  color: #102538;
-  border: none;
-  outline: none;
+  background-color: #13678a;
+  color: #f9f9f9;
+  border: 1px solid #45C4B0;
   padding: 0.6rem;
   border-radius: 4px;
   font-size: 1rem;
-  width: 100%;
 }
 
 .form-textarea {
@@ -268,28 +280,29 @@ export default {
 }
 
 .btn-add {
-  background-color: #1e90ff;
+  background-color: #f0ad4e;
   margin-top: 1rem;
 }
 
 .btn-delete {
-  background-color: #d9534f;
+  background-color: #ff8a7d;
 }
 
 .btn-save {
-  background-color: #20b283;
+  background-color: #DAFDBA;
+  color: #012030;
   margin-top: 1rem;
 }
 
 .btn-add:hover {
-  background-color: #1675c7;
+  background-color: #DAFDBA;
 }
 
 .btn-delete:hover {
-  background-color: #c64743;
+  background-color: #ff8a7d;
 }
 
 .btn-save:hover {
-  background-color: #18946d;
+  background-color: #f0ad4e;
 }
 </style>
