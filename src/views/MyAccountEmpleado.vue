@@ -9,8 +9,9 @@ const empleado = ref(null);
 const loading = ref(true);
 const errorMensaje = ref("");
 const isEditing = ref(false);
+const importedData = ref(null); // Datos importados
 
-//  Mapeo de roles por ID
+// Mapeo de roles por ID
 const rolesMap = {
   1: "Administrador",
   2: "Doctor",
@@ -25,7 +26,7 @@ const estadoMap = {
   0: "Inactivo",
 };
 
-//  Cargar datos del usuario y empleado
+// Cargar datos del usuario y empleado
 onMounted(async () => {
   if (!userId) {
     errorMensaje.value = "Usuario no encontrado. Intenta iniciar sesión nuevamente.";
@@ -51,7 +52,7 @@ onMounted(async () => {
   }
 });
 
-//  Alternar modo edición
+// Alternar modo edición
 const toggleEdit = () => {
   isEditing.value = !isEditing.value;
 };
@@ -83,20 +84,57 @@ const updateProfile = async () => {
     alert("Hubo un error al actualizar el perfil.");
   }
 };
-</script>
 
+// Exportar datos del usuario y del empleado en JSON
+const exportData = () => {
+  if (!user.value || !empleado.value) return;
+  const jsonData = JSON.stringify({ usuario: user.value, empleado: empleado.value }, null, 2);
+  const blob = new Blob([jsonData], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `EmpleadoData_${userId}.json`;
+  link.click();
+};
+
+// Importar datos desde un archivo JSON
+const importData = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    importedData.value = JSON.parse(e.target.result);
+  };
+  reader.readAsText(file);
+};
+
+// Confirmar y aplicar datos importados
+const applyImportedData = async () => {
+  if (!importedData.value || !importedData.value.usuario || !importedData.value.empleado) {
+    alert("No hay datos importados válidos para aplicar.");
+    return;
+  }
+
+  try {
+    await axios.put(`${API_URL}/usuarios/${userId}`, importedData.value.usuario);
+    await axios.put(`${API_URL}/empleados/${userId}`, importedData.value.empleado);
+    alert("Datos importados correctamente.");
+    user.value = importedData.value.usuario;
+    empleado.value = importedData.value.empleado;
+    importedData.value = null; // Limpiar los datos importados
+  } catch (error) {
+    console.error("Error aplicando datos importados:", error);
+    alert("Hubo un error al importar los datos.");
+  }
+};
+</script>
 
 <template>
   <div class="account-container">
     <h2>Mi Cuenta (Empleado)</h2>
 
-    <!--  Mostrar mensaje de carga -->
     <p v-if="loading">Cargando datos...</p>
-
-    <!--  Mostrar mensaje de error si hay problemas -->
     <p v-if="errorMensaje" class="error">{{ errorMensaje }}</p>
 
-    <!--  Mostrar el formulario si los datos están disponibles -->
     <form v-if="user && empleado" @submit.prevent="updateProfile">
       <label><b>Nombre:</b></label>
       <input v-model="user.nombreUsuario" :disabled="!isEditing" required />
@@ -146,11 +184,21 @@ const updateProfile = async () => {
       <button v-if="isEditing" type="submit">Guardar Cambios</button>
       <button v-else type="button" @click="toggleEdit">Editar</button>
     </form>
+
+    <div class="export-import">
+      <button @click="exportData">Exportar Datos (JSON)</button>
+      <input type="file" @change="importData" accept="application/json"/>
+    </div>
+
+    <div v-if="importedData" class="imported-data">
+      <h3>Datos Importados:</h3>
+      <pre>{{ importedData }}</pre>
+      <button @click="applyImportedData">Guardar Datos Importados</button>
+    </div>
   </div>
 </template>
 
 <style scoped>
-/* Estilos del contenedor */
 .account-container {
   max-width: 400px;
   margin: auto;
@@ -160,7 +208,6 @@ const updateProfile = async () => {
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
 }
 
-/*  Estilo de los inputs */
 input, select {
   width: 100%;
   padding: 10px;
@@ -169,13 +216,11 @@ input, select {
   border-radius: 5px;
 }
 
-/*  Estilo para campos no editables */
 .readonly-field {
   background-color: #e0e0e0;
   color: #555;
 }
 
-/*  Estilo de etiquetas */
 label {
   display: block;
   margin-top: 10px;
@@ -184,7 +229,6 @@ label {
   font-weight: bold;
 }
 
-/*  Botón de edición */
 button {
   width: 100%;
   padding: 10px;
@@ -200,10 +244,23 @@ button:hover {
   background-color: #0056b3;
 }
 
-/* Mensaje de error */
 .error {
   color: red;
   font-weight: bold;
   margin-top: 10px;
+}
+
+.export-import {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.imported-data {
+  background: #f4f4f4;
+  padding: 10px;
+  margin-top: 15px;
+  border-radius: 5px;
+  max-height: 200px;
+  overflow: auto;
 }
 </style>
