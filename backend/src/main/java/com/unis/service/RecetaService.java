@@ -1,4 +1,5 @@
 package com.unis.service;
+import com.unis.repository.RecetaRepository;
 
 import com.unis.model.Medicamento;
 import com.unis.model.Receta;
@@ -15,6 +16,9 @@ public class RecetaService {
 
     @Inject
     EntityManager em;
+
+    @Inject
+    RecetaRepository recetaRepository;
 
     @Transactional
     public Receta crearReceta(Receta receta) {
@@ -45,6 +49,20 @@ public class RecetaService {
             throw new RuntimeException("❌ Error al guardar la receta: " + e.getMessage());
         }
     }
+
+     @Transactional
+public Receta buscarPorIdCita(int idCita) {
+    Receta receta = recetaRepository.find("idCita", idCita).firstResult();
+    if (receta != null) {
+        // 💡 Forzar carga de medicamentos antes de devolver la receta
+        receta.getMedicamentos().size(); // Esto obliga a Hibernate a traer la lista
+    }
+    return receta;
+}
+
+
+
+
 
     @Transactional
     public RecetaMedicamento agregarMedicamento(RecetaMedicamento recetaMedicamento) {

@@ -29,6 +29,23 @@ public class RecetaResource {
         }
     }
 
+        @GET
+@Path("/cita/{idCita}")
+@Produces(MediaType.APPLICATION_JSON)
+public Response obtenerRecetaPorIdCita(@PathParam("idCita") int idCita) {
+    Receta receta = recetaService.buscarPorIdCita(idCita);
+    if (receta != null) {
+        return Response.ok(receta).build();
+    } else {
+        return Response.status(Response.Status.NOT_FOUND)
+                .entity("Receta no encontrada para la cita con ID: " + idCita)
+                .build();
+    }
+}
+
+
+
+
     @POST
     @Path("/medicamentos")
     public Response agregarMedicamento(RecetaMedicamento recetaMedicamento) {

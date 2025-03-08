@@ -7,7 +7,6 @@
       <table>
         <thead>
           <tr>
-            <!-- Columnas adicionales para Admin -->
             <th v-if="isAdmin">ID Cita</th>
             <th>Paciente</th>
             <th v-if="isAdmin">Doctor</th>
@@ -16,6 +15,7 @@
             <th>Hora Fin</th>
             <th>Estado</th>
             <th>Acciones</th>
+            <th>Receta</th>
           </tr>
         </thead>
         <tbody>
@@ -30,74 +30,107 @@
             <td>{{ cita.horaFin }}</td>
             <td>{{ cita.estado }}</td>
             <td>
-              <!-- Solo si la cita está pendiente se pueden realizar acciones -->
               <button v-if="cita.estado === 'PENDIENTE'" @click="abrirModalProcesar(cita)">Procesar</button>
               <button v-if="cita.estado === 'PENDIENTE'" @click="cancelarCita(cita)">Cancelar</button>
-              <!-- La reasignación solo la puede hacer el Admin -->
               <button v-if="isAdmin && cita.estado === 'PENDIENTE'" @click="abrirModalReasignar(cita)">Reasignar</button>
+            </td>
+            <td>
+              <button @click="gestionarReceta(cita)">Gestionar Receta</button>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <!-- Modal para procesar cita (finzalizar) -->
-    <div v-if="mostrarModalProcesar" class="modal">
+    <!-- Modal para gestionar receta -->
+    <div v-if="mostrarModalReceta" class="modal">
       <div class="modal-content">
-        <h3>Procesar Cita</h3>
-        <form @submit.prevent="guardarProcesamiento">
-          <div class="form-group">
-            <label for="diagnostico">Diagnóstico:</label>
-            <textarea id="diagnostico" v-model="citaSeleccionada.diagnostico" required></textarea>
-          </div>
-          <div class="form-group">
-            <label for="resultados">Resultados de Exámenes:</label>
-            <textarea id="resultados" v-model="citaSeleccionada.resultados"></textarea>
-          </div>
-          <button type="submit">Guardar</button>
-          <button type="button" @click="cerrarModalProcesar">Cancelar</button>
-        </form>
+        <h3>Gestión de Receta</h3>
+        <p><strong>Cita ID:</strong> {{ citaSeleccionada.idCita }}</p>
+
+        <div v-if="recetaExistente">
+          <p><strong>Receta ID:</strong> {{ receta.idReceta }}</p>
+          <p><strong>Código Receta:</strong> {{ receta.codigoReceta }}</p>
+          <p><strong>Notas:</strong> {{ receta.notasEspeciales }}</p>
+
+          <h4>Medicamentos:</h4>
+          <ul v-if="receta.medicamentos.length > 0">
+            <li v-for="med in receta.medicamentos" :key="med.idRecetaMedicamento">
+              {{ med.medicamento.principioActivo }} - {{ med.dosis }} ({{ med.frecuencia }})
+            </li>
+          </ul>
+          <p v-else>Sin medicamentos registrados.</p>
+
+          <button @click="mostrarAgregarMedicamento = true">Agregar Medicamento</button>
+        </div>
+
+        <div v-else>
+          <h3>Nueva Receta</h3>
+          <input v-model="nuevaReceta.codigoReceta" placeholder="Código de Receta" required />
+
+          <p style="color: gray;">Paciente: {{ citaSeleccionada.paciente?.nombre || 'No asignado' }} {{ citaSeleccionada.paciente?.apellido || '' }}</p>
+          <p style="color: gray;">Doctor: {{ citaSeleccionada.doctor?.nombre || 'No asignado' }} {{ citaSeleccionada.doctor?.apellido || '' }}</p>
+
+          <textarea v-model="nuevaReceta.anotaciones" placeholder="Anotaciones"></textarea>
+          <textarea v-model="nuevaReceta.notasEspeciales" placeholder="Notas Especiales"></textarea>
+
+          <button @click="crearRecetaDesdeCita">Generar Receta</button>
+        </div>
+
+        <div v-if="mostrarAgregarMedicamento">
+          <h3>Agregar Medicamento</h3>
+          <select v-model="medicamentoSeleccionado">
+            <option value="" disabled>Seleccione Medicamento</option>
+            <option v-for="medicamento in medicamentos" :key="medicamento.idMedicamento" :value="medicamento.idMedicamento">
+              {{ medicamento.principioActivo }} ({{ medicamento.concentracion }} - {{ medicamento.formaFarmaceutica }})
+            </option>
+          </select>
+
+          <input v-model="dosis" placeholder="Dosis" required />
+          <input v-model="frecuencia" placeholder="Frecuencia" required />
+          <input v-model="duracion" placeholder="Duración" required />
+          <input v-model="diagnostico" placeholder="Diagnóstico" />
+
+          <button @click="agregarMedicamento">Añadir Medicamento</button>
+        </div>
+        <button @click="editarReceta">Editar Receta</button>
+
+
+        <button @click="cerrarModalReceta">Cerrar</button>
       </div>
     </div>
-
-    <!-- Modal para reasignar doctor (solo Admin) -->
-    <div v-if="mostrarModalReasignar" class="modal">
-      <div class="modal-content">
-        <h3>Reasignar Doctor</h3>
-        <form @submit.prevent="guardarReasignacion">
-          <div class="form-group">
-            <label for="doctorSelect">Nuevo Doctor:</label>
-            <select id="doctorSelect" v-model="doctorSeleccionado" required>
-              <option v-for="doc in listaDoctores" :key="doc.idDoctor" :value="doc.idDoctor">
-                {{ doc.nombre + ' ' + doc.apellido }} ({{ doc.especialidad }})
-              </option>
-            </select>
-          </div>
-          <button type="submit">Guardar Reasignación</button>
-          <button type="button" @click="cerrarModalReasignar">Cancelar</button>
-        </form>
-      </div>
-    </div>
-
   </div>
 </template>
 
 <script>
 import axios from 'axios';
 import API_URL from '@/config';
-// Importa los refs de tu authStore.ts
+import recetaService from "@/services/RecetaService.js";
 import { userRole, userId } from '@/stores/authStore';
 
 export default {
-  name: "MedicalSchedule",
   data() {
     return {
       citas: [],
-      mostrarModalProcesar: false,
-      mostrarModalReasignar: false,
+      mostrarModalReceta: false,
+      mostrarAgregarMedicamento: false,
+      recetaExistente: false,
       citaSeleccionada: {},
-      doctorSeleccionado: null,
-      listaDoctores: []
+      receta: {},
+      nuevaReceta: {
+        codigoReceta: "",
+        idCita: null,
+        idPaciente: null,
+        idDoctor: null,
+        anotaciones: "",
+        notasEspeciales: "",
+      },
+      medicamentoSeleccionado: "",
+      dosis: "",
+      frecuencia: "",
+      duracion: "",
+      diagnostico: "",
+      medicamentos: [],
     };
   },
   computed: {
@@ -106,109 +139,194 @@ export default {
     },
     isDoctor() {
       return userRole.value === 2;
-    },
-    idDoctor() {
-      return this.isDoctor ? userId.value : null;
     }
   },
   mounted() {
-    if (!this.isAdmin && !this.isDoctor) {
-      alert("Acceso restringido: el usuario no tiene permisos para ver esta página.");
-      return;
-    }
+    console.log("📌 mounted() ejecutado.");
     this.obtenerCitas();
-    if (this.isAdmin) {
-      this.obtenerDoctores();
-    }
+    this.obtenerMedicamentos();
   },
   methods: {
-    // Obtiene las citas del backend según el rol
+
+    cerrarModalReceta() {
+  console.log("🔴 Cerrando modal de receta...");
+  this.mostrarModalReceta = false;
+  this.mostrarAgregarMedicamento = false;
+  this.recetaExistente = false;
+  this.receta = {};
+  this.nuevaReceta = {
+    codigoReceta: "",
+    idCita: null,
+    idPaciente: null,
+    idDoctor: null,
+    anotaciones: "",
+    notasEspeciales: "",
+  };
+},
+
     async obtenerCitas() {
       try {
-        let response;
-        if (this.isDoctor) {
-          response = await axios.get(`${API_URL}/citas/doctor/${this.idDoctor}`);
-        } else if (this.isAdmin) {
-          response = await axios.get(`${API_URL}/citas`);
-        }
+        console.log("⏳ Llamando a obtenerCitas()...");
+        let response = await axios.get(`${API_URL}/citas`);
         this.citas = response.data;
+        console.log("✅ Citas obtenidas:", this.citas);
       } catch (error) {
-        console.error("Error al obtener las citas:", error);
-        alert("No se pudieron cargar las citas");
+        console.error("❌ Error al obtener las citas:", error);
+        alert("No se pudieron cargar las citas.");
       }
     },
-    // Obtiene la lista de doctores (solo para Admin)
-    async obtenerDoctores() {
-      try {
-        const response = await axios.get(`${API_URL}/doctor`);
-        this.listaDoctores = response.data;
-      } catch (error) {
-        console.error("Error al obtener los doctores:", error);
-        alert("No se pudo cargar la lista de doctores");
-      }
-    },
-    // Abre el modal para procesar (finalizar) una cita
-    abrirModalProcesar(cita) {
-      this.citaSeleccionada = { ...cita };
-      this.mostrarModalProcesar = true;
-    },
-    cerrarModalProcesar() {
-      this.mostrarModalProcesar = false;
-      this.citaSeleccionada = {};
-    },
-    // Guarda el procesamiento de la cita (cambia su estado a FINALIZADA)
-    async guardarProcesamiento() {
-      try {
-        this.citaSeleccionada.estado = "FINALIZADA";
-        await axios.put(`${API_URL}/citas/${this.citaSeleccionada.idCita}`, this.citaSeleccionada);
-        alert("Cita procesada con éxito");
-        this.cerrarModalProcesar();
-        this.obtenerCitas();
-      } catch (error) {
-        console.error("Error al procesar la cita:", error);
-        alert("Error al procesar la cita");
-      }
-    },
-    // Actualiza el estado de la cita a CANCELADA
-    async cancelarCita(cita) {
-      if (confirm("¿Desea cancelar esta cita?")) {
-        try {
-          let updatedCita = { ...cita, estado: "CANCELADA" };
-          await axios.put(`${API_URL}/citas/${cita.idCita}`, updatedCita);
-          alert("Cita cancelada con éxito");
-          this.obtenerCitas();
-        } catch (error) {
-          console.error("Error al cancelar la cita:", error);
-          alert("Error al cancelar la cita");
-        }
-      }
-    },
-    // Abre el modal para reasignar el doctor (solo Admin)
-    abrirModalReasignar(cita) {
-      this.citaSeleccionada = { ...cita };
-      this.doctorSeleccionado = null;
-      this.mostrarModalReasignar = true;
-    },
-    cerrarModalReasignar() {
-      this.mostrarModalReasignar = false;
-      this.citaSeleccionada = {};
-    },
-    // Guarda la reasignación del doctor
-    async guardarReasignacion() {
-      try {
-        this.citaSeleccionada.idDoctor = this.doctorSeleccionado;
-        await axios.put(`${API_URL}/citas/${this.citaSeleccionada.idCita}`, this.citaSeleccionada);
-        alert("Cita reasignada con éxito");
-        this.cerrarModalReasignar();
-        this.obtenerCitas();
-      } catch (error) {
-        console.error("Error al reasignar el doctor:", error);
-        alert("Error al reasignar el doctor");
-      }
+
+    async obtenerMedicamentos() {
+  try {
+    console.log("⏳ Cargando medicamentos...");
+    const response = await axios.get(`${API_URL}/medicamentos`);
+    this.medicamentos = response.data;
+    console.log("✅ Medicamentos cargados:", this.medicamentos);
+  } catch (error) {
+    console.error("❌ Error al obtener los medicamentos:", error);
+    alert("No se pudieron cargar los medicamentos.");
+  }
+},
+
+async agregarMedicamento() {
+  // 🔥 Validar que todos los campos tengan datos
+  if (!this.medicamentoSeleccionado || !this.dosis || !this.frecuencia || !this.duracion) {
+    alert("❌ Todos los campos son obligatorios.");
+    return;
+  }
+
+  // 🔥 Validar que la receta tenga un ID válido
+  if (!this.receta.idReceta) {
+    alert("❌ Error: No hay una receta seleccionada.");
+    console.error("❌ No hay ID de receta al agregar medicamento.");
+    return;
+  }
+
+  // 🔥 Validar que el medicamento tenga un ID válido
+  if (!this.medicamentoSeleccionado) {
+    alert("❌ Error: No se ha seleccionado un medicamento.");
+    console.error("❌ ID de medicamento es null.");
+    return;
+  }
+
+  // 📌 Estructura correcta que el backend espera recibir
+  const medicamentoData = {
+    receta: { idReceta: this.receta.idReceta },
+    medicamento: { idMedicamento: this.medicamentoSeleccionado },
+    dosis: this.dosis,
+    frecuencia: this.frecuencia,
+    duracion: this.duracion,
+    diagnostico: this.diagnostico || null,
+  };
+
+  // 🔍 Mostrar los datos antes de enviarlos
+  console.log("📌 Enviando medicamento al backend:", JSON.stringify(medicamentoData, null, 2));
+
+  try {
+    const response = await axios.post(`${API_URL}/recetas/medicamentos`, medicamentoData);
+    console.log("✅ Medicamento agregado correctamente:", response.data);
+
+    alert("✅ Medicamento agregado correctamente.");
+
+    // 🔄 Cargar medicamentos después de agregar uno nuevo
+    await this.cargarMedicamentosPorReceta();
+
+    // 🔄 Resetear los campos después de agregar el medicamento
+    this.medicamentoSeleccionado = "";
+    this.dosis = "";
+    this.frecuencia = "";
+    this.duracion = "";
+    this.diagnostico = "";
+
+  } catch (error) {
+    console.error("❌ Error al agregar medicamento:", error);
+
+    if (error.response) {
+      console.error("🛑 Respuesta del servidor:", error.response.data);
+      alert(`Error al agregar el medicamento: ${error.response.data}`);
+    } else {
+      alert("Error al agregar el medicamento.");
     }
+  }
+},
+
+async cargarMedicamentosPorReceta() {
+  if (!this.receta.idReceta) {
+    console.error("❌ No se puede cargar medicamentos: idReceta es null.");
+    return;
+  }
+
+  try {
+    console.log("🔄 Cargando medicamentos de la receta con ID:", this.receta.idReceta);
+    const response = await axios.get(`${API_URL}/recetas/${this.receta.idReceta}/medicamentos`);
+    this.receta.medicamentos = response.data || [];
+    console.log("✅ Medicamentos actualizados:", this.receta.medicamentos);
+  } catch (error) {
+    console.error("❌ Error al cargar medicamentos:", error);
+  }
+},
+
+
+
+
+    async gestionarReceta(cita) {
+      console.log("📌 Gestionando receta para cita:", cita);
+
+      this.citaSeleccionada = { ...cita };
+      this.nuevaReceta.idCita = cita.idCita;
+      this.nuevaReceta.idPaciente = cita.paciente?.idPaciente || null;
+      this.nuevaReceta.idDoctor = cita.doctor?.idDoctor || null;
+
+      if (!this.nuevaReceta.idPaciente || !this.nuevaReceta.idDoctor) {
+        console.error("❌ Error: idPaciente o idDoctor son null.");
+        alert("Error: La cita no tiene paciente o doctor asignado.");
+        return;
+      }
+
+      try {
+        console.log("⏳ Buscando receta existente...");
+        const response = await axios.get(`${API_URL}/recetas/cita/${cita.idCita}`);
+        this.receta = response.data || {};
+        this.recetaExistente = Boolean(response.data);
+        console.log("✅ Receta encontrada:", this.receta);
+      } catch (error) {
+        console.warn("⚠️ No hay receta registrada para esta cita.");
+        this.recetaExistente = false;
+      }
+
+      this.mostrarModalReceta = true;
+    },
+
+    async crearRecetaDesdeCita() {
+  console.log("📌 Creando receta con:", JSON.stringify(this.nuevaReceta, null, 2));
+
+  try {
+    const respuesta = await recetaService.crearReceta(this.nuevaReceta);
+
+    if (!respuesta.idReceta) {
+      console.error("❌ Error: El backend no devolvió un ID de receta válido.");
+      alert("Error al crear la receta. Inténtalo de nuevo.");
+      return;
+    }
+
+    this.receta = { ...respuesta, medicamentos: respuesta.medicamentos || [] };
+    this.recetaExistente = true;
+    this.mostrarAgregarMedicamento = true;
+
+    console.log("✅ Receta creada con éxito:", this.receta);
+  } catch (error) {
+    console.error("❌ Error al generar la receta:", error);
+    alert("Error al generar la receta.");
+  }
+}
+
+
+
   }
 };
 </script>
+
+
 
 <style>
 /* =========================

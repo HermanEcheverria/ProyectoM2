@@ -1,37 +1,48 @@
 package com.unis.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import java.io.Serializable;
+
 @Entity
 @Table(name = "RECETAMEDICAMENTO")
 public class RecetaMedicamento {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID_RECETAMEDICAMENTO")
+    @Column(name = "ID_RECETAMEDICAMENTO", nullable = false)
     private Long idRecetaMedicamento;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "ID_RECETA", nullable = false)
+    @JsonBackReference  // 🔹 Evita la serialización infinita en JSON
     private Receta receta;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "ID_MEDICAMENTO", nullable = false)
     private Medicamento medicamento;
 
-    @Column(name = "DOSIS", nullable = false)
+    @Column(name = "DOSIS", length = 50)
     private String dosis;
 
-    @Column(name = "FRECUENCIA", nullable = false)
+    @Column(name = "FRECUENCIA", length = 50)
     private String frecuencia;
 
-    @Column(name = "DURACION", nullable = false)
+    @Column(name = "DURACION", length = 50)
     private String duracion;
 
-    @Column(name = "DIAGNOSTICO", nullable = true)
+    @Column(name = "DIAGNOSTICO", length = 255)
     private String diagnostico;
 
-    // ✅ GETTERS & SETTERS
+    // Métodos necesarios para evitar errores en RecetaService
+    public Long getIdReceta() {
+        return receta != null ? receta.getIdReceta() : null;
+    }
+
+    public Long getIdMedicamento() {
+        return medicamento != null ? medicamento.getIdMedicamento() : null;
+    }
+
+    // Getters y Setters
     public Long getIdRecetaMedicamento() { return idRecetaMedicamento; }
     public void setIdRecetaMedicamento(Long idRecetaMedicamento) { this.idRecetaMedicamento = idRecetaMedicamento; }
 
@@ -52,12 +63,4 @@ public class RecetaMedicamento {
 
     public String getDiagnostico() { return diagnostico; }
     public void setDiagnostico(String diagnostico) { this.diagnostico = diagnostico; }
-
-    public Long getIdReceta() {
-        return (receta != null) ? receta.getIdReceta() : null;
-    }
-
-    public Long getIdMedicamento() {
-        return (medicamento != null) ? medicamento.getIdMedicamento() : null;
-    }
 }
