@@ -26,7 +26,7 @@
 
     <div v-if="recetaGenerada" class="form-medicamentos">
       <h3>Agregar Medicamentos</h3>
-      <p style="color: gray;">Receta ID: {{ nuevaReceta.idReceta }}</p>
+      <p style="font-weight: bold;">Receta ID: {{ nuevaReceta.idReceta }}</p>
 
       <select v-model="medicamentoSeleccionado">
         <option value="" disabled>Seleccione Medicamento</option>
@@ -38,16 +38,22 @@
       <input v-model="dosis" placeholder="Dosis" required />
       <input v-model="frecuencia" placeholder="Frecuencia" required />
       <input v-model="duracion" placeholder="Duración" required />
-      <input v-model="diagnostico" placeholder="Diagnóstico" required />
+      <input v-model="diagnostico" placeholder="Diagnóstico" />
 
       <button @click="agregarMedicamento" class="btn-secundario">Añadir Medicamento</button>
 
-      <ul v-if="nuevaReceta.medicamentos.length > 0">
-        <li v-for="(med, index) in nuevaReceta.medicamentos" :key="index">
-          Medicamento ID: {{ med.idMedicamento }} | Dosis: {{ med.dosis }}, Frecuencia: {{ med.frecuencia }}, Duración: {{ med.duracion }}
-          <button @click="eliminarMedicamento(index)" class="btn-eliminar">Eliminar</button>
+      <p v-if="mensajeExito" class="mensaje-exito">{{ mensajeExito }}</p>
+
+      <h3 class="titulo-medicamentos">Medicamentos en la Receta</h3>
+      <p><strong>Receta ID:</strong> {{ nuevaReceta.idReceta }}</p>
+
+      <ul v-if="medicamentosReceta.length > 0">
+        <li v-for="(med, index) in medicamentosReceta" :key="index">
+          {{ med.medicamento.principioActivo }} | Dosis: {{ med.dosis }}, Frecuencia: {{ med.frecuencia }}, Duración: {{ med.duracion }}
         </li>
       </ul>
+
+      <button @click="regresarARecetas" class="btn-regresar">Regresar a Recetas</button>
     </div>
   </div>
 </template>
@@ -56,6 +62,7 @@
 import { ref, onMounted } from "vue";
 import recetaService from "../services/RecetaService.js";
 import { obtenerCitas, obtenerMedicamentos } from "@/services/selectService.js";
+import { useRouter } from "vue-router";
 
 const recetas = ref([]);
 const recetaGenerada = ref(false);
@@ -72,12 +79,16 @@ const nuevaReceta = ref({
 
 const citas = ref([]);
 const medicamentos = ref([]);
+const medicamentosReceta = ref([]);
+const mensajeExito = ref("");
 
 const medicamentoSeleccionado = ref("");
 const dosis = ref("");
 const frecuencia = ref("");
 const duracion = ref("");
 const diagnostico = ref("");
+
+const router = useRouter();
 
 onMounted(async () => {
   citas.value = await obtenerCitas();
@@ -98,11 +109,59 @@ const generarReceta = async () => {
     nuevaReceta.value.idReceta = respuesta.idReceta;
     recetaGenerada.value = true;
     alert("Receta guardada con éxito");
+    await cargarMedicamentosPorReceta();
   } catch (error) {
     console.error("Error generando receta:", error);
   }
 };
+
+const cargarMedicamentosPorReceta = async () => {
+  if (nuevaReceta.value.idReceta) {
+    medicamentosReceta.value = await recetaService.obtenerMedicamentosPorReceta(nuevaReceta.value.idReceta);
+  }
+};
+
+const agregarMedicamento = async () => {
+  if (!medicamentoSeleccionado.value || !dosis.value || !frecuencia.value || !duracion.value) {
+    alert("Todos los campos son obligatorios");
+    return;
+  }
+
+  const medicamentoData = {
+    idReceta: nuevaReceta.value.idReceta,
+    idMedicamento: medicamentoSeleccionado.value,
+    dosis: dosis.value,
+    frecuencia: frecuencia.value,
+    duracion: duracion.value,
+    diagnostico: diagnostico.value || null,
+  };
+
+  try {
+    await recetaService.agregarMedicamento(medicamentoData);
+    mensajeExito.value = "✅ Medicamento agregado correctamente";
+
+    // Limpiar los campos después de agregar el medicamento
+    medicamentoSeleccionado.value = "";
+    dosis.value = "";
+    frecuencia.value = "";
+    duracion.value = "";
+    diagnostico.value = "";
+
+    await cargarMedicamentosPorReceta();
+
+    setTimeout(() => {
+      mensajeExito.value = "";
+    }, 3000);
+  } catch (error) {
+    console.error("Error agregando medicamento:", error);
+  }
+};
+
+const regresarARecetas = () => {
+  router.push("/recetas");
+};
 </script>
+
 <style scoped>
 .recetas-container {
   max-width: 600px;
@@ -129,26 +188,27 @@ h1, h3 {
 .btn-guardar:hover, .btn-secundario:hover {
   background-color: #0056b3;
 }
-.btn-eliminar {
-  background-color: red;
-  color: white;
+.btn-regresar {
+  display: block;
+  width: 100%;
+  margin-top: 20px;
+  padding: 10px;
   border: none;
+  border-radius: 5px;
+  background-color: #28a745;
+  color: white;
   cursor: pointer;
 }
-input, select, textarea {
-  margin: 5px 0;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+.btn-regresar:hover {
+  background-color: #218838;
 }
-.lista-medicamentos ul {
-  list-style-type: none;
-  padding: 0;
+.mensaje-exito {
+  color: green;
+  font-weight: bold;
+  text-align: center;
 }
-.lista-medicamentos li {
-  display: flex;
-  justify-content: space-between;
-  padding: 5px;
-  border-bottom: 1px solid #ccc;
+.titulo-medicamentos {
+  text-align: center;
+  font-weight: bold;
 }
 </style>

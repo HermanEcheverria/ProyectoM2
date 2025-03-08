@@ -61,6 +61,16 @@ export default {
     }
   },
 
+  async obtenerMedicamentosPorReceta(idReceta) {
+    try {
+        const response = await axios.get(`${API_URL}/receta-medicamentos/${idReceta}`);
+        return response.data;
+    } catch (error) {
+        console.error(`Error obteniendo medicamentos de la receta ${idReceta}:`, error);
+        return [];
+    }
+},
+
   // ✅ Agregar un medicamento a una receta existente
   async agregarMedicamento(medicamento) {
     try {

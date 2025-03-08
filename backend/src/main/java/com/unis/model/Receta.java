@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 
 @Entity
 @Table(name = "RECETA")
@@ -37,6 +39,7 @@ public class Receta implements Serializable {
     private String notasEspeciales;
 
     @OneToMany(mappedBy = "receta", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore  // 🔹 Ignorar la serialización de la lista para evitar el error de LazyInitialization
     private List<RecetaMedicamento> medicamentos;
 
     // Getters y Setters
