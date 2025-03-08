@@ -43,6 +43,24 @@ public Response obtenerRecetaPorIdCita(@PathParam("idCita") int idCita) {
     }
 }
 
+@PUT
+@Path("/{idReceta}")  // 📌 Asegura que se recibe el ID de la receta y NO el idCita
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+public Response actualizarReceta(@PathParam("idReceta") Long idReceta, Receta recetaActualizada) {
+    try {
+        Receta recetaEditada = recetaService.actualizarReceta(idReceta, recetaActualizada);
+        return Response.ok(recetaEditada).build();
+    } catch (Exception e) {
+        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity("Error al actualizar la receta: " + e.getMessage())
+                .build();
+    }
+}
+
+
+
+
 
 
 

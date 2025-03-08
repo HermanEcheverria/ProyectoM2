@@ -61,6 +61,52 @@ public Receta buscarPorIdCita(int idCita) {
 }
 
 
+@Transactional
+public Receta actualizarReceta(Long idReceta, Receta recetaActualizada) {
+    try {
+        System.out.println("📌 Iniciando actualización de receta con ID: " + idReceta);
+
+        Receta recetaExistente = em.find(Receta.class, idReceta);
+        if (recetaExistente == null) {
+            throw new RuntimeException("❌ Error: No se encontró la receta con ID " + idReceta);
+        }
+
+        // ⚡ Actualizar solo los campos editables
+        recetaExistente.setAnotaciones(recetaActualizada.getAnotaciones());
+        recetaExistente.setNotasEspeciales(recetaActualizada.getNotasEspeciales());
+
+        // ⚡ Eliminar medicamentos anteriores
+        recetaExistente.getMedicamentos().clear();
+        em.flush(); // 🔥 Necesario para aplicar el cambio antes de agregar nuevos medicamentos
+
+        // ⚡ Agregar medicamentos actualizados
+        for (RecetaMedicamento med : recetaActualizada.getMedicamentos()) {
+            Medicamento medicamento = em.find(Medicamento.class, med.getMedicamento().getIdMedicamento());
+            if (medicamento == null) {
+                throw new RuntimeException("❌ Error: No se encontró el medicamento con ID " + med.getMedicamento().getIdMedicamento());
+            }
+
+            med.setReceta(recetaExistente);
+            med.setMedicamento(medicamento);
+
+            // ⚠️ Usar merge en lugar de persist para evitar error de detached entity
+            em.merge(med);
+            recetaExistente.getMedicamentos().add(med);
+        }
+
+        // 💾 Guardar cambios en la receta
+        em.merge(recetaExistente);
+
+        System.out.println("✅ Receta actualizada correctamente con ID: " + idReceta);
+        return recetaExistente;
+    } catch (Exception e) {
+        e.printStackTrace();
+        throw new RuntimeException("❌ Error al actualizar la receta: " + e.getMessage());
+    }
+}
+
+
+
 
 
 
