@@ -38,8 +38,9 @@ onMounted(() => {
 
 <template>
   <div class="faq-page">
-    <h1>Preguntas Frecuentes (FAQ)</h1>
+    <div class="header">Preguntas Frecuentes (FAQ)</div>
 
+    <div class="section">
     <!-- Mostrar mensaje si hay error al cargar preguntas -->
     <p v-if="errorCargando" class="error-message">
       ⚠ No se pudieron cargar las preguntas. Intenta de nuevo más tarde.
@@ -57,19 +58,39 @@ onMounted(() => {
       </p>
     </section>
   </div>
+  </div>
 </template>
 
 <style scoped>
 .faq-page {
-  max-width: 800px;
-  margin: 0 auto;
-  padding-top: 3rem;
+  padding: 20px;
+  background: #f9f9f9;
+  color: #e0e1dd;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
-h1 {
-  margin-bottom: 2rem;
+
+.header {
   text-align: center;
+  font-size: 22px;
+  font-weight: bold;
+  background: #45C4B0;
+  color: white;
+  padding: 12px;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
+
+
+.section {
+  border: 1px solid #45C4B0;
+  padding: 15px;
+  margin: 10px 0;
+  background: #13678a;
+  border-radius: 8px;
+}
+
 
 .faq-item {
   margin-bottom: 1rem;

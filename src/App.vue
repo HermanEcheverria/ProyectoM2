@@ -43,9 +43,9 @@ const myAccountRoute = () => {
         <RouterLink to="/">Home</RouterLink>
         <RouterLink to="/subhome1">Home2</RouterLink>
         <RouterLink to="/subhome2">Home3</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
+        <RouterLink to="/pages/about">About</RouterLink>
         <RouterLink to="/historia">Historia</RouterLink>
-        <RouterLink to="/contact">Contact Us</RouterLink>
+        <RouterLink to="/pages/contact">Contact Us</RouterLink>
         <RouterLink to="/faq">FAQ</RouterLink>
         <RouterLink to="/doctores">Doctores</RouterLink>
         <RouterLink v-if="isLoggedIn" :to="myAccountRoute()">Mi Cuenta</RouterLink>

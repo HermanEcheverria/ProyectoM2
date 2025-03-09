@@ -1,11 +1,11 @@
 import { createRouter, createWebHistory } from "vue-router";
 import type { RouteLocationNormalized, NavigationGuardNext } from "vue-router";
 import HomeView from "../views/HomeView.vue";
-import AboutView from "../views/AboutView.vue";
+//import AboutView from "../views/AboutView.vue";
 import SignUp from "../views/SignUp.vue";
 import Login from "../views/Login.vue";
 import FaqView from "../views/FaqView.vue";
-import ContactView from "../views/ContactView.vue";
+//import ContactView from "../views/ContactView.vue";
 import AdminPortal from "../views/AdminPortal.vue";
 import AdminFaqView from "../views/admin/AdminFaqView.vue";
 import Patient from "../../src/components/Patient.vue";
@@ -39,7 +39,9 @@ import PacienteHistorialPagos from "@/views/vistasSimuladas/PacienteHistorialPag
 import PacienteReportes from "@/views/vistasSimuladas/PacienteReportes.vue";
 import Reportes from "@/views/vistasSimuladas/Reportes.vue";
 import StockMedicamentos from "@/views/vistasSimuladas/StockMedicamentos.vue";
-
+//vistas paginas informativas dinamicas
+import AdminDynamicPages from "@/views/admin/AdminDynamicPages.vue";
+import DynamicPage from "@/views/DynamicPage.vue";
 
 // Función para verificar si el usuario está autenticado
 const requireAuth = (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
@@ -73,11 +75,9 @@ const router = createRouter({
     { path: "/", name: "home", component: HomeView },
     { path: "/subhome1", name: "subhome 1", component: SubhomeUView },
     { path: "/subhome2", name: "subhome 2", component: SubhomeDView },
-    { path: "/about", name: "about", component: AboutView },
     { path: "/signup", name: "signup", component: SignUp },
     { path: "/login", name: "login", component: Login },
     { path: "/faq", name: "faq", component: FaqView },
-    { path: "/contact", name: "contact", component: ContactView },
     { path: "/servicios-medicos", name: "servicios-medicos", component: MedicalServices },
     { path: "/recetas-pacientes", name: "recetas-pacientes", component: Patient },
     { path: "/historia", name: "historia", component: HistoriaView },
@@ -112,7 +112,18 @@ const router = createRouter({
     { path: "/my-account-paciente", name: "my-account-paciente", component: MyAccountPaciente, beforeEnter: requireRole(4) },
     { path: "/my-account-interconexion", name: "my-account-interconexion", component: MyAccountUsuarioInter, beforeEnter: requireRole(5) },
     { path: "/recetas", name: "recetas", component: RecetaView, beforeEnter: requireRole(1) },
-
+  //rutas dinamicas para paginas informativas
+  {
+    path: '/admin/pages',
+    name: 'admin-dynamic-pages',
+    component: AdminDynamicPages,
+    beforeEnter: requireRole(1) // Protección para admin
+  },
+  {
+    path: '/pages/:pageName',
+    name: 'dynamic-pages',
+    component: DynamicPage
+  }
 
 
   ]
