@@ -13,6 +13,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
@@ -47,7 +48,11 @@ public class Paciente {
     @Column(name = "TELEFONO")
     private String telefono;
 
-    @ManyToOne
+    @Column(name = "FOTOGRAFIA")
+    @Lob
+    private byte[] fotografia;
+
+   @ManyToOne
     @JoinColumn(name = "ID_USUARIO", insertable = false, updatable = false)
     private Usuario usuario;
 
@@ -126,5 +131,13 @@ public class Paciente {
 
     public void setCitas(List<Cita> citas) {
         this.citas = citas;
+    }
+
+    public byte[] getFotografia() {
+        return fotografia;
+    }
+    
+    public void setFotografia(byte[] fotografia) {
+        this.fotografia = fotografia;
     }
 }
