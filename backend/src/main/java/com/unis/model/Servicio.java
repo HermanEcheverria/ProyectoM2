@@ -1,23 +1,18 @@
 package com.unis.model;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "SERVICIO")
 public class Servicio extends PanacheEntity {
-    
+
     @Column(nullable = false)
     public String nombre;
 
@@ -27,26 +22,19 @@ public class Servicio extends PanacheEntity {
     @Column(nullable = false)
     public boolean cubiertoSeguro;
 
-    // 🔹 Evita recursión infinita en JSON
+    // 🔹 Relación ManyToOne para indicar el servicio padre
     @ManyToOne
     @JoinColumn(name = "PARENT_ID")
     @JsonBackReference
     public Servicio servicioPadre;
 
-    @OneToMany(mappedBy = "servicioPadre", cascade = CascadeType.ALL, orphanRemoval = true)
+    // 🔹 Relación OneToMany con subservicios
+    @OneToMany(mappedBy = "servicioPadre", cascade = CascadeType.MERGE, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonManagedReference
-    public Set<Servicio> subServicios;
+    public Set<Servicio> subServicios = new HashSet<>(); // ✅ Inicializado para evitar `null`
 
+    // ✅ Quitar setParentId() ya que causa entidades detached
     public Long getParentId() {
         return servicioPadre != null ? servicioPadre.id : null;
-    }
-
-    public void setParentId(Long parentId) {
-        if (parentId != null) {
-            this.servicioPadre = new Servicio();
-            this.servicioPadre.id = parentId;
-        } else {
-            this.servicioPadre = null;
-        }
     }
 }
