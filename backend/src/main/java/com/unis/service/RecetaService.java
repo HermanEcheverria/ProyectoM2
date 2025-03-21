@@ -1,15 +1,15 @@
 package com.unis.service;
-import com.unis.repository.RecetaRepository;
+import java.util.Date;
 
 import com.unis.model.Medicamento;
 import com.unis.model.Receta;
 import com.unis.model.RecetaMedicamento;
+import com.unis.repository.RecetaRepository;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
-import java.util.Date;
-import java.util.List;
 
 @ApplicationScoped
 public class RecetaService {
@@ -144,4 +144,12 @@ public Receta actualizarReceta(Long idReceta, Receta recetaActualizada) {
             throw new RuntimeException("❌ Error al agregar medicamento: " + e.getMessage());
         }
     }
+
+
+
+public Receta buscarPorCodigo(String codigoReceta) {
+    return recetaRepository.find("codigoReceta", codigoReceta).firstResult();
+
+}
+
 }

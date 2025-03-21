@@ -3,11 +3,17 @@ package com.unis.resource;
 import com.unis.model.Receta;
 import com.unis.model.RecetaMedicamento;
 import com.unis.service.RecetaService;
+
 import jakarta.inject.Inject;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.util.List;
 
 @Path("/recetas")
 @Produces(MediaType.APPLICATION_JSON)
@@ -76,4 +82,22 @@ public Response actualizarReceta(@PathParam("idReceta") Long idReceta, Receta re
                     .build();
         }
     }
+
+
+    @GET
+    @Path("/{codigoReceta}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response obtenerRecetaPorCodigo(@PathParam("codigoReceta") String codigoReceta) {
+        Receta receta = recetaService.buscarPorCodigo(codigoReceta);
+        if (receta != null) {
+            return Response.ok(receta).build();
+        } else {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Receta no encontrada con código: " + codigoReceta)
+                    .build();
+        }
+    }
+
+
+
 }
