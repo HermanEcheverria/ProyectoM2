@@ -11,7 +11,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -156,7 +155,7 @@ public class PageContentServiceTest {
     public void testDelete() {
         Long id = 1L;
         // Simulamos que deleteById 
-        doNothing().when(repository).deleteById(id);
+when(repository.deleteById(id)).thenReturn(true);
 
         pageContentService.delete(id);
 

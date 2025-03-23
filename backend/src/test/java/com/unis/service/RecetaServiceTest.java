@@ -119,46 +119,45 @@ public class RecetaServiceTest {
     // ----- Test para actualizarReceta -----
 
     @Test
-    public void testActualizarRecetaSuccess() {
-        Long idReceta = 1L;
-        Receta recetaExistente = new Receta();
-        recetaExistente.setAnotaciones("OldAnotaciones");
-        recetaExistente.setNotasEspeciales("OldNotas");
-        recetaExistente.setMedicamentos(new ArrayList<>());
+public void testActualizarRecetaSuccess() {
+    Long idReceta = 1L;
 
-        Receta recetaActualizada = new Receta();
-        recetaActualizada.setAnotaciones("NewAnotaciones");
-        recetaActualizada.setNotasEspeciales("NewNotas");
+    // Crear un medicamento existente
+    Medicamento medicamento = new Medicamento();
+    medicamento.setIdMedicamento(10L);
 
-        // Agregar un medicamento actualizado usando una clase anónima para simular getIdReceta y getIdMedicamento
-        RecetaMedicamento rm = new RecetaMedicamento() {
-            @Override
-            public Long getIdReceta() {
-                return 1L;
-            }
-            @Override
-            public Long getIdMedicamento() {
-                return 10L;
-            }
-        };
-        // Asignamos la lista de medicamentos a la receta actualizada
-        recetaActualizada.setMedicamentos(Arrays.asList(rm));
+    // Crear un RecetaMedicamento con el Medicamento asignado
+    RecetaMedicamento recetaMedicamento = new RecetaMedicamento();
+    recetaMedicamento.setMedicamento(medicamento);
 
-        Medicamento med = new Medicamento();
-        med.setIdMedicamento(10L);
+    // Crear la receta existente
+    Receta recetaExistente = new Receta();
+    recetaExistente.setAnotaciones("OldAnotaciones");
+    recetaExistente.setNotasEspeciales("OldNotas");
+    recetaExistente.setMedicamentos(new ArrayList<>(Arrays.asList(recetaMedicamento)));
 
-        when(em.find(Receta.class, idReceta)).thenReturn(recetaExistente);
-        when(em.find(Medicamento.class, 10L)).thenReturn(med);
-        when(em.merge(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        doNothing().when(em).flush();
+    // Crear la receta actualizada
+    Receta recetaActualizada = new Receta();
+    recetaActualizada.setAnotaciones("NewAnotaciones");
+    recetaActualizada.setNotasEspeciales("NewNotas");
+    recetaActualizada.setMedicamentos(Arrays.asList(recetaMedicamento));
 
-        Receta result = recetaService.actualizarReceta(idReceta, recetaActualizada);
+    // Simular la búsqueda de la receta y el medicamento en la base de datos
+    when(em.find(Receta.class, idReceta)).thenReturn(recetaExistente);
+    when(em.find(Medicamento.class, 10L)).thenReturn(medicamento);
+    when(em.merge(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    doNothing().when(em).flush();
 
-        assertEquals("NewAnotaciones", result.getAnotaciones());
-        assertEquals("NewNotas", result.getNotasEspeciales());
-        assertEquals(1, result.getMedicamentos().size(), "Debe haber 1 medicamento en la receta");
-        assertEquals(med, result.getMedicamentos().get(0).getMedicamento());
-    }
+    // Ejecutar la actualización
+    Receta result = recetaService.actualizarReceta(idReceta, recetaActualizada);
+
+    // Verificaciones
+    assertEquals("NewAnotaciones", result.getAnotaciones());
+    assertEquals("NewNotas", result.getNotasEspeciales());
+    assertEquals(1, result.getMedicamentos().size());
+    assertEquals(medicamento, result.getMedicamentos().get(0).getMedicamento());
+}
+
 
     @Test
     public void testActualizarRecetaNotFound() {

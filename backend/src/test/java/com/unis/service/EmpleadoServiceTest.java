@@ -191,30 +191,34 @@ public class EmpleadoServiceTest {
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), exception.getResponse().getStatus());
     }
 
-    // Test para actualizar empleado con otro error (retorna false)
-    @Test
-    public void testActualizarEmpleadoOtherError() {
-        Empleado empleado = new Empleado();
-        Usuario usuario = new Usuario();
-        usuario.setNombreUsuario("nuevoNombre");
-        usuario.setCorreo("nuevoCorreo@example.com");
-        usuario.setContrasena("nuevaContrasena");
-        empleado.setUsuario(usuario);
-        
-        empleado.setApellido("nuevoApellido");
-        empleado.setDocumento("nuevoDocumento");
-        empleado.setFechaNacimiento(new Date(200000L));
-        empleado.setGenero("F");
-        empleado.setTelefono("987654321");
-        empleado.setPuesto("NuevoPuesto");
+    // Test para actualizar empleado con otro error (debe lanzar excepción)
+@Test
+public void testActualizarEmpleadoOtherError() {
+    Empleado empleado = new Empleado();
+    Usuario usuario = new Usuario();
+    usuario.setNombreUsuario("nuevoNombre");
+    usuario.setCorreo("nuevoCorreo@example.com");
+    usuario.setContrasena("nuevaContrasena");
+    empleado.setUsuario(usuario);
 
-        when(entityManager.createNativeQuery(any(String.class))).thenReturn(query);
-        when(query.setParameter(anyInt(), any())).thenReturn(query);
-        when(query.executeUpdate()).thenThrow(new RuntimeException("Otro error"));
+    empleado.setApellido("nuevoApellido");
+    empleado.setDocumento("nuevoDocumento");
+    empleado.setFechaNacimiento(new Date(200000L));
+    empleado.setGenero("F");
+    empleado.setTelefono("987654321");
+    empleado.setPuesto("NuevoPuesto");
 
-        boolean result = empleadoService.actualizarEmpleado(1L, empleado);
-        assertFalse(result);
-    }
+    when(entityManager.createNativeQuery(any(String.class))).thenReturn(query);
+    when(query.setParameter(anyInt(), any())).thenReturn(query);
+    when(query.executeUpdate()).thenThrow(new RuntimeException("Otro error"));
+
+    WebApplicationException exception = assertThrows(WebApplicationException.class, () -> {
+        empleadoService.actualizarEmpleado(1L, empleado);
+    });
+
+    assertEquals("Error al actualizar el empleado: Otro error", exception.getMessage());
+}
+
 
     // Test para eliminar empleado exitosamente
     @Test
@@ -228,14 +232,18 @@ public class EmpleadoServiceTest {
         verify(query, times(1)).executeUpdate();
     }
 
-    // Test para eliminar empleado con error
-    @Test
-    public void testEliminarEmpleadoError() {
-        when(entityManager.createNativeQuery(any(String.class))).thenReturn(query);
-        when(query.setParameter(anyInt(), any())).thenReturn(query);
-        when(query.executeUpdate()).thenThrow(new RuntimeException("Error"));
+    // Test para eliminar empleado con error (debe lanzar excepción)
+@Test
+public void testEliminarEmpleadoError() {
+    when(entityManager.createNativeQuery(any(String.class))).thenReturn(query);
+    when(query.setParameter(anyInt(), any())).thenReturn(query);
+    when(query.executeUpdate()).thenThrow(new RuntimeException("Error"));
 
-        boolean result = empleadoService.eliminarEmpleado(1L);
-        assertFalse(result);
-    }
+    WebApplicationException exception = assertThrows(WebApplicationException.class, () -> {
+        empleadoService.eliminarEmpleado(1L);
+    });
+
+    assertEquals("Error al eliminar el empleado: Error", exception.getMessage());
+}
+
 }
