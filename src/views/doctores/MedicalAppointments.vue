@@ -77,6 +77,19 @@
         <FullCalendar :options="calendarOptions" />
       </div>
     </div>
+
+    <!-- Modal para mostrar detalles de la cita -->
+    <div v-if="citaSeleccionada" class="modal">
+      <div class="modal-content">
+        <h3>Detalles de la Cita</h3>
+        <p><strong>Paciente:</strong> {{ citaSeleccionada.paciente?.usuario?.nombreUsuario || "Desconocido" }}</p>
+        <p><strong>Doctor:</strong> {{ citaSeleccionada.doctor?.usuario?.nombreUsuario || "Desconocido" }}</p>
+        <p><strong>Fecha:</strong> {{ citaSeleccionada.fecha }}</p>
+        <p><strong>Hora:</strong> {{ citaSeleccionada.horaInicio }} - {{ citaSeleccionada.horaFin }}</p>
+        <p><strong>Notas:</strong> {{ citaSeleccionada.motivo || "Sin notas adicionales" }}</p>
+        <button @click="citaSeleccionada = null">Cerrar</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -111,30 +124,38 @@ export default {
     const doctores = ref([]);
     const citasExistentes = ref([]);
     const horasDisponibles = ref(generarHoras());
+    const citaSeleccionada = ref(null);
+
     const calendarOptions = ref({
-  plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-  initialView: "dayGridMonth",
-  editable: false,
-  events: [],
-
-  // Mostrar todas las citas en el mes sin agruparlas
-  dayMaxEventRows: false,
-
-  // Forzar que cada evento se muestre como un bloque completo
-  eventDisplay: "block",
-
-  // Ajustar la barra de navegación para permitir cambiar de vista
-  headerToolbar: {
-    left: "prev,next today",
-    center: "title",
-    right: "dayGridMonth,timeGridWeek,timeGridDay"
-  },
-
-  // Permitir que el calendario crezca dinámicamente
-  height: "auto",
-  contentHeight: "auto",
-});
-
+      plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+      initialView: "dayGridMonth",
+      editable: false,
+      events: [],
+      dayMaxEventRows: false,
+      eventDisplay: "block",
+      headerToolbar: {
+        left: "prev,next today",
+        center: "title",
+        right: "dayGridMonth,timeGridWeek,timeGridDay",
+      },
+      height: "auto",
+      contentHeight: "auto",
+      eventClick: ({ event }) => {
+        console.log("📌 Evento clickeado:", event);
+        const citaData = citasExistentes.value.find(
+          (c) =>
+            c.fecha === event.startStr.split("T")[0] &&
+            c.horaInicio === event.startStr.split("T")[1].slice(0, 5) &&
+            c.horaFin === event.endStr.split("T")[1].slice(0, 5)
+        );
+        if (citaData) {
+          console.log("✅ Cita encontrada:", citaData);
+          citaSeleccionada.value = citaData;
+        } else {
+          console.warn("⚠️ No se encontró la cita correspondiente.");
+        }
+      },
+    });
 
     async function cargarDoctores() {
       try {
@@ -157,7 +178,6 @@ export default {
       try {
         const citas = await citaService.obtenerCitas();
         console.log("Citas desde la API:", citas);
-
         if (Array.isArray(citas)) {
           citasExistentes.value = citas;
           calendarOptions.value.events = citasExistentes.value.map((citaItem) => ({
@@ -201,6 +221,7 @@ export default {
           }
         } catch (error) {
           console.error("❌ Error al buscar pacientes:", error);
+          pacientes.value = [];
         }
       } else {
         pacientes.value = [];
@@ -321,6 +342,7 @@ export default {
       buscarPaciente,
       seleccionarPaciente,
       calendarOptions,
+      citaSeleccionada,
     };
   },
 };
@@ -366,6 +388,7 @@ h2 {
 .form-group {
   margin-bottom: 15px;
 }
+
 input,
 select,
 textarea {
@@ -375,6 +398,7 @@ textarea {
   border-radius: 5px;
   border: 1px solid #ddd;
 }
+
 button {
   margin-top: 10px;
   padding: 10px;
@@ -384,7 +408,25 @@ button {
   border-radius: 5px;
   cursor: pointer;
 }
-button:hover {
+
+button:hover {  top: 0;
   background-color: #0056b3;
+}
+
+/* Estilos del modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: white;  padding: 20px;  border-radius: 10px;  width: 90%;  max-width: 500px;
 }
 </style>
