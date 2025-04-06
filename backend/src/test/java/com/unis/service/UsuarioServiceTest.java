@@ -4,9 +4,20 @@ import com.unis.model.Usuario;
 import com.unis.repository.UsuarioRepository;
 import com.unis.repository.RolRepository;
 
+<<<<<<< HEAD
 import jakarta.ws.rs.WebApplicationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+=======
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+
+import static org.mockito.Mockito.*;
+import org.mockito.MockitoAnnotations;
+>>>>>>> 13bf481 (fixing merges)
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -61,3 +72,4 @@ public class UsuarioServiceTest {
         verify(usuarioRepository, never()).persist((Usuario) any());
     }
 }
+//prueba
