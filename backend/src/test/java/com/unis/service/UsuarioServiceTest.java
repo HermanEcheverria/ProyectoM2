@@ -4,20 +4,9 @@ import com.unis.model.Usuario;
 import com.unis.repository.UsuarioRepository;
 import com.unis.repository.RolRepository;
 
-<<<<<<< HEAD
 import jakarta.ws.rs.WebApplicationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-=======
-import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-
-import static org.mockito.Mockito.*;
-import org.mockito.MockitoAnnotations;
->>>>>>> 13bf481 (fixing merges)
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -47,9 +36,7 @@ public class UsuarioServiceTest {
         when(usuarioRepository.findByCorreo("nuevo@email.com")).thenReturn(null);
 
         assertDoesNotThrow(() -> usuarioService.registrarUsuario(nuevo));
-
-       
-        verify(usuarioRepository).persist((Usuario) any());
+        verify(usuarioRepository).persist(any(Usuario.class));
     }
 
     @Test
@@ -67,9 +54,6 @@ public class UsuarioServiceTest {
         });
 
         assertEquals("El correo ya está registrado", ex.getMessage());
-
-        
-        verify(usuarioRepository, never()).persist((Usuario) any());
+        verify(usuarioRepository, never()).persist(any(Usuario.class));
     }
 }
-//prueba
