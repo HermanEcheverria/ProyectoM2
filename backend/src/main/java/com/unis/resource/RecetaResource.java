@@ -59,11 +59,6 @@ public Response actualizarReceta(@PathParam("idReceta") Long idReceta, Receta re
 }
 
 
-
-
-
-
-
     @POST
     @Path("/medicamentos")
     public Response agregarMedicamento(RecetaMedicamento recetaMedicamento) {
