@@ -51,6 +51,8 @@ const myAccountRoute = () => {
         <RouterLink v-if="isLoggedIn" :to="myAccountRoute()">Mi Cuenta</RouterLink>
         <RouterLink v-if="userRole === 1" to="/admin-portal">Gestionar</RouterLink>
         <RouterLink v-if="userRole === 1" to="/servicios-medicos">Servicios Médicos</RouterLink>
+        <RouterLink to="/solicitud-hospital">Solicitar Convenio</RouterLink>
+
         <RouterLink v-if="!isLoggedIn" to="/login">Log in</RouterLink>
         <button v-if="isLoggedIn" @click="logout(router)" class="logout-btn">Cerrar sesión</button>
       </nav>
