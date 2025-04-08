@@ -5,14 +5,10 @@
 
     <!-- Opciones de Gestión -->
     <div class="actions">
-      <button @click="crearFicha">🆕 Crear Nueva Ficha</button>
-      <button @click="editarFicha">✏️ Editar Ficha</button>
-      <button @click="eliminarFicha">🗑️ Eliminar Ficha</button>
-      <button @click="verFicha">📄 Ver Ficha</button>
-      <div class="search-container">
-      <input v-model="buscarId" placeholder="🔍 Buscar Ficha por ID">
-      <button @click="buscarFicha">🔎 Buscar</button>
-      </div>
+      <button @click="crearFicha">Crear Nueva Ficha</button>
+      <button @click="editarFicha">Editar Ficha</button>
+      <button @click="eliminarFicha">Eliminar Ficha</button>
+      <button @click="verFicha"> Ver Ficha</button>
     </div>
 
     <!-- Listado de Fichas Técnicas -->

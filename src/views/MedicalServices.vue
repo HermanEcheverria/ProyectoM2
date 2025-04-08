@@ -4,7 +4,7 @@
 
     <!-- Menú de navegación con botones -->
     <div class="gestion-menu">
-      <button @click="router.push('/recetas')" class="gestion-button">Recetas médicas</button>
+      <!--  <button @click="router.push('/recetas')" class="gestion-button">Recetas médicas</button>  -->
       <button @click="router.push('/admin/doctores-citas')" class="gestion-button">Citas médicas</button>
       <button @click="router.push('/admin/doctores-agenda')" class="gestion-button">Agenda médica</button>
       <button @click="router.push('/historial-pagos-pacientes')" class="gestion-button">Historial de pagos del paciente</button>

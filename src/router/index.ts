@@ -33,6 +33,8 @@ import SubhomeUView from "../views/SubhomeUView.vue"
 import SubhomeDView from "../views/SubhomeUView.vue"
 import UsuarioInterAdmin from "@/views/UsuarioInterAdmin.vue";
 import AdminFichasTecnicas from "@/views/admin/AdminFichasTecnicas.vue";
+import SolicitudHospitalView from "@/views/SolicitudHospitalView.vue";
+
 //componentes simulados
 import HistorialPagos from "@/views/vistasSimuladas/HistorialPagos.vue";
 import PacienteHistorialPagos from "@/views/vistasSimuladas/PacienteHistorialPagos.vue";
@@ -82,6 +84,8 @@ const router = createRouter({
     { path: "/recetas-pacientes", name: "recetas-pacientes", component: Patient },
     { path: "/historia", name: "historia", component: HistoriaView },
     { path: "/doctores", name: "CatalogoDoctores", component: CatalogoDoctores },
+    { path: "/solicitud-hospital", name: "solicitud-hospital", component: SolicitudHospitalView },
+
     //componentes simulados
     { path: "/historial-pagos-pacientes", name: "historial-pagos-pacientes", component: PacienteHistorialPagos },
     { path: "/reportes-pacientes", name: "reportes-pacientes", component: PacienteReportes },

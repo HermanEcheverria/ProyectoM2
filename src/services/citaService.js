@@ -31,6 +31,7 @@ const citaService = {
       throw error;
     }
   },
+
 };
 
 export default citaService;

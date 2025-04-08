@@ -1,18 +1,11 @@
 <template>
   <div class="container">
-    <!-- Título -->
     <div class="header">ADMINISTRACIÓN DE FICHAS TÉCNICAS</div>
 
-    <!-- Acciones -->
     <div class="actions">
-      <button @click="crearFicha">Crear Nueva Ficha</button>
-      <div class="search-container">
-        <input v-model="buscarPaciente" placeholder="🔍 Buscar Paciente">
-        <button @click="buscarFicha">Buscar</button>
-      </div>
+      <button @click="abrirModalCrear">Crear Nueva Ficha</button>
     </div>
 
-    <!-- Listado de Pacientes con Fichas Técnicas -->
     <div class="section">
       <h3>LISTADO DE PACIENTES CON FICHAS TÉCNICAS</h3>
       <table>
@@ -21,140 +14,218 @@
             <th>ID</th>
             <th>Nombre</th>
             <th>DPI</th>
-            <th>Afiliación de seguro</th>
-            <th>Código de seguro</th>
-            <th># de carnet de seguro</th>
-            <th>Fecha Creada</th>
+            <th>Afiliación</th>
+            <th>Código Seguro</th>
+            <th>Carnet Seguro</th>
+            <th>Fecha Creación</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
-  <tr v-if="loading">
-    <td colspan="8">⏳ Cargando datos...</td>
-  </tr>
-  <tr v-else-if="error">
-    <td colspan="8" style="color: red;">⚠️ {{ error }}</td>
-  </tr>
-  <tr v-else-if="fichasFiltradas.length === 0">
-    <td colspan="8">No hay fichas técnicas registradas.</td>
-  </tr>
-  <tr v-for="ficha in fichasFiltradas" :key="ficha.id">
-    <td>{{ ficha.id }}</td>
-    <td>{{ ficha.nombre }}</td>
-    <td>{{ ficha.dpi }}</td>
-    <td>{{ ficha.afiliacion }}</td>
-    <td>{{ ficha.cod }}</td>
-    <td>{{ ficha.carnet }}</td>
-    <td>{{ ficha.fechaCreada }}</td>
-    <td>
-      <button @click="editarFicha(ficha.id)">Editar</button>
-      <button @click="eliminarFicha(ficha.id)">Borrar</button>
-      <button @click="verFicha(ficha.id)">Ver</button>
-    </td>
-  </tr>
-</tbody>
-
+          <tr v-if="loading"><td colspan="8">Cargando...</td></tr>
+          <tr v-else-if="error"><td colspan="8" style="color:red;">{{ error }}</td></tr>
+          <tr v-else-if="fichasFiltradas.length === 0"><td colspan="8">Sin registros.</td></tr>
+          <tr v-for="ficha in fichasFiltradas" :key="ficha.idFicha">
+            <td>{{ ficha.paciente.idPaciente }}</td>
+            <td>{{ ficha.paciente.usuario.nombreUsuario }}</td>
+            <td>{{ ficha.paciente.documento }}</td>
+            <td>{{ ficha.numeroAfiliacion }}</td>
+            <td>{{ ficha.codigoSeguro }}</td>
+            <td>{{ ficha.carnetSeguro }}</td>
+            <td>{{ ficha.fechaCreacion }}</td>
+            <td>
+              <button @click="abrirModalEditar(ficha)">Editar</button>
+              <button @click="eliminarFicha(ficha.idFicha)">Borrar</button>
+            </td>
+          </tr>
+        </tbody>
       </table>
+    </div>
+
+    <!-- Modal para crear/editar ficha -->
+    <div v-if="mostrarModal" class="modal">
+      <div class="modal-content">
+        <h3>{{ fichaEnEdicion.idFicha ? 'Editar Ficha Técnica' : 'Nueva Ficha Técnica' }}</h3>
+
+        <!-- Buscador de pacientes -->
+        <label>Buscar Paciente</label>
+        <input v-model="busquedaPaciente" placeholder="Buscar por nombre o DPI" @input="filtrarPacientes" />
+        <ul v-if="pacientesFiltrados.length">
+          <li v-for="paciente in pacientesFiltrados" :key="paciente.idPaciente" @click="seleccionarPaciente(paciente)">
+            {{ paciente.usuario.nombreUsuario }} - {{ paciente.documento }}
+          </li>
+        </ul>
+
+        <label>Paciente ID</label>
+        <input v-model="fichaEnEdicion.idPaciente" disabled />
+
+        <label>Servicio ID</label>
+        <input v-model="fichaEnEdicion.idServicio" placeholder="ID del servicio" />
+
+        <label>Afiliación</label>
+        <input v-model="fichaEnEdicion.numeroAfiliacion" placeholder="Número de afiliación" />
+
+        <label>Código Seguro</label>
+        <input v-model="fichaEnEdicion.codigoSeguro" placeholder="Código del seguro" />
+
+        <label>Carnet Seguro</label>
+        <input v-model="fichaEnEdicion.carnetSeguro" placeholder="Carnet del seguro" />
+
+        <label>Historial de Servicios</label>
+        <textarea v-model="fichaEnEdicion.historialServicios" placeholder="Historial de servicios"></textarea>
+
+        <div class="modal-buttons">
+          <button @click="guardarFicha">Guardar</button>
+          <button class="btn-cancelar" @click="cerrarModal">Cancelar</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import { ref, computed, onMounted } from "vue";
-import { useRouter } from "vue-router";
-import fichasApi from "@/services/fichasApi.js"; // Importamos la API de Fichas Técnicas
+import fichasApi from "@/services/fichasApi";
+import pacienteService from "@/services/pacienteService";
 
 export default {
   setup() {
-    const router = useRouter();
-    const buscarPaciente = ref("");
     const fichas = ref([]);
+    const pacientes = ref([]);
+    const pacientesFiltrados = ref([]);
+    const busquedaPaciente = ref("");
+
     const loading = ref(true);
     const error = ref(null);
+    const mostrarModal = ref(false);
 
-    // 🔹 Obtener fichas técnicas desde el backend
+    const fichaEnEdicion = ref({
+      idFicha: null,
+      idPaciente: "",
+      idServicio: "",
+      numeroAfiliacion: "",
+      codigoSeguro: "",
+      carnetSeguro: "",
+      historialServicios: "",
+    });
+
     const cargarFichas = async () => {
       try {
-        const data = await fichasApi.getAllFichas();
-        fichas.value = data.map(ficha => ({
-          id: ficha.paciente.idPaciente, // ID del paciente
-          nombre: ficha.paciente.usuario.nombreUsuario || "N/A", // Nombre
-          dpi: ficha.paciente.documento || "N/A", // DPI
-          afiliacion: ficha.numeroAfiliacion || "N/A", // Afiliación de seguro
-          cod: ficha.codigoSeguro || "N/A", // Código del seguro
-          carnet: ficha.carnetSeguro || "N/A", // Carnet de seguro
-          fechaCreada: ficha.fechaCreacion || "N/A", // Fecha de creación
-          estado: "Activa", // Estado por defecto
-        }));
-        loading.value = false;
+        fichas.value = await fichasApi.getAllFichas();
       } catch (err) {
-        error.value = "Error al obtener las fichas. Revisa la conexión.";
+        error.value = "Error al cargar fichas.";
+      } finally {
         loading.value = false;
       }
     };
 
-    // 🔹 Ejecutar la carga de fichas al montar el componente
+    const cargarPacientes = async () => {
+      try {
+        const res = await pacienteService.getAllPaciente();
+        pacientes.value = res.data;
+      } catch (err) {
+        console.error("Error al cargar pacientes:", err);
+      }
+    };
+
     onMounted(() => {
       cargarFichas();
+      cargarPacientes();
     });
 
-    // 🔹 Filtrar fichas en tiempo real
-    const fichasFiltradas = computed(() => {
-      if (!buscarPaciente.value) return fichas.value;
-      return fichas.value.filter(ficha =>
-        ficha.nombre.toLowerCase().includes(buscarPaciente.value.toLowerCase()) ||
-        ficha.id.toString().includes(buscarPaciente.value)
-      );
-    });
+    const fichasFiltradas = computed(() => fichas.value);
 
-    // 🔹 Crear una nueva ficha
-    const crearFicha = () => {
-      router.push("/admin/crear-ficha-tecnica");
+    const abrirModalCrear = () => {
+      fichaEnEdicion.value = {
+        idFicha: null,
+        idPaciente: "",
+        idServicio: "",
+        numeroAfiliacion: "",
+        codigoSeguro: "",
+        carnetSeguro: "",
+        historialServicios: "",
+      };
+      busquedaPaciente.value = "";
+      pacientesFiltrados.value = [];
+      mostrarModal.value = true;
     };
 
-    // 🔹 Editar ficha (Ejemplo, implementar modal en el futuro)
-    const editarFicha = async (id, datos) => {
+    const abrirModalEditar = (ficha) => {
+      fichaEnEdicion.value = {
+        idFicha: ficha.idFicha,
+        idPaciente: ficha.paciente.idPaciente,
+        idServicio: ficha.idServicio,
+        numeroAfiliacion: ficha.numeroAfiliacion,
+        codigoSeguro: ficha.codigoSeguro,
+        carnetSeguro: ficha.carnetSeguro,
+        historialServicios: ficha.historialServicios,
+      };
+      mostrarModal.value = true;
+    };
+
+    const cerrarModal = () => {
+      mostrarModal.value = false;
+    };
+
+    const guardarFicha = async () => {
       try {
-        await fichasApi.updateFicha(id, datos);
-        alert(`Ficha ID: ${id} actualizada correctamente.`);
-        cargarFichas();
+        if (fichaEnEdicion.value.idFicha) {
+          await fichasApi.updateFicha(fichaEnEdicion.value.idFicha, fichaEnEdicion.value);
+        } else {
+          await fichasApi.registrarFicha(fichaEnEdicion.value);
+        }
+        await cargarFichas();
+        cerrarModal();
       } catch (err) {
-        alert("Error al actualizar la ficha.");
+        alert("Error al guardar la ficha.");
+        console.error(err);
       }
     };
 
-    // 🔹 Eliminar ficha técnica
-    const eliminarFicha = async (id) => {
-      if (confirm(`¿Seguro que deseas eliminar la ficha ID: ${id}?`)) {
+    const eliminarFicha = async (idFicha) => {
+      if (confirm("¿Deseas eliminar esta ficha?")) {
         try {
-          await fichasApi.deleteFicha(id);
-          fichas.value = fichas.value.filter(ficha => ficha.id !== id);
-          alert("Ficha eliminada exitosamente.");
+          await fichasApi.deleteFicha(idFicha);
+          await cargarFichas();
         } catch (err) {
-          alert("Error al eliminar la ficha.");
+          alert("Error al eliminar ficha.");
         }
       }
     };
 
-    // 🔹 Ver una ficha técnica
-    const verFicha = (id) => {
-      alert(`Ver ficha ID: ${id}`);
+    const filtrarPacientes = () => {
+      const query = busquedaPaciente.value.toLowerCase();
+      pacientesFiltrados.value = pacientes.value.filter(p =>
+        p.usuario.nombreUsuario.toLowerCase().includes(query) ||
+        p.documento.toLowerCase().includes(query)
+      );
+    };
+
+    const seleccionarPaciente = (paciente) => {
+      fichaEnEdicion.value.idPaciente = paciente.idPaciente;
+      busquedaPaciente.value = `${paciente.usuario.nombreUsuario} (${paciente.documento})`;
+      pacientesFiltrados.value = [];
     };
 
     return {
-      buscarPaciente,
       fichasFiltradas,
-      crearFicha,
-      editarFicha,
-      eliminarFicha,
-      verFicha,
       loading,
       error,
+      mostrarModal,
+      fichaEnEdicion,
+      abrirModalCrear,
+      abrirModalEditar,
+      cerrarModal,
+      guardarFicha,
+      eliminarFicha,
+      pacientesFiltrados,
+      busquedaPaciente,
+      filtrarPacientes,
+      seleccionarPaciente,
     };
   },
 };
 </script>
-
 
 <style scoped>
 /* Estilos de Contenedor */

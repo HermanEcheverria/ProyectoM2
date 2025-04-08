@@ -160,6 +160,40 @@
       </div>
     </div>
   </div>
+
+<!-- Modal para Procesar -->
+<div v-if="mostrarModalProcesar" class="modal">
+  <div class="modal-content">
+    <h3>Procesar Cita</h3>
+    <p>¿Deseas marcar la cita <strong>{{ citaSeleccionada.idCita }}</strong> como procesada?</p>
+    <div class="modal-buttons">
+      <button class="btn-guardar" @click="procesarCita">Confirmar</button>
+      <button class="btn-cancelar" @click="cerrarModalProcesar">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para Reasignar -->
+<div v-if="mostrarModalReasignar" class="modal">
+  <div class="modal-content">
+    <h3>Reasignar Cita</h3>
+    <p>ID Cita: {{ citaSeleccionada.idCita }}</p>
+
+    <label for="nuevoDoctor">Nuevo Doctor:</label>
+    <select v-model="nuevoDoctorId">
+      <option disabled value="">Seleccione un doctor</option>
+      <option v-for="doc in doctores" :key="doc.idDoctor" :value="doc.idDoctor">
+        {{ doc.nombre }} {{ doc.apellido }}
+      </option>
+    </select>
+
+    <div class="modal-buttons">
+      <button class="btn-guardar" @click="reasignarCita">Guardar</button>
+      <button class="btn-cancelar" @click="cerrarModalReasignar">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 </template>
 
 <script>
@@ -172,6 +206,10 @@ export default {
   data() {
     return {
       citas: [],
+      mostrarModalProcesar: false,
+      mostrarModalReasignar: false,
+nuevoDoctorId: "",
+doctores: [],
       mostrarModalEditar: false,  // Controla el modal de edición
     recetaEditable: {},  // Guarda la receta en edición
       mostrarModalReceta: false,
@@ -207,8 +245,67 @@ export default {
     console.log("mounted() ejecutado.");
     this.obtenerCitas();
     this.obtenerMedicamentos();
+    this.obtenerDoctores();
   },
   methods: {
+
+    async obtenerDoctores() {
+  try {
+    const response = await axios.get(`${API_URL}/doctor`);
+    this.doctores = response.data;
+    console.log("Doctores cargados:", this.doctores);
+  } catch (error) {
+    console.error("Error al obtener doctores:", error);
+    alert("No se pudieron cargar los doctores.");
+  }
+},
+
+
+    abrirModalProcesar(cita) {
+  this.citaSeleccionada = cita;
+  this.mostrarModalProcesar = true;
+},
+cerrarModalProcesar() {
+  this.mostrarModalProcesar = false;
+},
+async procesarCita() {
+  try {
+    await axios.put(`${API_URL}/citas/${this.citaSeleccionada.idCita}/procesar`);
+    alert('Cita procesada exitosamente');
+    this.obtenerCitas();
+  } catch (error) {
+    console.error('Error al procesar cita:', error);
+  } finally {
+    this.cerrarModalProcesar();
+  }
+},
+
+abrirModalReasignar(cita) {
+  this.citaSeleccionada = cita;
+  this.nuevoDoctorId = '';
+  this.mostrarModalReasignar = true;
+},
+cerrarModalReasignar() {
+  this.mostrarModalReasignar = false;
+},
+async reasignarCita() {
+  if (!this.nuevoDoctorId) {
+    alert("Debe seleccionar un doctor.");
+    return;
+  }
+  try {
+    await axios.put(`${API_URL}/citas/${this.citaSeleccionada.idCita}/reasignar`, {
+      idDoctor: this.nuevoDoctorId
+    });
+    alert("Cita reasignada exitosamente.");
+    this.obtenerCitas();
+  } catch (error) {
+    console.error("Error al reasignar cita:", error);
+  } finally {
+    this.cerrarModalReasignar();
+  }
+},
+
   abrirModalEditarReceta() {
     console.log("Abriendo modal de edición...");
     this.recetaEditable = JSON.parse(JSON.stringify(this.receta)); // Clonamos para no afectar directamente la receta
