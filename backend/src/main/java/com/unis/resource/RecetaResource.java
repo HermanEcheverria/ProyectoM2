@@ -35,6 +35,7 @@ public class RecetaResource {
         }
     }
 
+
         @GET
 @Path("/cita/{idCita}")
 @Produces(MediaType.APPLICATION_JSON)
@@ -50,7 +51,7 @@ public Response obtenerRecetaPorIdCita(@PathParam("idCita") int idCita) {
 }
 
 @PUT
-@Path("/{idReceta}")  // 📌 Asegura que se recibe el ID de la receta y NO el idCita
+@Path("/{idReceta}")  //  Asegura que se recibe el ID de la receta y NO el idCita
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public Response actualizarReceta(@PathParam("idReceta") Long idReceta, Receta recetaActualizada) {

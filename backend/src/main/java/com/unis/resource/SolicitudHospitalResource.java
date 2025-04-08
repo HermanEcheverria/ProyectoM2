@@ -4,11 +4,7 @@ import com.unis.model.SolicitudHospital;
 import com.unis.service.SolicitudHospitalService;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
@@ -38,5 +34,15 @@ public class SolicitudHospitalResource {
     @Path("/historial")
     public List<SolicitudHospital> listar() {
         return SolicitudHospital.listAll(Sort.descending("id"));
+    }
+
+    //  actualizar estado de solicitud por nombre (usado por la aseguradora)
+    @PATCH
+    @Path("/{nombre}/estado")
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Transactional
+    public Response actualizarEstado(@PathParam("nombre") String nombre, String nuevoEstado) {
+        servicio.actualizarEstado(nombre, nuevoEstado);
+        return Response.ok().build();
     }
 }
