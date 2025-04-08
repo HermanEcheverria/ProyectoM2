@@ -25,13 +25,12 @@ public class SolicitudHospitalResource {
     @POST
     @Transactional
     public Response enviar(SolicitudHospital solicitud) {
-        // 🔸 Guardar solicitud en base de datos local
+        //  Guardar solicitud en base de datos local
         solicitud.persist();
 
-        // 🔸 Enviar a la aseguradora (REST Client)
+        //  Enviar a la aseguradora (REST Client)
         servicio.enviarSolicitud(solicitud);
-
-        // 🔸 Devolver la solicitud guardada
+        //  Devolver la solicitud guardada
         return Response.ok(solicitud).build();
     }
 

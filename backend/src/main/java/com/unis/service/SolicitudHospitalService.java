@@ -16,7 +16,7 @@ public class SolicitudHospitalService {
         try {
             aseguradoraClient.enviarSolicitud(solicitud);
         } catch (Exception e) {
-            System.out.println("❌ Error al enviar solicitud a la aseguradora: " + e.getMessage());
+            System.out.println(" Error al enviar solicitud a la aseguradora: " + e.getMessage());
         }
     }
 }
