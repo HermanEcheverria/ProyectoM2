@@ -257,7 +257,6 @@ table {
 /* Encabezados de tabla */
 th {
   background: #01324b;
-  color: var(--color-texto-claro);
   font-weight: bold;
   padding: 12px;
   text-align: center;

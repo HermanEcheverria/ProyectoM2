@@ -26,19 +26,28 @@ export const deleteServicio = async (id) => {
 };
 
 export const addSubServicio = async (parentId, subServicio) => {
-  if (!subServicio || !subServicio.nombre) {
-    console.error("Error: El subservicio debe tener un nombre válido.");
+  if (!subServicio || !subServicio.id) {
+    console.error("Error: El subservicio debe tener un ID válido.");
     return;
   }
 
   try {
-    const response = await axios.post(`${API_ENDPOINT}/${parentId}/subservicios`, subServicio);
+    // 🔹 Solo enviar el ID, no el objeto completo
+    const requestBody = { subServicioId: subServicio.id };
+
+    const response = await axios.post(`${API_ENDPOINT}/${parentId}/subservicios`, requestBody);
     return response.data;
   } catch (error) {
     console.error("Error al agregar subservicio:", error.response ? error.response.data : error);
     throw error;
   }
 };
+
+
+
+
+
+
 
 export const getSubServicios = async (id) => {
   const response = await axios.get(`${API_ENDPOINT}/${id}/subservicios`);

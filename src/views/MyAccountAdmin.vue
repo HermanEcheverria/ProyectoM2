@@ -115,7 +115,7 @@ const applyImportedData = async () => {
 
 <template>
   <div class="account-container">
-    <h2>Mi Cuenta (Administrador)</h2>
+    <div class="header">Mi Cuenta (Administrador)</div>
 
     <!--  Mostrar mensaje de carga -->
     <p v-if="loading">Cargando datos...</p>
@@ -175,7 +175,16 @@ const applyImportedData = async () => {
   border-radius: 8px;
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
 }
-
+.header {
+  text-align: center;
+  font-size: 22px;
+  font-weight: bold;
+  background: #45C4B0;
+  color: white;
+  padding: 12px;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
 /*  Estilo de los inputs */
 input {
   width: 100%;

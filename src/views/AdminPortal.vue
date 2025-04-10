@@ -10,6 +10,7 @@
       <button @click="router.push('/admin/doctores-citas')" class="gestion-button">Citas médicas</button>
       <button @click="router.push('/admin/doctores-agenda')" class="gestion-button">Agenda médica</button>
       <button @click="router.push('/admin/faq')" class="faq-button">FAQ</button>
+      <button @click="router.push('/admin/pages')" class="pages-button">Páginas informativas</button>
       <button @click="router.push('/admin/historia')" class="gestion-button">Historia</button>
       <button @click="router.push('/admin/pacientes')" class="gestion-button">Gestión de Pacientes</button>
       <button @click="router.push('/admin/empleados')" class="gestion-button">Gestión de Empleados</button>
@@ -49,7 +50,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.faq-button, .gestion-button {
+.faq-button, .gestion-button, .pages-button {
   background-color: #007bff;
   color: white;
   border: none;
@@ -63,7 +64,7 @@ onMounted(() => {
   text-align: center;
 }
 
-.faq-button:hover, .gestion-button:hover {
+.faq-button:hover, .gestion-button:hover, .pages-button:hover {
   background-color: #0056b3;
 }
 

@@ -610,7 +610,6 @@ body {
   padding: 0;
   background-color: var(--color-azul-noche); /* Fondo total de la página */
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  color: var(--color-texto-claro);
 }
 
 /* =========================
@@ -625,7 +624,6 @@ body {
   background: linear-gradient(to bottom, var(--color-teal-oscuro), var(--color-azul-noche));
   border-radius: 12px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-  color: var(--color-texto-claro);
 }
 
 /* Título centrado con algo de estilo */
@@ -662,7 +660,6 @@ body {
   padding: 1rem;
   font-weight: 600;
   text-align: left;
-  color: var(--color-texto-claro);
   font-size: 1rem;
   border-bottom: 2px solid var(--color-teal-oscuro);
 }

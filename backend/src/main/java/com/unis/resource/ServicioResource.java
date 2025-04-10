@@ -1,6 +1,9 @@
 package com.unis.resource;
 
 import java.util.List;
+import java.util.Map;
+
+import org.jboss.logging.Logger;
 
 import com.unis.model.Servicio;
 import com.unis.service.ServicioService;
@@ -16,7 +19,6 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.jboss.logging.Logger;
 
 @Path("/api/servicios")
 @Produces(MediaType.APPLICATION_JSON)
@@ -26,7 +28,7 @@ public class ServicioResource {
     @Inject
     ServicioService servicioService;
 
-    private static final Logger LOGGER = Logger.getLogger(ServicioResource.class); // 🔹 Agregar Logger
+    private static final Logger LOGGER = Logger.getLogger(ServicioResource.class);
 
     @GET
     public List<Servicio> listarServicios() {
@@ -48,7 +50,7 @@ public class ServicioResource {
                         .entity("{\"error\": \"El nombre del servicio es obligatorio.\"}").build();
             }
 
-            Long parentId = servicio.getParentId(); // 🔹 Obtener `parentId` desde el body
+            Long parentId = servicio.getParentId();
 
             if (parentId != null) {
                 Servicio servicioPadre = servicioService.buscarPorId(parentId);
@@ -56,7 +58,7 @@ public class ServicioResource {
                     return Response.status(Response.Status.BAD_REQUEST)
                             .entity("{\"error\": \"El servicio padre no existe.\"}").build();
                 }
-                servicio.setParentId(parentId);
+                servicio.servicioPadre = servicioPadre; // ✅ Asignamos el objeto directamente
             }
 
             Servicio nuevoServicio = servicioService.agregarServicio(servicio, parentId);
@@ -69,27 +71,39 @@ public class ServicioResource {
         }
     }
 
-    @POST
-    @Path("/{id}/subservicios")
-    @Transactional
-    public Response agregarSubServicio(@PathParam("id") Long parentId, Servicio subServicio) {
-        try {
-            if (subServicio == null || subServicio.nombre == null || subServicio.nombre.trim().isEmpty()) {
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity("{\"error\": \"El nombre del subservicio es obligatorio.\"}").build();
-            }
 
-            subServicio.setParentId(parentId); // 🔹 Asignar `parentId` correctamente
-            Servicio nuevoSubServicio = servicioService.agregarServicio(subServicio, parentId);
+@POST
+@Path("/{id}/subservicios")
+@Consumes(MediaType.APPLICATION_JSON)
+@Transactional
+public Response agregarSubServicio(@PathParam("id") Long parentId, Map<String, Object> requestBody) {
+    try {
+        System.out.println("📥 Recibiendo solicitud: " + requestBody); // 🔍 Verifica qué recibe
 
-            return Response.status(Response.Status.CREATED).entity(nuevoSubServicio).build();
-
-        } catch (Exception e) {
-            LOGGER.error("Error al agregar subservicio", e); // 🔹 Reemplazamos `printStackTrace()`
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\": \"Error al agregar subservicio: " + e.getMessage() + "\"}").build();
+        if (!requestBody.containsKey("subServicioId")) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("{\"error\": \"El JSON debe contener 'subServicioId'.\"}").build();
         }
+
+        Object subServicioIdObject = requestBody.get("subServicioId");
+        if (!(subServicioIdObject instanceof Number)) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("{\"error\": \"subServicioId debe ser un número válido.\"}").build();
+        }
+
+        Long subServicioId = ((Number) subServicioIdObject).longValue();
+        servicioService.agregarSubServicio(parentId, subServicioId);
+
+        return Response.ok("{\"message\": \"Subservicio agregado correctamente.\"}").build();
+    } catch (Exception e) {
+        LOGGER.error("Error al agregar subservicio", e);
+        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity("{\"error\": \"Error al agregar subservicio: " + e.getMessage() + "\"}").build();
     }
+}
+
+
+
 
     @DELETE
     @Path("/{id}")
@@ -104,4 +118,35 @@ public class ServicioResource {
                     .entity("{\"error\": \"Error al eliminar el servicio.\"}").build();
         }
     }
+
+
+@DELETE
+@Path("/{id}/subservicios/{subServicioId}")
+@Transactional
+public Response eliminarRelacion(@PathParam("id") Long servicioPadreId, @PathParam("subServicioId") Long subServicioId) {
+    try {
+        boolean eliminado = servicioService.eliminarRelacion(servicioPadreId, subServicioId);
+        
+        if (!eliminado) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("{\"error\": \"La relación no existe o ya fue eliminada.\"}").build();
+        }
+
+        return Response.ok("{\"message\": \"Relación eliminada correctamente.\"}").build();
+    } catch (Exception e) {
+        LOGGER.error("Error al eliminar relación", e);
+        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity("{\"error\": \"Error al eliminar relación: " + e.getMessage() + "\"}").build();
+    }
 }
+
+
+
+
+
+
+
+
+
+}
+
