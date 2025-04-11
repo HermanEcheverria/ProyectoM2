@@ -57,7 +57,7 @@ const cargarAseguradoras = async () => {
       aseguradoras.value = await res.json()
     }
   } catch (err) {
-    console.error("❌ Error cargando aseguradoras:", err)
+    console.error(" Error cargando aseguradoras:", err)
   }
 }
 
@@ -72,11 +72,11 @@ const registrarAtencion = async () => {
       aseguradoraId: form.value.aseguradoraId
     })
 
-    mensaje.value = "✅ Solicitud enviada correctamente."
+    mensaje.value = " Solicitud enviada correctamente."
     form.value = { afiliado: '', servicio: '', monto: 0, aseguradoraId: '' }
     console.log("Respuesta del servidor:", response)
   } catch (err) {
-    mensaje.value = "❌ Error al enviar la solicitud."
+    mensaje.value = " Error al enviar la solicitud."
     console.error(err)
   }
 }
