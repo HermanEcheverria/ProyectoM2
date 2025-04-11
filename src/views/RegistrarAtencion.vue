@@ -97,7 +97,7 @@ const mensaje = ref('')
 const dpiBusqueda = ref('')
 const datosCliente = ref(null)
 const autorizacionId = ref(null)
-const hospitalId = localStorage.getItem("hospitalId") || "67f7cba9eb65224cb0ff978e"
+const hospitalId = localStorage.getItem("hospitalId") || "67f88b2f87f154c62d78d4e2"
 
 const cargarAseguradoras = async () => {
   try {
