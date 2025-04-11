@@ -30,7 +30,7 @@ export const enviarSolicitudHospital = async ({ afiliado, servicio, monto, hospi
     return await res.json();
 
   } catch (err) {
-    console.error("❌ Error en enviarSolicitudHospital:", err.message);
+    console.error(" Error en enviarSolicitudHospital:", err.message);
     throw err;
   }
 };
