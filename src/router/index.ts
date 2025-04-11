@@ -35,6 +35,8 @@ import UsuarioInterAdmin from "@/views/UsuarioInterAdmin.vue";
 import AdminFichasTecnicas from "@/views/admin/AdminFichasTecnicas.vue";
 import SolicitudHospitalView from "@/views/SolicitudHospitalView.vue";
 import RegistrarAtencion from '../views/RegistrarAtencion.vue';
+import ConsultarHistorial from "../views/ConsultarHistorial.vue";
+
 
 
 //componentes simulados
@@ -88,6 +90,8 @@ const router = createRouter({
     { path: "/doctores", name: "CatalogoDoctores", component: CatalogoDoctores },
     { path: "/solicitud-hospital", name: "solicitud-hospital", component: SolicitudHospitalView },
     { path: "/registrar-atencion", name: "RegistrarAtencion", component: RegistrarAtencion },
+    { path: "/consultar-historial", name: "consultar-historial", component: ConsultarHistorial },
+
 
 
     //componentes simulados

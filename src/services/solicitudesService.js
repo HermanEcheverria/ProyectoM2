@@ -1,6 +1,6 @@
 import axios from "axios";
 
-// Usa la URL dinámica basada en el entorno
+// UUsa la URL dinámica basada en el entorno
 const API = `${window.location.protocol}//${window.location.hostname}:5001/api`;
 
 // Enviar solicitud hospitalaria a la aseguradora
