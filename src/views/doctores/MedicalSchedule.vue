@@ -260,6 +260,53 @@ doctores: [],
   }
 },
 
+async cancelarCita(cita) {
+  if (!confirm("¿Estás seguro de que deseas cancelar esta cita?")) return;
+
+  try {
+    await axios.put(`${API_URL}/citas/${cita.idCita}/cancelar`);
+    alert("Cita cancelada correctamente.");
+    this.obtenerCitas();
+  } catch (error) {
+    console.error("Error al cancelar la cita:", error);
+    alert("No se pudo cancelar la cita.");
+  }
+},
+
+async reasignarCita() {
+  if (!this.nuevoDoctorId) {
+    alert("Debe seleccionar un doctor.");
+    return;
+  }
+  try {
+    await axios.put(`${API_URL}/citas/${this.citaSeleccionada.idCita}/reasignar`, {
+      idDoctor: this.nuevoDoctorId
+    });
+    alert("Cita reasignada exitosamente.");
+    this.obtenerCitas();
+  } catch (error) {
+    console.error("Error al reasignar cita:", error);
+  } finally {
+    this.cerrarModalReasignar();
+  }
+},
+
+async procesarCita() {
+  try {
+    await axios.put(`${API_URL}/citas/${this.citaSeleccionada.idCita}/procesar`);
+    alert('Cita procesada exitosamente');
+    this.obtenerCitas();
+  } catch (error) {
+    console.error('Error al procesar cita:', error);
+  } finally {
+    this.cerrarModalProcesar();
+  }
+},
+
+
+
+
+
 
     abrirModalProcesar(cita) {
   this.citaSeleccionada = cita;

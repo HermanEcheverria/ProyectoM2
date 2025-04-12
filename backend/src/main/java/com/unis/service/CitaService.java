@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.unis.model.Cita;
 import com.unis.model.Doctor;
+import com.unis.model.EstadoCita;
 import com.unis.model.Paciente;
 import com.unis.repository.CitaRepository;
 
@@ -18,6 +19,9 @@ public class CitaService {
 
     @Inject
     CitaRepository citaRepository;
+    @Inject
+    DoctorService doctorService;
+
 
     @PersistenceContext
     EntityManager entityManager;
@@ -35,6 +39,14 @@ public class CitaService {
     public Cita obtenerCitaPorId(Long id) {
         return citaRepository.findById(id);
     }
+
+      /**
+     * Obtiene una doctor por su ID.
+     */
+    public Doctor buscarDoctorPorId(Long id) {
+        return doctorService.getDoctorById(id).orElse(null);
+    }
+    
 
     /**
      * Agenda una nueva cita médica, validando la información.
@@ -73,14 +85,15 @@ public class CitaService {
      * Cancela una cita médica por su ID.
      */
     @Transactional
-    public void cancelarCita(Long id) {
-        Cita cita = citaRepository.findById(id);
-        if (cita != null) {
-            citaRepository.delete(cita);
-        } else {
-            throw new IllegalArgumentException("⚠️ Error: No se encontró la cita con ID " + id);
-        }
+public void cancelarCita(Long id) {
+    Cita cita = citaRepository.findById(id);
+    if (cita != null) {
+        cita.setEstado(EstadoCita.CANCELADA); // No borrar, solo marcar como cancelada
+    } else {
+        throw new IllegalArgumentException("⚠️ Error: No se encontró la cita con ID " + id);
     }
+}
+
 
     /**
      * Actualiza una cita médica, por ejemplo para procesarla (cambiar estado, agregar diagnóstico y resultados).
@@ -102,4 +115,29 @@ public class CitaService {
         }
         // Se pueden actualizar otros campos según se requiera.
     }
+
+    @Transactional
+public void procesarCita(Long id) {
+    Cita cita = citaRepository.findById(id);
+    if (cita == null) {
+        throw new IllegalArgumentException("Cita no encontrada");
+    }
+
+    cita.setEstado(EstadoCita.FINALIZADA);
+}
+
+@Transactional
+public void reasignarDoctor(Long idCita, Doctor nuevoDoctor) {
+    Cita cita = citaRepository.findById(idCita);
+    if (cita == null) {
+        throw new IllegalArgumentException("Cita no encontrada");
+    }
+    if (nuevoDoctor == null) {
+        throw new IllegalArgumentException("Doctor inválido");
+    }
+
+    cita.setDoctor(nuevoDoctor); // Esto actualiza también el idDoctor si tu setter lo hace
+}
+
+
 }

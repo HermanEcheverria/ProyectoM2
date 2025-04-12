@@ -25,12 +25,32 @@ const citaService = {
   ,
   async cancelarCita(id) {
     try {
-      await axios.delete(`${CITA_API}/${id}`);
+      await axios.put(`${CITA_API}/${id}/cancelar`);
     } catch (error) {
       console.error("Error al cancelar cita:", error);
       throw error;
     }
   },
+
+  async procesarCita(id) {
+    try {
+      await axios.put(`${CITA_API}/${id}/procesar`);
+    } catch (error) {
+      console.error("Error al procesar cita:", error);
+      throw error;
+    }
+  },
+
+  async reasignarCita(id, idDoctor) {
+    try {
+      await axios.put(`${CITA_API}/${id}/reasignar`, { idDoctor });
+    } catch (error) {
+      console.error("Error al reasignar cita:", error);
+      throw error;
+    }
+  },
+
+
 
 };
 

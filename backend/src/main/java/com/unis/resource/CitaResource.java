@@ -2,18 +2,14 @@ package com.unis.resource;
 
 import java.util.List;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.unis.model.Cita;
+import com.unis.model.Doctor;
+import com.unis.model.EstadoCita;
 import com.unis.service.CitaService;
 
 import jakarta.inject.Inject;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -21,7 +17,7 @@ import jakarta.ws.rs.core.Response;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class CitaResource {
-    
+
     @Inject
     CitaService citaService;
 
@@ -50,6 +46,7 @@ public class CitaResource {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity("⚠️ Error: La hora de fin debe ser posterior a la hora de inicio").build();
         }
+
         citaService.agendarCita(cita);
         return Response.status(Response.Status.CREATED)
                 .entity("✅ Cita agendada con éxito").build();
@@ -67,10 +64,51 @@ public class CitaResource {
         }
     }
 
-    @DELETE
-    @Path("/{id}")
+    @PUT
+    @Path("/{id}/cancelar")
     public Response cancelarCita(@PathParam("id") Long id) {
-        citaService.cancelarCita(id);
-        return Response.status(Response.Status.NO_CONTENT).build();
+        try {
+            citaService.cancelarCita(id);
+            return Response.ok("Cita cancelada").build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("⚠️ Error: " + e.getMessage()).build();
+        }
     }
+
+    @PUT
+    @Path("/{id}/reasignar")
+    public Response reasignarDoctor(@PathParam("id") Long id, JsonNode body) {
+        try {
+            Long idDoctor = body.get("idDoctor").asLong();
+            Doctor nuevoDoctor = citaService.buscarDoctorPorId(idDoctor);
+            if (nuevoDoctor == null) {
+                return Response.status(Response.Status.NOT_FOUND).entity("⚠️ Doctor no encontrado").build();
+            }
+    
+            citaService.reasignarDoctor(id, nuevoDoctor); // ✅ Guarda el cambio
+    
+            return Response.ok("Doctor reasignado con éxito").build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.BAD_REQUEST).entity("❌ Error en la reasignación").build();
+        }
+    }
+    
+
+    @PUT
+    @Path("/{id}/procesar")
+    public Response procesarCita(@PathParam("id") Long id) {
+        try {
+            citaService.procesarCita(id);
+            return Response.ok("Cita procesada con éxito").build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error al procesar la cita").build();
+        }
+    }
+    
 }
