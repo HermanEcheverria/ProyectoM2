@@ -2,6 +2,11 @@ package com.unis.service;
 
 import java.util.List;
 
+import com.unis.model.Hospital;
+import com.unis.model.Servicio;
+import com.unis.model.Usuario;
+import com.unis.model.Aseguradora;
+import com.unis.dto.CitaDTO;
 import com.unis.model.Cita;
 import com.unis.model.Doctor;
 import com.unis.model.EstadoCita;
@@ -22,122 +27,170 @@ public class CitaService {
     @Inject
     DoctorService doctorService;
 
-
     @PersistenceContext
     EntityManager entityManager;
 
-    /**
-     * Obtiene la lista de todas las citas registradas.
-     */
     public List<Cita> obtenerCitas() {
         return citaRepository.listAll();
     }
 
-    /**
-     * Obtiene una cita por su ID.
-     */
     public Cita obtenerCitaPorId(Long id) {
         return citaRepository.findById(id);
     }
 
-      /**
-     * Obtiene una doctor por su ID.
-     */
     public Doctor buscarDoctorPorId(Long id) {
         return doctorService.getDoctorById(id).orElse(null);
     }
-    
 
-    /**
-     * Agenda una nueva cita médica, validando la información.
-     */
     @Transactional
     public void agendarCita(Cita cita) {
-        System.out.println("📌 Datos recibidos en el backend: " + cita);
-        System.out.println("📌 ID Doctor recibido: " + cita.getIdDoctor());
-        System.out.println("📌 ID Paciente recibido: " + cita.getIdPaciente());
-
-        if (cita.getIdDoctor() == null) {
-            throw new IllegalArgumentException("⚠️ Error: El ID del doctor es obligatorio.");
-        }
-        if (cita.getIdPaciente() == null) {
-            throw new IllegalArgumentException("⚠️ Error: El ID del paciente es obligatorio.");
+        if (cita.getIdDoctor() == null || cita.getIdPaciente() == null) {
+            throw new IllegalArgumentException(" El ID del doctor y paciente son obligatorios.");
         }
 
         Doctor doctor = entityManager.find(Doctor.class, cita.getIdDoctor());
         Paciente paciente = entityManager.find(Paciente.class, cita.getIdPaciente());
 
-        if (doctor == null) {
-            throw new IllegalArgumentException("⚠️ Error: No se encontró el doctor con ID " + cita.getIdDoctor());
-        }
-        if (paciente == null) {
-            throw new IllegalArgumentException("⚠️ Error: No se encontró el paciente con ID " + cita.getIdPaciente());
+        if (doctor == null || paciente == null) {
+            throw new IllegalArgumentException(" Doctor o paciente no encontrados.");
         }
 
         cita.setDoctor(doctor);
         cita.setPaciente(paciente);
 
-        System.out.println("✅ Doctor y Paciente asignados correctamente.");
         citaRepository.persist(cita);
     }
 
-    /**
-     * Cancela una cita médica por su ID.
-     */
     @Transactional
-public void cancelarCita(Long id) {
-    Cita cita = citaRepository.findById(id);
-    if (cita != null) {
-        cita.setEstado(EstadoCita.CANCELADA); // No borrar, solo marcar como cancelada
-    } else {
-        throw new IllegalArgumentException("⚠️ Error: No se encontró la cita con ID " + id);
+    public void cancelarCita(Long id) {
+        Cita cita = citaRepository.findById(id);
+        if (cita != null) {
+            cita.setEstado(EstadoCita.CANCELADA);
+        } else {
+            throw new IllegalArgumentException("Cita no encontrada");
+        }
     }
-}
 
-
-    /**
-     * Actualiza una cita médica, por ejemplo para procesarla (cambiar estado, agregar diagnóstico y resultados).
-     */
     @Transactional
     public void actualizarCita(Long id, Cita citaActualizada) {
         Cita cita = citaRepository.findById(id);
         if (cita == null) {
-            throw new IllegalArgumentException("⚠️ Error: No se encontró la cita con ID " + id);
+            throw new IllegalArgumentException(" Cita no encontrada");
         }
-        if (citaActualizada.getEstado() != null) {
-            cita.setEstado(citaActualizada.getEstado());
-        }
-        if (citaActualizada.getDiagnostico() != null) {
-            cita.setDiagnostico(citaActualizada.getDiagnostico());
-        }
-        if (citaActualizada.getResultados() != null) {
-            cita.setResultados(citaActualizada.getResultados());
-        }
-        // Se pueden actualizar otros campos según se requiera.
+        if (citaActualizada.getEstado() != null) cita.setEstado(citaActualizada.getEstado());
+        if (citaActualizada.getDiagnostico() != null) cita.setDiagnostico(citaActualizada.getDiagnostico());
+        if (citaActualizada.getResultados() != null) cita.setResultados(citaActualizada.getResultados());
     }
 
     @Transactional
-public void procesarCita(Long id) {
-    Cita cita = citaRepository.findById(id);
-    if (cita == null) {
-        throw new IllegalArgumentException("Cita no encontrada");
+    public void procesarCita(Long id) {
+        Cita cita = citaRepository.findById(id);
+        if (cita == null) {
+            throw new IllegalArgumentException("Cita no encontrada");
+        }
+        cita.setEstado(EstadoCita.FINALIZADA);
     }
 
-    cita.setEstado(EstadoCita.FINALIZADA);
+    @Transactional
+    public void reasignarDoctor(Long idCita, Doctor nuevoDoctor) {
+        Cita cita = citaRepository.findById(idCita);
+        if (cita == null || nuevoDoctor == null) {
+            throw new IllegalArgumentException("Cita o doctor no válidos");
+        }
+        cita.setDoctor(nuevoDoctor);
+    }
+
+    @Transactional
+public void recibirCitaExternaDesdeAseguradora(CitaDTO dto) {
+    if (dto == null) throw new IllegalArgumentException("DTO de cita es null");
+
+    System.out.println(" Recibiendo cita externa desde aseguradora: " + dto);
+
+    // 1. Buscar paciente por DPI
+    Paciente paciente = entityManager
+        .createQuery("SELECT p FROM Paciente p WHERE p.documento = :dpi", Paciente.class)
+        .setParameter("dpi", dto.dpi)
+        .getResultStream()
+        .findFirst()
+        .orElse(null);
+
+    if (paciente == null) {
+        paciente = new Paciente();
+        paciente.setDocumento(dto.dpi);
+        paciente.setApellido(dto.apellido);
+
+        // Asociar con un usuario que tenga el nombre
+        Usuario usuario = new Usuario();
+        usuario.setNombreUsuario(dto.nombre);
+        usuario.setCorreo("auto_" + dto.dpi + "@hospital.com");
+        usuario.setContrasena("1234"); // Contraseña temporal
+        entityManager.persist(usuario);
+
+        paciente.setUsuario(usuario);
+        entityManager.persist(paciente);
+        System.out.println("Paciente y usuario creados automáticamente");
+    }
+
+    // 2. Validar o crear hospital
+    Hospital hospital = entityManager.find(Hospital.class, dto.idHospital);
+    if (hospital == null) {
+        hospital = new Hospital();
+        hospital.setId(dto.idHospital);
+        hospital.setNombre("Hospital Auto " + dto.idHospital);
+        hospital.setDireccion("Auto-generada");
+        hospital.setTelefono("00000000");
+        hospital.setCorreo("auto@hospital.com");
+        entityManager.persist(hospital);
+        System.out.println("Hospital creado automáticamente");
+    }
+
+    // 3. Validar o crear servicio
+    Servicio servicio = entityManager.find(Servicio.class, dto.idServicio);
+    if (servicio == null) {
+        servicio = new Servicio();
+        servicio.id = dto.idServicio;
+        servicio.nombre = "Servicio Auto " + dto.idServicio;
+        servicio.costo = 0.0;
+        servicio.cubiertoSeguro = false;
+        entityManager.persist(servicio);
+        System.out.println("🛠 Servicio creado automáticamente");
+    }
+
+    // 4. Validar o crear aseguradora
+    Aseguradora aseguradora = null;
+    if (dto.idAseguradora != null) {
+        aseguradora = entityManager.find(Aseguradora.class, dto.idAseguradora);
+        if (aseguradora == null) {
+            aseguradora = new Aseguradora();
+            aseguradora.setId(dto.idAseguradora);
+            aseguradora.setNombre("Aseguradora Auto " + dto.idAseguradora);
+            entityManager.persist(aseguradora);
+            System.out.println("Aseguradora creada automáticamente");
+        }
+    }
+
+    // 5. Crear la cita
+    Cita cita = new Cita();
+    cita.setPaciente(paciente);
+    cita.setIdPaciente(paciente.getIdPaciente());
+    cita.setFecha(dto.fecha);
+    cita.setHoraInicio(dto.horaInicio);
+    cita.setHoraFin(dto.horaFin);
+    cita.setMotivo(dto.motivo);
+    cita.setEstado(EstadoCita.CONFIRMADA);
+    cita.setNumeroAutorizacion(dto.numeroAutorizacion);
+    cita.setHospital(hospital);
+    cita.setIdHospital(hospital.getId());
+    cita.setServicio(servicio);
+    cita.setIdServicio(servicio.getId());
+
+    if (aseguradora != null) {
+        cita.setAseguradora(aseguradora);
+        cita.setIdAseguradora(aseguradora.getId());
+    }
+
+    citaRepository.persist(cita);
+    System.out.println(" Cita registrada exitosamente desde aseguradora");
 }
-
-@Transactional
-public void reasignarDoctor(Long idCita, Doctor nuevoDoctor) {
-    Cita cita = citaRepository.findById(idCita);
-    if (cita == null) {
-        throw new IllegalArgumentException("Cita no encontrada");
-    }
-    if (nuevoDoctor == null) {
-        throw new IllegalArgumentException("Doctor inválido");
-    }
-
-    cita.setDoctor(nuevoDoctor); // Esto actualiza también el idDoctor si tu setter lo hace
-}
-
 
 }

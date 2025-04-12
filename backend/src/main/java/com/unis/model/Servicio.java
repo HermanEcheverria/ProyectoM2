@@ -44,4 +44,14 @@ public class Servicio extends PanacheEntity {
     public Long getParentId() {
         return servicioPadre != null ? servicioPadre.id : null;
     }
+
+    public Long getId() {
+        return this.id;
+    }
+
+    public Long getIdServicio() {
+        return this.id;
+    }
+    
+    
 }

@@ -1,14 +1,16 @@
+// CitaResource.java
 package com.unis.resource;
 
 import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.unis.dto.CitaDTO;
 import com.unis.model.Cita;
 import com.unis.model.Doctor;
-import com.unis.model.EstadoCita;
 import com.unis.service.CitaService;
 
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -85,9 +87,8 @@ public class CitaResource {
             if (nuevoDoctor == null) {
                 return Response.status(Response.Status.NOT_FOUND).entity("⚠️ Doctor no encontrado").build();
             }
-    
-            citaService.reasignarDoctor(id, nuevoDoctor); // ✅ Guarda el cambio
-    
+
+            citaService.reasignarDoctor(id, nuevoDoctor);
             return Response.ok("Doctor reasignado con éxito").build();
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
@@ -96,7 +97,6 @@ public class CitaResource {
             return Response.status(Response.Status.BAD_REQUEST).entity("❌ Error en la reasignación").build();
         }
     }
-    
 
     @PUT
     @Path("/{id}/procesar")
@@ -110,5 +110,18 @@ public class CitaResource {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error al procesar la cita").build();
         }
     }
-    
+
+    @POST
+    @Path("/externa")
+    @Transactional
+    public Response recibirDesdeAseguradora(CitaDTO dto) {
+        try {
+            citaService.recibirCitaExternaDesdeAseguradora(dto);
+            return Response.status(Response.Status.CREATED).entity(" Cita recibida desde aseguradora").build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Error al procesar la cita externa: " + e.getMessage()).build();
+        }
+    }
 }

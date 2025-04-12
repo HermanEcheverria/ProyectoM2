@@ -40,6 +40,9 @@ public class Cita {
     @Column(name = "ID_PACIENTE")
     private Long idPaciente;
 
+    @Column(name = "NUMERO_AUTORIZACION")
+private String numeroAutorizacion;
+
     @Column(name = "FECHA", nullable = false)
     private LocalDate fecha;
 
@@ -52,6 +55,12 @@ public class Cita {
     @Column(name = "ID_HOSPITAL")
     private Long idHospital;
 
+    @Column(name = "ID_SERVICIO")
+    private Long idServicio;
+
+    @Column(name = "ID_ASEGURADORA")
+    private Long idAseguradora;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "ESTADO", nullable = false)
     private EstadoCita estado;
@@ -59,14 +68,25 @@ public class Cita {
     @Column(name = "MOTIVO")
     private String motivo;
 
-    // NUEVOS CAMPOS PARA PROCESAMIENTO DE LA CITA
     @Column(name = "DIAGNOSTICO")
     private String diagnostico;
 
     @Column(name = "RESULTADOS")
     private String resultados;
 
-    // Getters y Setters existentes...
+    @ManyToOne
+    @JoinColumn(name = "ID_HOSPITAL", insertable = false, updatable = false)
+    private Hospital hospital;
+
+    @ManyToOne
+    @JoinColumn(name = "ID_SERVICIO", insertable = false, updatable = false)
+    private Servicio servicio;
+
+    @ManyToOne
+    @JoinColumn(name = "ID_ASEGURADORA", insertable = false, updatable = false)
+    private Aseguradora aseguradora;
+
+    // Getters y Setters
 
     public Long getIdCita() {
         return idCita;
@@ -128,6 +148,18 @@ public class Cita {
     public void setIdHospital(Long idHospital) {
         this.idHospital = idHospital;
     }
+    public Long getIdServicio() {
+        return idServicio;
+    }
+    public void setIdServicio(Long idServicio) {
+        this.idServicio = idServicio;
+    }
+    public Long getIdAseguradora() {
+        return idAseguradora;
+    }
+    public void setIdAseguradora(Long idAseguradora) {
+        this.idAseguradora = idAseguradora;
+    }
     public EstadoCita getEstado() {
         return estado;
     }
@@ -140,9 +172,6 @@ public class Cita {
     public void setMotivo(String motivo) {
         this.motivo = motivo;
     }
-
-    // Getters y setters para los nuevos campos
-
     public String getDiagnostico() {
         return diagnostico;
     }
@@ -154,5 +183,31 @@ public class Cita {
     }
     public void setResultados(String resultados) {
         this.resultados = resultados;
+    }
+    public Hospital getHospital() {
+        return hospital;
+    }
+    public void setHospital(Hospital hospital) {
+        this.hospital = hospital;
+    }
+    public Servicio getServicio() {
+        return servicio;
+    }
+    public void setServicio(Servicio servicio) {
+        this.servicio = servicio;
+    }
+    public Aseguradora getAseguradora() {
+        return aseguradora;
+    }
+    public void setAseguradora(Aseguradora aseguradora) {
+        this.aseguradora = aseguradora;
+    }
+
+    public String getNumeroAutorizacion() {
+        return numeroAutorizacion;
+    }
+    
+    public void setNumeroAutorizacion(String numeroAutorizacion) {
+        this.numeroAutorizacion = numeroAutorizacion;
     }
 }
