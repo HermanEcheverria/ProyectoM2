@@ -7,9 +7,11 @@ import jakarta.persistence.*;
 public class Aseguradora {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID_ASEGURADORA")
-    private Long id;
+@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "aseguradora_seq")
+@SequenceGenerator(name = "aseguradora_seq", sequenceName = "SEQ_ASEGURADORA", allocationSize = 1)
+@Column(name = "ID_ASEGURADORA")
+private Long id;
+
 
     @Column(name = "NOMBRE", nullable = false, length = 100)
     private String nombre;
