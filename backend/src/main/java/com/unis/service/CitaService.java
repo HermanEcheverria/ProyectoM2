@@ -1,5 +1,9 @@
 package com.unis.service;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.List;
 
 import com.unis.model.Hospital;
@@ -15,6 +19,8 @@ import com.unis.repository.CitaRepository;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
@@ -92,6 +98,42 @@ public class CitaService {
     }
 
     @Transactional
+    public void procesarCitaYEnviarResultados(Long id, String diagnostico, String resultados) {
+        Cita cita = citaRepository.findById(id);
+        if (cita == null) throw new IllegalArgumentException("Cita no encontrada");
+
+        cita.setDiagnostico(diagnostico);
+        cita.setResultados(resultados);
+        cita.setEstado(EstadoCita.FINALIZADA);
+
+        enviarResultadosAAseguradora(cita);
+    }
+
+    private void enviarResultadosAAseguradora(Cita cita) {
+        try {
+            JsonObject json = Json.createObjectBuilder()
+                .add("idCita", cita.getId())
+                .add("dpi", cita.getPaciente().getDocumento())
+                .add("diagnostico", cita.getDiagnostico())
+                .add("resultados", cita.getResultados())
+                .add("fecha", cita.getFecha().toString())
+                .build();
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:5001/api/resultados"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json.toString()))
+                .build();
+
+            client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(response -> System.out.println("✅ Resultado enviado: " + response.statusCode()));
+        } catch (Exception e) {
+            System.err.println("❌ Error enviando resultados: " + e.getMessage());
+        }
+    }
+
+    @Transactional
     public void reasignarDoctor(Long idCita, Doctor nuevoDoctor) {
         Cita cita = citaRepository.findById(idCita);
         if (cita == null || nuevoDoctor == null) {
@@ -103,36 +145,34 @@ public class CitaService {
     @Transactional
     public void recibirCitaExternaDesdeAseguradora(CitaDTO dto) {
         if (dto == null) throw new IllegalArgumentException("DTO de cita es null");
-    
-        System.out.println("📥 Recibiendo cita externa desde aseguradora: " + dto);
-    
-        // 1. Buscar paciente por DPI
+
+        System.out.println(" Recibiendo cita externa desde aseguradora: " + dto);
+
         Paciente paciente = entityManager
             .createQuery("SELECT p FROM Paciente p WHERE p.documento = :dpi", Paciente.class)
             .setParameter("dpi", dto.dpi)
             .getResultStream()
             .findFirst()
             .orElse(null);
-    
+
         if (paciente == null) {
             paciente = new Paciente();
             paciente.setDocumento(dto.dpi);
             paciente.setApellido(dto.apellido);
-    
+
             Usuario usuario = new Usuario();
             usuario.setNombreUsuario(dto.nombre);
             usuario.setCorreo("auto_" + dto.dpi + "@hospital.com");
-            usuario.setContrasena("1234"); // contraseña temporal
+            usuario.setContrasena("1234");
             entityManager.persist(usuario);
-    
+
             paciente.setUsuario(usuario);
-            paciente.setIdUsuario(usuario.getId()); // ✅ necesario para la relación
+            paciente.setIdUsuario(usuario.getId());
             entityManager.persist(paciente);
-    
-            System.out.println("🆕 Paciente y usuario creados automáticamente");
+
+            System.out.println(" Paciente y usuario creados automáticamente");
         }
-    
-        // 2. Validar o crear hospital
+
         Hospital hospital = entityManager.find(Hospital.class, dto.idHospital);
         if (hospital == null) {
             hospital = new Hospital();
@@ -141,11 +181,10 @@ public class CitaService {
             hospital.setDireccion("Auto-generada");
             hospital.setTelefono("00000000");
             hospital.setCorreo("auto@hospital.com");
-            hospital = entityManager.merge(hospital); // ✅ usar merge
-            System.out.println("🏥 Hospital creado automáticamente");
+            hospital = entityManager.merge(hospital);
+            System.out.println(" Hospital creado automáticamente");
         }
-    
-        // 3. Validar o crear servicio
+
         Servicio servicio = entityManager.find(Servicio.class, dto.idServicio);
         if (servicio == null) {
             servicio = new Servicio();
@@ -153,11 +192,10 @@ public class CitaService {
             servicio.nombre = "Servicio Auto " + dto.idServicio;
             servicio.costo = 0.0;
             servicio.cubiertoSeguro = false;
-            servicio = entityManager.merge(servicio); // ✅ usar merge
-            System.out.println("🛠 Servicio creado automáticamente");
+            servicio = entityManager.merge(servicio);
+            System.out.println(" Servicio creado automáticamente");
         }
-    
-        // 4. Validar o crear aseguradora
+
         Aseguradora aseguradora = null;
         if (dto.idAseguradora != null) {
             aseguradora = entityManager.find(Aseguradora.class, dto.idAseguradora);
@@ -165,12 +203,11 @@ public class CitaService {
                 aseguradora = new Aseguradora();
                 aseguradora.setId(dto.idAseguradora);
                 aseguradora.setNombre("Aseguradora Auto " + dto.idAseguradora);
-                aseguradora = entityManager.merge(aseguradora); // ✅ usar merge
-                System.out.println("🛡️ Aseguradora creada automáticamente");
+                aseguradora = entityManager.merge(aseguradora);
+                System.out.println(" Aseguradora creada automáticamente");
             }
         }
-    
-        // 5. Crear la cita
+
         Cita cita = new Cita();
         cita.setPaciente(paciente);
         cita.setIdPaciente(paciente.getIdPaciente());
@@ -184,15 +221,13 @@ public class CitaService {
         cita.setIdHospital(hospital.getId());
         cita.setServicio(servicio);
         cita.setIdServicio(servicio.getId());
-    
+
         if (aseguradora != null) {
             cita.setAseguradora(aseguradora);
             cita.setIdAseguradora(aseguradora.getId());
         }
-    
-        citaRepository.persist(cita);
-        System.out.println("✅ Cita registrada exitosamente desde aseguradora");
-    }
-    
 
+        citaRepository.persist(cita);
+        System.out.println(" Cita registrada exitosamente desde aseguradora");
+    }
 }

@@ -21,10 +21,19 @@
         <tbody>
           <tr v-for="cita in citas" :key="cita.idCita">
             <td v-if="isAdmin">{{ cita.idCita }}</td>
-            <td>{{ cita.paciente ? cita.paciente.nombre + ' ' + cita.paciente.apellido : 'Sin asignar' }}</td>
-            <td v-if="isAdmin">
-              {{ cita.doctor ? cita.doctor.nombre + ' ' + cita.doctor.apellido : 'Sin asignar' }}
-            </td>
+            <td>
+  {{ cita.paciente && cita.paciente.usuario
+      ? cita.paciente.usuario.nombreUsuario + ' ' + (cita.paciente.apellido || '')
+      : 'Sin asignar' }}
+</td>
+
+<td v-if="isAdmin">
+  {{ cita.doctor && cita.doctor.usuario
+      ? cita.doctor.usuario.nombreUsuario + ' ' + (cita.doctor.apellido || '')
+      : 'Sin asignar' }}
+</td>
+
+
             <td>{{ cita.fecha }}</td>
             <td>{{ cita.horaInicio }}</td>
             <td>{{ cita.horaFin }}</td>
@@ -166,6 +175,13 @@
   <div class="modal-content">
     <h3>Procesar Cita</h3>
     <p>¿Deseas marcar la cita <strong>{{ citaSeleccionada.idCita }}</strong> como procesada?</p>
+
+<label for="diagnostico">Diagnóstico:</label>
+<input type="text" id="diagnostico" v-model="diagnosticoProcesar" required />
+
+<label for="resultados">Resultados:</label>
+<textarea id="resultados" v-model="resultadosProcesar" required></textarea>
+
     <div class="modal-buttons">
       <button class="btn-guardar" @click="procesarCita">Confirmar</button>
       <button class="btn-cancelar" @click="cerrarModalProcesar">Cancelar</button>
@@ -209,6 +225,8 @@ export default {
       mostrarModalProcesar: false,
       mostrarModalReasignar: false,
 nuevoDoctorId: "",
+diagnosticoProcesar: "",
+resultadosProcesar: "",
 doctores: [],
       mostrarModalEditar: false,  // Controla el modal de edición
     recetaEditable: {},  // Guarda la receta en edición
@@ -293,7 +311,11 @@ async reasignarCita() {
 
 async procesarCita() {
   try {
-    await axios.put(`${API_URL}/citas/${this.citaSeleccionada.idCita}/procesar`);
+    await axios.put(`${API_URL}/citas/${this.citaSeleccionada.idCita}`, {
+  diagnostico: this.diagnosticoProcesar,
+  resultados: this.resultadosProcesar,
+  estado: 'FINALIZADA'
+});
     alert('Cita procesada exitosamente');
     this.obtenerCitas();
   } catch (error) {
@@ -314,18 +336,11 @@ async procesarCita() {
 },
 cerrarModalProcesar() {
   this.mostrarModalProcesar = false;
+  this.diagnosticoProcesar = "";
+this.resultadosProcesar = "";
+
 },
-async procesarCita() {
-  try {
-    await axios.put(`${API_URL}/citas/${this.citaSeleccionada.idCita}/procesar`);
-    alert('Cita procesada exitosamente');
-    this.obtenerCitas();
-  } catch (error) {
-    console.error('Error al procesar cita:', error);
-  } finally {
-    this.cerrarModalProcesar();
-  }
-},
+
 
 abrirModalReasignar(cita) {
   this.citaSeleccionada = cita;
