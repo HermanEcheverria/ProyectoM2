@@ -2,18 +2,17 @@
 package com.unis.resource;
 
 import java.util.List;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.unis.dto.CitaDTO;
-import com.unis.model.Cita;
-import com.unis.model.Doctor;
-import com.unis.service.CitaService;
-
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.json.JsonObject;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.unis.model.Cita;
+import com.unis.model.Doctor;
+import com.unis.service.CitaService;
 
 @Path("/citas")
 @Produces(MediaType.APPLICATION_JSON)
@@ -116,14 +115,16 @@ public class CitaResource {
     @POST
     @Path("/externa")
     @Transactional
-    public Response recibirDesdeAseguradora(CitaDTO dto) {
+    public Response recibirDesdeAseguradora(JsonObject dto) {
+        System.out.println("📥 Recibiendo cita desde aseguradora: " + dto);
+
         try {
-            citaService.recibirCitaExternaDesdeAseguradora(dto);
-            return Response.status(Response.Status.CREATED).entity(" Cita recibida desde aseguradora").build();
+            citaService.crearCitaDesdeJson(dto);
+            return Response.status(Response.Status.CREATED).entity("✅ Cita guardada en hospital").build();
         } catch (Exception e) {
             e.printStackTrace();
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Error al procesar la cita externa: " + e.getMessage()).build();
+                    .entity("❌ Error al guardar cita: " + e.getMessage()).build();
         }
     }
 }
