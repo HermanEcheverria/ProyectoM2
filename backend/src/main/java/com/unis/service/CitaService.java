@@ -6,15 +6,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
 
-import com.unis.model.Hospital;
-import com.unis.model.Servicio;
-import com.unis.model.Usuario;
-import com.unis.model.Aseguradora;
+import com.unis.model.*;
 import com.unis.dto.CitaDTO;
-import com.unis.model.Cita;
-import com.unis.model.Doctor;
-import com.unis.model.EstadoCita;
-import com.unis.model.Paciente;
 import com.unis.repository.CitaRepository;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -30,6 +23,7 @@ public class CitaService {
 
     @Inject
     CitaRepository citaRepository;
+
     @Inject
     DoctorService doctorService;
 
@@ -51,19 +45,18 @@ public class CitaService {
     @Transactional
     public void agendarCita(Cita cita) {
         if (cita.getIdDoctor() == null || cita.getIdPaciente() == null) {
-            throw new IllegalArgumentException(" El ID del doctor y paciente son obligatorios.");
+            throw new IllegalArgumentException("El ID del doctor y paciente son obligatorios.");
         }
 
         Doctor doctor = entityManager.find(Doctor.class, cita.getIdDoctor());
         Paciente paciente = entityManager.find(Paciente.class, cita.getIdPaciente());
 
         if (doctor == null || paciente == null) {
-            throw new IllegalArgumentException(" Doctor o paciente no encontrados.");
+            throw new IllegalArgumentException("Doctor o paciente no encontrados.");
         }
 
         cita.setDoctor(doctor);
         cita.setPaciente(paciente);
-
         citaRepository.persist(cita);
     }
 
@@ -81,7 +74,7 @@ public class CitaService {
     public void actualizarCita(Long id, Cita citaActualizada) {
         Cita cita = citaRepository.findById(id);
         if (cita == null) {
-            throw new IllegalArgumentException(" Cita no encontrada");
+            throw new IllegalArgumentException("Cita no encontrada");
         }
         if (citaActualizada.getEstado() != null) cita.setEstado(citaActualizada.getEstado());
         if (citaActualizada.getDiagnostico() != null) cita.setDiagnostico(citaActualizada.getDiagnostico());
@@ -112,12 +105,18 @@ public class CitaService {
     private void enviarResultadosAAseguradora(Cita cita) {
         try {
             JsonObject json = Json.createObjectBuilder()
-                .add("idCita", cita.getId())
-                .add("dpi", cita.getPaciente().getDocumento())
-                .add("diagnostico", cita.getDiagnostico())
-                .add("resultados", cita.getResultados())
-                .add("fecha", cita.getFecha().toString())
-                .build();
+    .add("idCita", cita.getIdCita())
+    .add("documento", cita.getPaciente().getDocumento())
+    .add("nombre", cita.getPaciente().getUsuario().getNombreUsuario())
+    .add("apellido", cita.getPaciente().getApellido())
+    .add("diagnostico", cita.getDiagnostico())
+    .add("resultados", cita.getResultados())
+    .add("fecha", cita.getFecha().toString())
+    .add("doctor", cita.getDoctor().getUsuario().getNombreUsuario())
+    .build();
+
+
+            System.out.println("📤 Enviando resultado: " + json);
 
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
@@ -146,7 +145,7 @@ public class CitaService {
     public void recibirCitaExternaDesdeAseguradora(CitaDTO dto) {
         if (dto == null) throw new IllegalArgumentException("DTO de cita es null");
 
-        System.out.println(" Recibiendo cita externa desde aseguradora: " + dto);
+        System.out.println("📥 Recibiendo cita externa desde aseguradora: " + dto);
 
         Paciente paciente = entityManager
             .createQuery("SELECT p FROM Paciente p WHERE p.documento = :dpi", Paciente.class)
@@ -170,7 +169,7 @@ public class CitaService {
             paciente.setIdUsuario(usuario.getId());
             entityManager.persist(paciente);
 
-            System.out.println(" Paciente y usuario creados automáticamente");
+            System.out.println("✅ Paciente y usuario creados automáticamente");
         }
 
         Hospital hospital = entityManager.find(Hospital.class, dto.idHospital);
@@ -182,7 +181,7 @@ public class CitaService {
             hospital.setTelefono("00000000");
             hospital.setCorreo("auto@hospital.com");
             hospital = entityManager.merge(hospital);
-            System.out.println(" Hospital creado automáticamente");
+            System.out.println("✅ Hospital creado automáticamente");
         }
 
         Servicio servicio = entityManager.find(Servicio.class, dto.idServicio);
@@ -193,7 +192,7 @@ public class CitaService {
             servicio.costo = 0.0;
             servicio.cubiertoSeguro = false;
             servicio = entityManager.merge(servicio);
-            System.out.println(" Servicio creado automáticamente");
+            System.out.println("✅ Servicio creado automáticamente");
         }
 
         Aseguradora aseguradora = null;
@@ -204,7 +203,7 @@ public class CitaService {
                 aseguradora.setId(dto.idAseguradora);
                 aseguradora.setNombre("Aseguradora Auto " + dto.idAseguradora);
                 aseguradora = entityManager.merge(aseguradora);
-                System.out.println(" Aseguradora creada automáticamente");
+                System.out.println("✅ Aseguradora creada automáticamente");
             }
         }
 
@@ -228,6 +227,6 @@ public class CitaService {
         }
 
         citaRepository.persist(cita);
-        System.out.println(" Cita registrada exitosamente desde aseguradora");
+        System.out.println("✅ Cita registrada exitosamente desde aseguradora");
     }
 }

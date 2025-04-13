@@ -30,6 +30,10 @@ public class Hospital {
     @Column(name = "FECHA_CREACION")
     private LocalDateTime fechaCreacion;
 
+    @Column(name = "MONGO_ID", length = 50)
+private String mongoId;
+
+
     // Getters y setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -51,4 +55,13 @@ public class Hospital {
 
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
+
+    public String getMongoId() {
+        return mongoId;
+    }
+    
+    public void setMongoId(String mongoId) {
+        this.mongoId = mongoId;
+    }
+    
 }

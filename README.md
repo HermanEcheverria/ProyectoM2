@@ -63,6 +63,8 @@ npm run test:e2e -- --debug
 npm run lint
 ```
 cd backend
-mvn quarkus:dev   
+mvn quarkus:dev
+mvn quarkus:dev "-Dquarkus.http.host=0.0.0.0"
+
 
 npm run dev -- --host 

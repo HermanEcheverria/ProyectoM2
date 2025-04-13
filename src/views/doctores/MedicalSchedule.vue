@@ -311,11 +311,11 @@ async reasignarCita() {
 
 async procesarCita() {
   try {
-    await axios.put(`${API_URL}/citas/${this.citaSeleccionada.idCita}`, {
+    await axios.put(`${API_URL}/citas/${this.citaSeleccionada.idCita}/procesar`, {
   diagnostico: this.diagnosticoProcesar,
-  resultados: this.resultadosProcesar,
-  estado: 'FINALIZADA'
+  resultados: this.resultadosProcesar
 });
+
     alert('Cita procesada exitosamente');
     this.obtenerCitas();
   } catch (error) {

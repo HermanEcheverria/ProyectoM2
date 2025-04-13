@@ -100,10 +100,12 @@ public class CitaResource {
 
     @PUT
     @Path("/{id}/procesar")
-    public Response procesarCita(@PathParam("id") Long id) {
+    public Response procesarCita(@PathParam("id") Long id, JsonNode body) {
         try {
-            citaService.procesarCita(id);
-            return Response.ok("Cita procesada con éxito").build();
+            String diagnostico = body.get("diagnostico").asText(null);
+            String resultados = body.get("resultados").asText(null);
+            citaService.procesarCitaYEnviarResultados(id, diagnostico, resultados);
+            return Response.ok("✅ Cita procesada y resultados enviados").build();
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
         } catch (Exception e) {
