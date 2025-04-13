@@ -19,7 +19,7 @@
         <label class="form-label">Buscar por DPI</label>
         <div class="input-group">
           <input v-model="dpiBusqueda" class="form-control" placeholder="Ingrese DPI del cliente" />
-          <button @click.prevent="buscarPorDPI" class="btn btn-secondary">Buscar</button>
+          <button @click.prevent="buscarPorDPI" class="btn btn-secondary">Buscar y Verificar Poliza</button>
         </div>
       </div>
 
