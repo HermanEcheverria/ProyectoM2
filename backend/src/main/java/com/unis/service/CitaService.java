@@ -8,12 +8,10 @@ import java.time.LocalDate;
 import java.util.List;
 
 import com.unis.model.*;
-import com.unis.dto.CitaDTO;
 import com.unis.repository.CitaRepository;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -105,17 +103,16 @@ public class CitaService {
 
     private void enviarResultadosAAseguradora(Cita cita) {
         try {
-            JsonObject json = Json.createObjectBuilder()
-    .add("idCita", cita.getIdCita())
-    .add("documento", cita.getPaciente().getDocumento())
-    .add("nombre", cita.getPaciente().getUsuario().getNombreUsuario())
-    .add("apellido", cita.getPaciente().getApellido())
-    .add("diagnostico", cita.getDiagnostico())
-    .add("resultados", cita.getResultados())
-    .add("fecha", cita.getFecha().toString())
-    .add("doctor", cita.getDoctor().getUsuario().getNombreUsuario())
-    .build();
-
+            JsonObject json = jakarta.json.Json.createObjectBuilder()
+                .add("idCita", cita.getIdCita())
+                .add("documento", cita.getPaciente().getDocumento())
+                .add("nombre", cita.getPaciente().getUsuario().getNombreUsuario())
+                .add("apellido", cita.getPaciente().getApellido())
+                .add("diagnostico", cita.getDiagnostico())
+                .add("resultados", cita.getResultados())
+                .add("fecha", cita.getFecha().toString())
+                .add("doctor", cita.getDoctor().getUsuario().getNombreUsuario())
+                .build();
 
             System.out.println("📤 Enviando resultado: " + json);
 
@@ -144,14 +141,77 @@ public class CitaService {
 
     @Transactional
 public void crearCitaDesdeJson(JsonObject dto) {
-    Cita cita = new Cita();
+    String documento = dto.getString("documento", null);
+    String nombre = dto.getString("nombre", "Desconocido");
+    String apellido = dto.getString("apellido", "");
+    String nombreAseguradora = dto.getString("nombreAseguradora", null);
 
-    cita.setFecha(LocalDate.parse(dto.getString("fecha"))); 
+    if (documento == null || documento.isEmpty()) {
+        throw new IllegalArgumentException("El campo 'documento' es obligatorio");
+    }
+
+    // 🔎 Verificar si ya existe un paciente con ese documento
+    Paciente paciente = entityManager
+        .createQuery("SELECT p FROM Paciente p WHERE p.documento = :doc", Paciente.class)
+        .setParameter("doc", documento)
+        .getResultStream()
+        .findFirst()
+        .orElse(null);
+
+    if (paciente == null) {
+        // ✅ Crear nuevo usuario
+        Usuario usuario = new Usuario();
+        usuario.setNombreUsuario(nombre);
+        usuario.setCorreo("auto_" + documento + "@hospital.com");
+        usuario.setContrasena("1234");
+
+        // 👉 Buscar y asignar el rol Paciente (ID = 4)
+        Rol rolPaciente = entityManager.find(Rol.class, 4L);
+        usuario.setRol(rolPaciente);
+
+        entityManager.persist(usuario);
+
+        // ✅ Crear nuevo paciente
+        paciente = new Paciente();
+        paciente.setDocumento(documento);
+        paciente.setApellido(apellido);
+        paciente.setUsuario(usuario);
+        paciente.setIdUsuario(usuario.getId());
+
+        entityManager.persist(paciente);
+        System.out.println("✅ Usuario y paciente creados automáticamente");
+    }
+
+    // Crear nueva cita
+    Cita cita = new Cita();
+    cita.setPaciente(paciente);
+    cita.setIdPaciente(paciente.getIdPaciente());
+    cita.setFecha(LocalDate.parse(dto.getString("fecha")));
     cita.setHoraInicio(dto.getString("horaInicio"));
     cita.setHoraFin(dto.getString("horaFin"));
     cita.setMotivo(dto.getString("motivo"));
-    cita.setNumeroAutorizacion(dto.getString("numeroAutorizacion"));
+    cita.setNumeroAutorizacion(dto.getString("numeroAutorizacion", "AUTO-GEN"));
     cita.setEstado(EstadoCita.CONFIRMADA);
+
+    // 🔗 Asociar o crear aseguradora si viene en el DTO
+    if (nombreAseguradora != null && !nombreAseguradora.isBlank()) {
+        Aseguradora aseguradora = entityManager
+            .createQuery("SELECT a FROM Aseguradora a WHERE UPPER(a.nombre) = :nombre", Aseguradora.class)
+            .setParameter("nombre", nombreAseguradora.toUpperCase())
+            .getResultStream()
+            .findFirst()
+            .orElse(null);
+
+        if (aseguradora == null) {
+            aseguradora = new Aseguradora();
+            aseguradora.setNombre(nombreAseguradora);
+            entityManager.persist(aseguradora);
+            System.out.println("🆕 Aseguradora creada automáticamente");
+        }
+
+        cita.setAseguradora(aseguradora);
+        cita.setIdAseguradora(aseguradora.getId());
+    }
 
     citaRepository.persist(cita);
     System.out.println("✅ Cita guardada en la base de datos");

@@ -113,18 +113,18 @@ public class CitaResource {
     }
 
     @POST
-    @Path("/externa")
-    @Transactional
-    public Response recibirDesdeAseguradora(JsonObject dto) {
-        System.out.println("📥 Recibiendo cita desde aseguradora: " + dto);
-
-        try {
-            citaService.crearCitaDesdeJson(dto);
-            return Response.status(Response.Status.CREATED).entity("✅ Cita guardada en hospital").build();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("❌ Error al guardar cita: " + e.getMessage()).build();
-        }
+@Path("/externa")
+@Consumes(MediaType.APPLICATION_JSON)
+@Transactional
+public Response recibirDesdeAseguradora(JsonObject dto) {
+    try {
+        citaService.crearCitaDesdeJson(dto);
+        return Response.status(Response.Status.CREATED).entity("✅ Cita recibida correctamente").build();
+    } catch (Exception e) {
+        e.printStackTrace();
+        return Response.status(Response.Status.BAD_REQUEST)
+            .entity("❌ Error al guardar cita: " + e.getMessage()).build();
     }
+}
+
 }

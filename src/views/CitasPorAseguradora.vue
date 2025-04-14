@@ -7,7 +7,7 @@
         <tr>
           <th>ID Cita</th>
           <th>Paciente Aseguradora</th>
-          <th>Servicio</th>
+          <th>Aseguradora</th>
           <th>Motivo</th>
           <th>Fecha</th>
           <th>Hora Inicio</th>
@@ -22,7 +22,7 @@
             {{ cita.paciente?.usuario?.nombreUsuario || "Sin nombre" }}
             {{ cita.paciente?.apellido || "" }}
           </td>
-          <td>{{ cita.servicio?.nombre || "Sin servicio" }}</td>
+          <td>{{ cita.aseguradora?.nombre || "Sin aseguradora" }}</td>
           <td>{{ cita.motivo }}</td>
           <td>{{ cita.fecha }}</td>
           <td>{{ cita.horaInicio }}</td>
@@ -64,7 +64,6 @@ export default {
   },
 };
 </script>
-
 
 <style scoped>
 .schedule-portal {
