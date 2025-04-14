@@ -8,9 +8,11 @@ import jakarta.persistence.*;
 public class FichaTecnica {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID_FICHA")
-    private Long idFicha;
+@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ficha_seq_gen")
+@SequenceGenerator(name = "ficha_seq_gen", sequenceName = "FICHATECNICA_SEQ", allocationSize = 1)
+@Column(name = "ID_FICHA")
+private Long idFicha;
+
 
     @Column(name = "ID_SERVICIO")
     private Long idServicio;
