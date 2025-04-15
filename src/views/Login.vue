@@ -17,6 +17,9 @@ const login = async () => {
 
     if (id && roleId) {
       setUser(id, roleId, router);
+
+      // ✅ Guarda el email del usuario en localStorage
+      localStorage.setItem("usuarioEmail", correo.value);
     } else {
       errorMensaje.value = "Error en los datos del usuario.";
     }
@@ -24,6 +27,7 @@ const login = async () => {
     errorMensaje.value = "Error al iniciar sesión. Inténtalo nuevamente.";
   }
 };
+
 </script>
 
 <template>

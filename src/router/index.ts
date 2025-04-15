@@ -38,6 +38,7 @@ import RegistrarAtencion from '../views/RegistrarAtencion.vue';
 import ConsultarHistorial from "../views/ConsultarHistorial.vue";
 import CitasPorAseguradora from "@/views/CitasPorAseguradora.vue";
 import ReporteView from "@/views/admin/ReporteView.vue";
+import ReporteMedicinasView from "@/views/admin/ReporteMedicinasView.vue";
 
 
 //componentes simulados
@@ -121,6 +122,7 @@ const router = createRouter({
     { path: "/admin/usuario-interconexion", name: "admin-usuario-interconexion", component: UsuarioInterAdmin, beforeEnter: requireRole(1) },
     { path: "/admin/fichas-tecnicas", name: "admin-fichas-tecnicas", component: AdminFichasTecnicas, beforeEnter: requireRole(1) },
     {path: "/admin/reportes", name: "admin-reportes", component: ReporteView, beforeEnter: requireRole(1)},
+    {path: "/admin/reportes-medicina", name: "admin-reportes-medicina", component: ReporteMedicinasView, beforeEnter: requireRole(1)},
     { path: "/doctorimagen", name: "doctor-imagen", component: DoctorImageView, beforeEnter: requireAuth },
     //componentes simulados de admin
     { path: "/admin/historial-pago", name: "historial-pago", component: HistorialPagos, beforeEnter: requireAuth },
