@@ -49,6 +49,7 @@ import Reportes from "@/views/vistasSimuladas/Reportes.vue";
 import StockMedicamentos from "@/views/vistasSimuladas/StockMedicamentos.vue";
 //vistas paginas informativas dinamicas
 import AdminDynamicPages from "@/views/admin/AdminDynamicPages.vue";
+import AdminModerationView from "@/views/admin/AdminModerationView.vue";
 import DynamicPage from "@/views/DynamicPage.vue";
 
 // Función para verificar si el usuario está autenticado
@@ -100,6 +101,12 @@ const router = createRouter({
       beforeEnter: requireRole(1)
     },
 
+  {
+  path: '/drafts/:id',
+  name: 'draft-hospital',
+  component: () => import('@/views/admin/Draft.vue') ,
+  meta: { requiresAuth: false}
+},
 
 
 
@@ -136,6 +143,12 @@ const router = createRouter({
     { path: "/my-account-interconexion", name: "my-account-interconexion", component: MyAccountUsuarioInter, beforeEnter: requireRole(5) },
     { path: "/recetas", name: "recetas", component: RecetaView, beforeEnter: requireRole(1) },
   //rutas dinamicas para paginas informativas
+  {
+    path: '/admin/moderacion',
+    name: 'admin-moderacion',
+    component: AdminModerationView,
+    beforeEnter: requireRole(1) // Protección para admin
+  },
   {
     path: '/admin/pages',
     name: 'admin-dynamic-pages',

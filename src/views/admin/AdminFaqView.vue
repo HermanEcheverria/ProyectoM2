@@ -1,314 +1,188 @@
 <template>
   <div class="admin-faq">
-    <div class="header">Administrar Preguntas Frecuentes (FAQ)</div>
+    <div class="header">Administrador de Preguntas Frecuentes (FAQ)</div>
 
-    <!-- Form para Crear/Editar FAQ -->
-    <form @submit.prevent="saveFaq" class="faq-form">
-      <div class="form-group">
-        <label>Pregunta:</label>
-        <input v-model="faq.pregunta" type="text" required />
+    <div class="faq-item" v-for="(faq, index) in faqs" :key="faq.id || index">
+      <input
+        v-model="faq.pregunta"
+        placeholder="Pregunta"
+        class="faq-input"
+      />
+      <textarea
+        v-model="faq.respuesta"
+        placeholder="Respuesta"
+        class="faq-textarea"
+      ></textarea>
+
+      <div class="faq-actions">
+        <button @click="guardar(faq)">💾 Guardar</button>
+        <button @click="enviarAModeracion(faq)">📤 Enviar a Moderación</button>
       </div>
+    </div>
 
-      <div class="form-group">
-        <label>Respuesta:</label>
-        <textarea v-model="faq.respuesta" rows="3"></textarea>
-      </div>
-
-      <div class="form-group">
-        <label>Autor:</label>
-        <input v-model="faq.autor" type="text" />
-      </div>
-
-      <!-- Botón para Guardar (Crear/Editar) -->
-      <div class="button-row">
-        <button type="submit" class="btn-save">
-          {{ faq.id ? 'Actualizar' : 'Crear' }} FAQ
-        </button>
-        <button type="button" class="btn-reset" @click="clearForm">
-          Limpiar
-        </button>
-      </div>
-    </form>
-
-    <hr class="divider" />
-
-    <div class="section">
-    <!-- Tabla de FAQs existentes -->
-    <table class="faq-table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Pregunta</th>
-          <th>Respuesta</th>
-          <th>Autor</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="item in faqs" :key="item.id">
-          <td>{{ item.id }}</td>
-          <td>{{ item.pregunta }}</td>
-          <td>{{ item.respuesta || '---' }}</td>
-          <td>{{ item.autor || '---' }}</td>
-          <td>
-            <button class="btn-edit" @click="editFaq(item)">Editar</button>
-            <button class="btn-delete" @click="deleteFaq(item.id)">Eliminar</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+    <button class="add-btn" @click="agregarFaq">➕ Agregar nueva pregunta</button>
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted } from "vue";
 import axios from "axios";
 import API_URL from "@/config";
 
-export default {
-  name: "AdminFaqView",
-  data() {
-    return {
-      // Objeto FAQ en el formulario
-      faq: {
-        id: null,
-        pregunta: "",
-        respuesta: "",
-        autor: ""
-      },
-      // Lista de FAQs obtenidas del backend
-      faqs: []
-    };
-  },
-  async created() {
-    // Cargar FAQs al montar
-    await this.fetchFaqs();
-  },
-  methods: {
-    /**
-     * Obtener todas las FAQs (GET /faq)
-     */
-    async fetchFaqs() {
-      try {
-        const resp = await axios.get(`${API_URL}/faq`);
-        if (Array.isArray(resp.data)) {
-          this.faqs = resp.data;
-        } else {
-          console.error("La API no devolvió un array.");
-        }
-      } catch (error) {
-        console.error("Error al obtener FAQs:", error);
-      }
-    },
+const faqs = ref([]);
 
-    /**
-     * Guardar la FAQ del formulario:
-     * - Si tiene ID => PUT /faq/editar/:id
-     * - Si no tiene ID => POST /faq/crear
-     */
-    async saveFaq() {
-      try {
-        if (this.faq.id) {
-          // Actualizar (PUT)
-          await axios.put(`${API_URL}/faq/editar/${this.faq.id}`, this.faq);
-        } else {
-          // Crear (POST)
-          await axios.post(`${API_URL}/faq/crear`, this.faq);
-        }
-        alert("FAQ guardada correctamente.");
-
-        // Recargar tabla
-        await this.fetchFaqs();
-        // Limpiar el formulario
-        this.clearForm();
-      } catch (error) {
-        console.error("Error al guardar FAQ:", error);
-      }
-    },
-
-    /**
-     * Cargar los datos en el formulario para editar
-     */
-    editFaq(item) {
-      // Clonamos 'item' para no modificar la tabla en vivo
-      this.faq = { ...item };
-    },
-
-    /**
-     * Eliminar una FAQ (DELETE /faq/eliminar/:id)
-     */
-    async deleteFaq(id) {
-      if (!confirm("¿Estás seguro de eliminar esta pregunta?")) return;
-      try {
-        await axios.delete(`${API_URL}/faq/eliminar/${id}`);
-        alert("FAQ eliminada correctamente.");
-        this.fetchFaqs();
-      } catch (error) {
-        console.error("Error al eliminar FAQ:", error);
-      }
-    },
-
-    /**
-     * Limpiar el formulario (nueva FAQ)
-     */
-    clearForm() {
-      this.faq = {
-        id: null,
-        pregunta: "",
-        respuesta: "",
-        autor: ""
-      };
-    }
+const loadFaqs = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/faq`);
+    faqs.value = response.data;
+  } catch (error) {
+    console.error("Error al cargar FAQs:", error);
   }
 };
+
+const guardar = async (faq) => {
+  try {
+    const usuarioEmail = localStorage.getItem("usuarioEmail");
+    if (!usuarioEmail) throw new Error("No se encontró el email del editor");
+
+    faq.editadoPor = usuarioEmail;
+    if (!faq.autor) {
+      faq.autor = usuarioEmail;
+    }
+
+    faq.status = faq.status || "PROCESO";
+
+    if (faq.id) {
+      await axios.put(`${API_URL}/faq/editar/${faq.id}`, faq);
+    } else {
+      await axios.post(`${API_URL}/faq/crear`, faq);
+    }
+
+    alert("✅ Pregunta guardada correctamente.");
+    await loadFaqs();
+  } catch (error) {
+    console.error("Error al guardar FAQ:", error);
+    alert("❌ Error al guardar FAQ.");
+  }
+};
+
+const enviarAModeracion = async (faq) => {
+  try {
+    const usuarioEmail = localStorage.getItem("usuarioEmail");
+    if (!usuarioEmail) throw new Error("No se encontró el email del editor");
+
+    faq.status = "PROCESO";
+    faq.rejectionReason = null;
+    faq.editadoPor = usuarioEmail;
+    if (!faq.autor) {
+      faq.autor = usuarioEmail;
+    }
+
+    if (faq.id) {
+      await axios.put(`${API_URL}/faq/editar/${faq.id}`, faq);
+    } else {
+      await axios.post(`${API_URL}/faq/crear`, faq);
+    }
+
+    alert("📤 Pregunta enviada a moderación.");
+    await loadFaqs();
+  } catch (error) {
+    console.error("Error al enviar FAQ:", error);
+    alert("❌ No se pudo enviar la pregunta.");
+  }
+};
+
+const agregarFaq = () => {
+  const usuarioEmail = localStorage.getItem("usuarioEmail") || "";
+
+  faqs.value.push({
+    pregunta: "",
+    respuesta: "",
+    autor: usuarioEmail,
+    editadoPor: usuarioEmail,
+    status: "PROCESO",
+  });
+};
+
+onMounted(loadFaqs);
 </script>
 
 
 <style scoped>
-/* Contenedor principal oscuro (similar a tu "Historia") */
 .admin-faq {
-  background: #f9f9f9;
-  color: #e0e1dd;          /* Texto verde/menta */
-  min-height: 100vh;
-  padding: 2rem;
-  border-radius: 10px;
-  max-width: 900px;
+  max-width: 800px;
   margin: 0 auto;
-}
-
-/* Título */
-.admin-faq h1 {
-  font-size: 1.8rem;
-  margin-bottom: 1.5rem;
-  color: #b3f5e3;
-}
-
-/* Formulario estilo */
-.faq-form {
-  background-color: #13678a; /* Bloque más claro */
-  padding: 1.5rem;
-  border-radius: 8px;
-  margin-bottom: 2rem;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-  display: flex;
-  flex-direction: column;
-}
-
-.form-group label {
-  font-weight: bold;
-  margin-bottom: 0.3rem;
-  color: #f9f9f9;
-}
-
-.section {
-  border: 1px solid #45C4B0;
-  padding: 15px;
-  margin: 10px 0;
-  background: #13678a;
-  border-radius: 8px;
-}
-
-.form-group input,
-.form-group textarea {
-  background-color: #13678a; /* Campos claros */
-  color: #102538;           /* Texto oscuro */
-  border: 1px solid #45C4B0;
-  padding: 0.6rem;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-/* Fila de botones en el formulario */
-.button-row {
-  display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-/* Botones del form */
-.btn-save,
-.btn-reset {
-  padding: 0.6rem 1rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+  padding: 2rem;
+  color: white;
 }
 
 .header {
   text-align: center;
-  font-size: 22px;
-  font-weight: bold;
-  background: #45C4B0;
-  color: white;
-  padding: 12px;
-  border-radius: 5px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  font-size: 24px;
+  background-color: #026e81;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
 }
 
-.btn-save {
-  background-color: #DAFDBA;
-  color: #012030;
-  margin-right: 1rem;
-}
-.btn-save:hover {
-  background-color: #DAFDBA;
-}
-
-.btn-reset {
-  background-color: #ff8a7d;
-  color: #fff;
-}
-.btn-reset:hover {
-  background-color: #ff8a7d;
+.faq-item {
+  background-color: #13678a;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 6px;
+  border: 1px solid #00abbc;
 }
 
-/* Separador */
-.divider {
-  border: 0;
-  border-top: 1px solid #b3f5e3;
-  margin: 2rem 0;
-}
-
-/* Tabla de FAQs */
-.faq-table {
+.faq-input,
+.faq-textarea {
   width: 100%;
-  border-collapse: collapse;
-  color: #f9f9f9; /* Texto claro */
-}
-
-.faq-table th,
-.faq-table td {
-  border: 1px solid #b3f5e3;
-  padding: 0.5rem 0.8rem;
-  text-align: left;
-}
-
-.faq-table th {
-  background-color: #0b1b2b;
-}
-
-/* Botones en la tabla */
-.faq-table button {
-  margin-right: 0.3rem;
-  padding: 0.4rem 0.7rem;
-  border: none;
+  margin-bottom: 0.5rem;
+  padding: 0.6rem;
   border-radius: 4px;
+  border: 1px solid #ccc;
+  background: #0f2e3d;
+  color: white;
+}
+
+.faq-textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.faq-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.faq-actions button {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  border: none;
+  font-weight: bold;
   cursor: pointer;
-  color: #fff;
+  color: white;
 }
 
-.faq-table button:hover {
-  opacity: 0.8;
+.faq-actions button:first-child {
+  background-color: #00bb77;
 }
 
-/* Botón Editar */
-.btn-edit {
-  background-color: #f0ad4e; /* celeste */
+.faq-actions button:last-child {
+  background-color: #ff9933;
 }
-.btn-delete {
-  background-color: #ff8a7d; /* rojo */
+
+.add-btn {
+  margin-top: 1rem;
+  background-color: #0099dd;
+  padding: 0.7rem 1.2rem;
+  border-radius: 6px;
+  font-weight: bold;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+.add-btn:hover {
+  background-color: #007bbd;
 }
 </style>

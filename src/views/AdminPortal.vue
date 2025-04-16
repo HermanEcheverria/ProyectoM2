@@ -20,6 +20,7 @@
       <button @click="router.push('/admin/servicios')" class="gestion-button"> Gestion de Servicios </button>
       <button @click="router.push('/admin/reporte')" class="gestion-button"> Gestion de Reporte </button>
       <!--vista simulada de admin-->
+      <button @click="router.push('/admin/moderacion')" class="gestion-button"> Moderación de páginas informativas </button>
       <button @click="router.push('/admin/historial-pago')" class="gestion-button"> Gestion de historial de pago </button>
       <button @click="router.push('/admin/reportes')" class="gestion-button"> Gestion de reportes</button>
       <button @click="router.push('/admin/reportes-medicina')" class="gestion-button"> Gestion de reportes de medicamentos</button>

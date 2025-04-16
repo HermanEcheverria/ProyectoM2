@@ -1,6 +1,6 @@
 <template>
   <div class="historia-container">
-    <div class="historia">
+    <div class="historia" v-if="historia">
       <h1>{{ historia.nombreEntidad }}</h1>
 
       <div class="historia-layout">
@@ -40,60 +40,59 @@
         </div>
       </section>
     </div>
+
+    <div v-else class="no-data">
+      <p>No hay historia publicada disponible.</p>
+    </div>
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted } from "vue";
 import axios from "axios";
-import API_URL from "../config"; // Importamos API_URL desde config.ts
+import API_URL from "@/config";
 
-export default {
-  name: "HistoriaView",
-  data() {
-    return {
-      historia: {
-        nombreEntidad: "",
-        historia: "",
-        meritos: "",
-        lineaDelTiempo: ""
-      },
-      timelineData: [],
-      meritosData: []
-    };
-  },
-  async created() {
-    try {
-      const response = await axios.get(`${API_URL}/historias`); // Reemplazamos la URL fija
-      if (response.data && response.data.length > 0) {
-        this.historia = response.data[0];
+const historia = ref(null);
+const timelineData = ref([]);
+const meritosData = ref([]);
 
-        try {
-          // Parseamos la línea del tiempo si es un JSON válido
-          this.timelineData = JSON.parse(this.historia.lineaDelTiempo || "[]");
-        } catch (error) {
-          console.error("Error al parsear la línea del tiempo:", error);
-          this.timelineData = [];
-        }
-
-        try {
-          // Validamos si 'meritos' es un JSON válido antes de parsearlo
-          if (typeof this.historia.meritos === "string" && this.historia.meritos.trim().startsWith("[")) {
-            this.meritosData = JSON.parse(this.historia.meritos);
-          } else {
-            this.meritosData = [];
-          }
-        } catch (error) {
-          console.error("Error al parsear los méritos:", error);
-          this.meritosData = [];
-        }
-      }
-    } catch (error) {
-      console.error("Error al obtener la historia:", error);
-    }
+const config = {
+  headers: {
+    "Content-Type": "application/json"
   }
 };
-</script>
 
+onMounted(async () => {
+  try {
+    const response = await axios.get(`${API_URL}/historias/publicadas`, config);
+    const data = response.data;
+
+    if (Array.isArray(data) && data.length > 0) {
+      historia.value = data[0];
+
+      // Parsear JSON de línea del tiempo
+      try {
+        timelineData.value = JSON.parse(historia.value.lineaDelTiempo || "[]");
+      } catch {
+        timelineData.value = [];
+      }
+
+      // Parsear JSON de méritos
+      try {
+        meritosData.value =
+          typeof historia.value.meritos === "string" &&
+          historia.value.meritos.trim().startsWith("[")
+            ? JSON.parse(historia.value.meritos)
+            : [];
+      } catch {
+        meritosData.value = [];
+      }
+    }
+  } catch (error) {
+    console.error("Error al obtener historia publicada:", error);
+  }
+});
+</script>
 
 <style scoped>
 .historia-container {
@@ -116,7 +115,6 @@ export default {
   box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.3);
 }
 
-/* 🎯 Título Principal */
 .historia h1 {
   text-align: center;
   font-size: 2.5rem;
@@ -125,14 +123,12 @@ export default {
   color: #A4F0C4;
 }
 
-/* 📌 Distribución en columnas */
 .historia-layout {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: 2rem;
 }
 
-/* 📜 Sección Historia */
 .historia-info {
   background-color: #13678A;
   padding: 25px;
@@ -140,7 +136,6 @@ export default {
   box-shadow: 2px 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-/* 🎯 Título de Historia y Méritos */
 .historia-info h2, .meritos-info h2 {
   text-align: center;
   margin-bottom: 15px;
@@ -149,7 +144,6 @@ export default {
   font-weight: bold;
 }
 
-/* ✅ Mejoras en el texto de la historia */
 .historia-info div {
   font-size: 1.2rem;
   line-height: 1.9;
@@ -157,24 +151,6 @@ export default {
   color: #DAFDBA;
 }
 
-/* ✨ Resaltar palabras clave */
-.historia-info div strong {
-  color: #A4F0C4;
-  font-weight: bold;
-}
-
-/* 🔹 Espaciado entre párrafos */
-.historia-info div p {
-  margin-bottom: 15px;
-}
-
-/* 🎯 Enfatizar información con cursiva */
-.historia-info div em {
-  color: #45C4B0;
-  font-style: italic;
-}
-
-/* 🏅 Estilos de Méritos */
 .meritos-info {
   background-color: #13678A;
   padding: 25px;
@@ -204,11 +180,6 @@ export default {
   color: #13678A;
 }
 
-.merito-title {
-  font-weight: bold;
-}
-
-/* 📅 Línea del Tiempo */
 .timeline-section {
   margin-top: 50px;
 }
@@ -241,12 +212,9 @@ export default {
   top: 15px;
 }
 
-/* 📱 Adaptación para móviles */
-@media (max-width: 768px) {
-  .historia-info div {
-    font-size: 1rem;
-    line-height: 1.6;
-  }
+.no-data {
+  color: #fff;
+  text-align: center;
+  font-size: 1.2rem;
 }
-
 </style>

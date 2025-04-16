@@ -22,12 +22,18 @@ public class Faq {
 
     private String editadoPor; // Para guardar quién editó la pregunta
 
+    @Column(name = "STATUS", length = 20)
+    private String status; // PROCESO, PUBLICADO, RECHAZADO
+
+    @Column(name = "REJECTION_REASON", length = 500)
+    private String rejectionReason;
+
     @PrePersist
     protected void onCreate() {
         this.fechaCreacion = LocalDateTime.now();
     }
 
-    // GETTERS Y SETTERS
+    // Getters y Setters
 
     public Long getId() {
         return id;
@@ -36,6 +42,7 @@ public class Faq {
     public String getPregunta() {
         return pregunta;
     }
+
     public void setPregunta(String pregunta) {
         this.pregunta = pregunta;
     }
@@ -43,6 +50,7 @@ public class Faq {
     public String getRespuesta() {
         return respuesta;
     }
+
     public void setRespuesta(String respuesta) {
         this.respuesta = respuesta;
     }
@@ -50,6 +58,7 @@ public class Faq {
     public String getAutor() {
         return autor;
     }
+
     public void setAutor(String autor) {
         this.autor = autor;
     }
@@ -57,6 +66,7 @@ public class Faq {
     public LocalDateTime getFechaCreacion() {
         return fechaCreacion;
     }
+
     public void setFechaCreacion(LocalDateTime fechaCreacion) {
         this.fechaCreacion = fechaCreacion;
     }
@@ -64,8 +74,24 @@ public class Faq {
     public String getEditadoPor() {
         return editadoPor;
     }
+
     public void setEditadoPor(String editadoPor) {
         this.editadoPor = editadoPor;
     }
-}
 
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getRejectionReason() {
+        return rejectionReason;
+    }
+
+    public void setRejectionReason(String rejectionReason) {
+        this.rejectionReason = rejectionReason;
+    }
+}

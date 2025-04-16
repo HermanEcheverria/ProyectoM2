@@ -1,39 +1,33 @@
-<script setup lang="js">
+<script setup>
 import { ref, onMounted } from "vue";
-import { obtenerPreguntas } from "@/services/faqService.js";
+import { obtenerPreguntas } from "@/services/faqService.js"; // Usamos la función correcta
 
-
-// Variables reactivas
 const preguntas = ref([]);
 const activeIndex = ref(null);
 const errorCargando = ref(false);
 
-// Función para cargar preguntas desde la API
+// Cargar solo preguntas PUBLICADAS
 const cargarPreguntas = async () => {
   try {
     errorCargando.value = false;
     const data = await obtenerPreguntas();
     if (Array.isArray(data)) {
-      preguntas.value = data;
+      preguntas.value = data.filter((p) => p.status === "PUBLICADO");
     } else {
-      console.error("🚨 Error: La API no devolvió un array de preguntas.");
+      console.error("🚨 La API no devolvió un array válido.");
       errorCargando.value = true;
     }
   } catch (error) {
-    console.error("🚨 Error cargando preguntas:", error);
+    console.error("🚨 Error al cargar preguntas:", error);
     errorCargando.value = true;
   }
 };
 
-// Alternar visibilidad de respuestas
 const toggleActive = (index) => {
   activeIndex.value = activeIndex.value === index ? null : index;
 };
 
-// Cargar preguntas al montar el componente
-onMounted(() => {
-  cargarPreguntas();
-});
+onMounted(cargarPreguntas);
 </script>
 
 <template>
@@ -41,23 +35,25 @@ onMounted(() => {
     <div class="header">Preguntas Frecuentes (FAQ)</div>
 
     <div class="section">
-    <!-- Mostrar mensaje si hay error al cargar preguntas -->
-    <p v-if="errorCargando" class="error-message">
-      ⚠ No se pudieron cargar las preguntas. Intenta de nuevo más tarde.
-    </p>
-
-    <!-- Sección dinámica con preguntas -->
-    <section v-for="(pregunta, index) in preguntas" :key="pregunta.id" class="faq-item">
-      <h2 @click="toggleActive(index)">
-        <span :class="{ 'rotated': activeIndex === index }">▶</span>
-        {{ pregunta.pregunta }}
-      </h2>
-
-      <p v-if="activeIndex === index">
-        {{ pregunta.respuesta?.trim() || "🔹 Esta pregunta aún no tiene respuesta." }}
+      <p v-if="errorCargando" class="error-message">
+        ⚠ No se pudieron cargar las preguntas. Intenta de nuevo más tarde.
       </p>
-    </section>
-  </div>
+
+      <section
+        v-for="(pregunta, index) in preguntas"
+        :key="pregunta.id"
+        class="faq-item"
+      >
+        <h2 @click="toggleActive(index)">
+          <span :class="{ rotated: activeIndex === index }">▶</span>
+          {{ pregunta.pregunta }}
+        </h2>
+
+        <p v-if="activeIndex === index">
+          {{ pregunta.respuesta?.trim() || "🔹 Esta pregunta aún no tiene respuesta." }}
+        </p>
+      </section>
+    </div>
   </div>
 </template>
 
@@ -70,7 +66,6 @@ onMounted(() => {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
-
 .header {
   text-align: center;
   font-size: 22px;
@@ -79,9 +74,8 @@ onMounted(() => {
   color: white;
   padding: 12px;
   border-radius: 5px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
-
 
 .section {
   border: 1px solid #45C4B0;
@@ -90,7 +84,6 @@ onMounted(() => {
   background: #13678a;
   border-radius: 8px;
 }
-
 
 .faq-item {
   margin-bottom: 1rem;

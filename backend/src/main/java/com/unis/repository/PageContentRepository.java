@@ -9,11 +9,20 @@ import java.util.List;
 @ApplicationScoped
 public class PageContentRepository implements PanacheRepository<PageContent> {
 
-    public List<PageContent> findPublishedByPage(String pageName){
+    public List<PageContent> findPublishedByPage(String pageName) {
         return list("pageName = ?1 and status = ?2", pageName, "PUBLICADO");
     }
 
-    public List<PageContent> findDrafts(){
-        return list("status", "PROCESO");
+    public List<PageContent> findDrafts() {
+        return list("status = ?1", "PROCESO");
+    }
+    
+
+    public List<PageContent> findByStatus(String status) {
+        return list("status = ?1", status);
+    }
+
+    public PageContent findById(Long id) {
+        return find("idContent", id).firstResult();
     }
 }

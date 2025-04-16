@@ -39,6 +39,13 @@ public class PageContent {
     @Column(name = "STATUS", length = 20)
     private String status;
 
+    @Column(name = "REJECTION_REASON", length = 500)
+    private String rejectionReason;
+
+    @Column(name = "EDITOR_EMAIL", length = 150)
+private String editorEmail;
+
+
     // Constructor vacío requerido por Hibernate
     public PageContent() {
     }
@@ -116,4 +123,21 @@ public class PageContent {
     public void setStatus(String status) {
         this.status = status;
     }
+
+    public String getRejectionReason() {
+        return rejectionReason;
+    }
+
+    public void setRejectionReason(String rejectionReason) {
+        this.rejectionReason = rejectionReason;
+    }
+
+    public String getEditorEmail() {
+        return editorEmail;
+    }
+    
+    public void setEditorEmail(String editorEmail) {
+        this.editorEmail = editorEmail;
+    }
+    
 }

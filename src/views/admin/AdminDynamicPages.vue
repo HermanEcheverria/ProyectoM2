@@ -3,32 +3,38 @@
     <div class="header">Administrador de páginas informativas</div>
 
     <div class="section">
-    <select v-model="selectedPage" @change="loadContent">
-      <option disabled value="">Selecciona una página</option>
-      <option v-for="page in pages" :key="page" :value="page">
-        {{ page }}
-      </option>
-    </select>
-
-    <div v-for="content in contents" :key="content.idContent" class="content-editor">
-      <input v-model="content.sectionName" placeholder="Nombre de sección" />
-      <input v-model="content.contentTitle" placeholder="Título del contenido" />
-      <textarea v-model="content.contentBody" placeholder="Contenido HTML"></textarea>
-
-      <!-- ✅ Campo para subir la imagen (sin vista previa) -->
-      <input type="file" @change="handleFileUpload($event, content)" accept="image/*" />
-
-      <select v-model="content.status">
-        <option value="PROCESO">Borrador</option>
-        <option value="PUBLICADO">Publicado</option>
+      <select v-model="selectedPage" @change="loadContent">
+        <option disabled value="">Selecciona una página</option>
+        <option v-for="page in pages" :key="page" :value="page">
+          {{ page }}
+        </option>
       </select>
 
-      <button class="edit-button" @click="saveContent(content)">Guardar Cambios</button>
-    </div>
+      <div
+        v-for="content in contents"
+        :key="content.idContent || content.tempId"
+        class="content-editor"
+      >
+        <input v-model="content.sectionName" placeholder="Nombre de sección" />
+        <input v-model="content.contentTitle" placeholder="Título del contenido" />
+        <textarea v-model="content.contentBody" placeholder="Contenido HTML"></textarea>
 
-    <button class="edit-button" @click="addContent">Añadir nueva sección</button>
+        <input type="file" @change="handleFileUpload($event, content)" accept="image/*" />
+
+        <select v-model="content.status" disabled>
+          <option value="PROCESO">Borrador</option>
+          <option value="PUBLICADO">Publicado</option>
+        </select>
+
+        <div class="button-group">
+          <button class="edit-button" @click="saveContent(content)">Guardar</button>
+          <button class="moderate-button" @click="sendToModeration(content)">Enviar a Moderación</button>
+        </div>
+      </div>
+
+      <button class="edit-button" @click="addContent">Añadir nueva sección</button>
+    </div>
   </div>
-</div>
 </template>
 
 <script setup>
@@ -38,57 +44,108 @@ import {
   getDraftContent,
   updateContent,
   createContent
-} from '../../services/pageContentService';
+} from '@/services/pageContentService';
 
 const selectedPage = ref('');
 const pages = ref(['about', 'contact']);
 const contents = ref([]);
 
-// 🔹 Cargar contenido desde backend
 const loadContent = async () => {
   if (!selectedPage.value) return;
   try {
     const published = await getPublishedContent(selectedPage.value);
     const drafts = await getDraftContent();
+    const merged = [...published];
 
-    contents.value = [...published, ...drafts.filter(c => c.pageName === selectedPage.value)];
+    drafts.forEach(d => {
+      if (d.pageName === selectedPage.value && !merged.some(p => p.idContent === d.idContent)) {
+        merged.push(d);
+      }
+    });
+
+    contents.value = merged;
   } catch (error) {
     console.error("Error cargando contenido:", error);
   }
 };
 
-// 🔹 Manejar la subida de imágenes (convertir a Base64, sin vista previa)
 const handleFileUpload = (event, content) => {
   const file = event.target.files[0];
   if (file) {
     const reader = new FileReader();
     reader.onload = (e) => {
-      content.image = e.target.result.split(',')[1]; // Guardar la imagen en Base64
+      content.image = e.target.result.split(',')[1]; // base64
     };
     reader.readAsDataURL(file);
   }
 };
 
-// 🔹 Guardar contenido (nueva sección o actualización)
 const saveContent = async (content) => {
   try {
+    content.pageName = selectedPage.value;
+    content.modifiedBy = Number(localStorage.getItem("userId"));
+
+    let saved;
     if (content.idContent) {
-      await updateContent(content.idContent, content);
+      saved = await updateContent(content.idContent, content);
     } else {
-      content.pageName = selectedPage.value;
-      content.modifiedBy = Number(localStorage.getItem('userId'));
-      await createContent(content);
+      saved = await createContent(content);
     }
+
+    // 🔁 Si el backend creó una nueva versión, actualiza el ID en el frontend
+    if (saved?.idContent && saved?.idContent !== content.idContent) {
+      content.idContent = saved.idContent;
+    }
+
+    delete content.tempId; // Limpia el tempId si lo tenía
     await loadContent();
-    alert("Contenido guardado correctamente");
+    alert("Contenido guardado correctamente.");
   } catch (error) {
     console.error("Error al guardar contenido:", error);
+    alert("Error al guardar contenido.");
   }
 };
 
-// 🔹 Añadir una nueva sección
+
+const sendToModeration = async (content) => {
+  try {
+    const contentToSend = {
+      ...content,
+      status: "PROCESO",
+      pageName: selectedPage.value,
+      modifiedBy: Number(localStorage.getItem("userId")),
+      editorEmail:       localStorage.getItem("usuarioEmail")// asegurate que este valor exista
+    };
+
+    console.log("🟡 Enviando a moderación:", contentToSend); // 🔍 Aquí se imprime todo el contenido enviado
+
+    let saved;
+    if (contentToSend.idContent) {
+      saved = await updateContent(contentToSend.idContent, contentToSend);
+    } else {
+      saved = await createContent(contentToSend);
+    }
+
+    if (saved?.idContent && saved?.idContent !== contentToSend.idContent) {
+      console.log("🆕 Se creó una nueva versión:", saved.idContent);
+      content.idContent = saved.idContent;
+    }
+
+    delete content.tempId;
+
+    alert("Enviado a moderación correctamente.");
+    await loadContent();
+  } catch (error) {
+    console.error("❌ Error al enviar a moderación:", error);
+    alert("No se pudo enviar a moderación.");
+  }
+};
+
+
+
 const addContent = () => {
   contents.value.push({
+    tempId: Date.now(),
     pageName: selectedPage.value,
     sectionName: '',
     contentTitle: '',
@@ -102,18 +159,17 @@ const addContent = () => {
 onMounted(loadContent);
 </script>
 
+
 <style scoped>
-/* Contenedor principal oscuro (similar a tu "Historia") */
 .admin-page-editor {
   background: #f9f9f9;
-  color: #e0e1dd;          /* Texto verde/menta */
+  color: #e0e1dd;
   min-height: 100vh;
   padding: 2rem;
   border-radius: 10px;
   max-width: 900px;
   margin: 0 auto;
 }
-
 
 .section {
   border: 1px solid #45C4B0;
@@ -123,21 +179,45 @@ onMounted(loadContent);
   border-radius: 8px;
 }
 
-
-/* Fila de botones en el formulario */
-.button-row {
-  display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
+input,
+textarea,
+select {
+  display: block;
+  width: 100%;
+  margin: 0.5rem 0;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
 }
 
-/* Botones del form */
-.btn-save,
-.btn-reset {
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.edit-button {
   padding: 0.6rem 1rem;
+  background-color: #00ABBD;
+  color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+}
+.edit-button:hover {
+  background-color: #0099DD;
+}
+
+.moderate-button {
+  padding: 0.6rem 1rem;
+  background-color: #FF9933;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.moderate-button:hover {
+  background-color: #e57a00;
 }
 
 .header {
@@ -148,35 +228,6 @@ onMounted(loadContent);
   color: white;
   padding: 12px;
   border-radius: 5px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-}
-
-.btn-save {
-  background-color: #DAFDBA;
-  color: #012030;
-  margin-right: 1rem;
-}
-.btn-save:hover {
-  background-color: #DAFDBA;
-}
-
-.btn-reset {
-  background-color: #ff8a7d;
-  color: #fff;
-}
-.btn-reset:hover {
-  background-color: #ff8a7d;
-}
-
-/* Botón Editar */
-.btn-edit {
-  background-color: #f0ad4e; /* celeste */
-}
-.btn-delete {
-  background-color: #ff8a7d; /* rojo */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 </style>
-
-
-
-
