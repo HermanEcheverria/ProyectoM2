@@ -83,7 +83,7 @@ import API_URL from '@/config';
 export default {
   name: 'ReporteView',
   setup() {
-    // Lista de doctores se obtiene dinámicamente del endpoint "/doctor"
+    // 1) Lista de doctores
     const doctores = ref([]);
     const getDoctores = async () => {
       try {
@@ -93,94 +93,92 @@ export default {
         console.error('Error al obtener los doctores', error);
       }
     };
-    onMounted(() => {
-      getDoctores();
-    });
 
-    // Suponemos que el usuario logueado se llama "Andrés"
-    const userName = "Andrés";
-
-    // Parámetros del reporte
+    // 2) Parámetros para el reporte (ahora con usuario)
     const reporteRequest = reactive({
       idDoctor: null,
       fechaInicio: '',
       fechaFin: '',
-      tipoReporte: 'AGRUPADO'
+      tipoReporte: 'AGRUPADO',
+     usuario: ''
     });
 
-    // Respuesta del reporte
+    // 3) Respuesta del servidor
     const reporteResponse = ref(null);
 
-    // Extraer las columnas de la tabla a partir del primer registro (si existen)
+    // 4) Columnas de la tabla
     const tableColumns = ref([]);
     watch(() => reporteResponse.value, (nuevoReporte) => {
-      if (nuevoReporte && nuevoReporte.datos && nuevoReporte.datos.length > 0) {
+      if (nuevoReporte?.datos?.length) {
         tableColumns.value = Object.keys(nuevoReporte.datos[0]);
       } else {
         tableColumns.value = [];
       }
     });
 
-    // Procesar y formatear el encabezado reemplazando los marcadores:
-    // Se reemplaza [NombreUsuario] con "Andrés" y se usa la información del doctor
+    // 5) Líneas del encabezado
     const headerLines = ref([]);
     watch(() => reporteResponse.value, (nuevoReporte) => {
-      if (nuevoReporte && nuevoReporte.encabezado) {
-        let headerStr = nuevoReporte.encabezado;
-        headerStr = headerStr.replace('[NombreUsuario]', userName);
-        headerStr = headerStr.replace(/Doctor ID = (\d+)/, (match, p1) => {
-          const id = Number(p1);
-          const doctor = doctores.value.find(d => d.idDoctor === id);
-          if (doctor) {
-            const nombreDoctor =
-              (doctor.usuario && doctor.usuario.nombreUsuario) ||
-              doctor.nombre ||
-              doctor.apellido ||
-              'Desconocido';
-            return `Doctor: ${nombreDoctor}`;
-          }
-          return match;
-        });
-        headerLines.value = headerStr.split('\n');
-      } else {
-        headerLines.value = [];
-      }
+      headerLines.value = nuevoReporte?.encabezado
+        ? nuevoReporte.encabezado.split('\n')
+        : [];
     });
 
-    // Función para generar el reporte (llama al service y actualiza reporteResponse)
+    // 6) Obtener el usuario actual y asignarlo a reporteRequest.usuario
+    const obtenerUsuarioActual = async () => {
+      try {
+        // Supongamos que guardas el ID en localStorage
+        const userId = localStorage.getItem('userId');
+        const { data } = await axios.get(`${API_URL}/usuarios/${userId}`);
+        reporteRequest.usuario = data.nombreUsuario;
+      } catch (e) {
+        console.warn('No se pudo obtener usuario, quedará Anónimo', e);
+        reporteRequest.usuario = '[Anónimo]';
+      }
+    };
+
+    onMounted(() => {
+      getDoctores();
+      obtenerUsuarioActual();
+    });
+
+    // 7) Generar reporte (envía usuario junto al resto de parámetros)
     const onGenerarReporte = async () => {
       try {
-        const reporte = await generarReporte(reporteRequest);
-        reporteResponse.value = reporte;
+        console.log('Enviando payload:', JSON.stringify(reporteRequest));
+        const resultado = await generarReporte(reporteRequest);
+        reporteResponse.value = resultado;
       } catch (error) {
         console.error('Error al generar el reporte', error);
       }
     };
 
-    // Función para descargar el reporte en Excel
+    // 8) Descargar Excel (igual que antes)
     const descargarExcel = () => {
       const params = new URLSearchParams({
         idDoctor: reporteRequest.idDoctor,
         fechaInicio: reporteRequest.fechaInicio,
         fechaFin: reporteRequest.fechaFin,
-        tipoReporte: reporteRequest.tipoReporte
+        tipoReporte: reporteRequest.tipoReporte,
+        usuario:     reporteRequest.usuario
       }).toString();
-      const url = `${API_URL}/api/reportes/consultas/excel?${params}`;
-      window.location.href = url;
+      window.location.href = `${API_URL}/api/reportes/consultas/excel?${params}`;
     };
 
     return {
       doctores,
       reporteRequest,
       reporteResponse,
-      onGenerarReporte,
       tableColumns,
       headerLines,
+      onGenerarReporte,
       descargarExcel
     };
   }
 };
 </script>
+
+
 
 <style scoped>
 .report-container {

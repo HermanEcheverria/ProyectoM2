@@ -3,6 +3,7 @@ package com.unis.resource;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -13,6 +14,8 @@ import com.unis.dto.ReporteAgregadoDTO;
 import com.unis.dto.ReporteDetalladoDTO;
 import com.unis.dto.ReporteRequest;
 import com.unis.dto.ReporteResponse;
+import com.unis.model.Doctor;
+import com.unis.service.DoctorService;
 import com.unis.service.ReporteService;
 
 import jakarta.inject.Inject;
@@ -22,10 +25,8 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.StreamingOutput;
 
 @Path("/api/reportes")
@@ -36,64 +37,105 @@ public class ReporteResource {
     @Inject
     ReporteService reporteService;
 
-    // Endpoint para generar reporte en JSON
+    @Inject
+    DoctorService doctorService;
+
+    // === Generar reporte en JSON, usando request.getUsuario() ===
     @POST
     @Path("/consultas")
     public Response generarReporte(ReporteRequest request) {
-        // Validación de parámetros básicos
-        if (request.getIdDoctor() == null || request.getFechaInicio() == null || request.getFechaFin() == null ||
-            request.getFechaInicio().isAfter(request.getFechaFin())) {
+
+        // 1) Validación de parámetros
+        if (request.getIdDoctor() == null
+         || request.getFechaInicio() == null
+         || request.getFechaFin() == null
+         || request.getFechaInicio().isAfter(request.getFechaFin())) {
             return Response.status(Response.Status.BAD_REQUEST)
                            .entity("Parámetros inválidos")
                            .build();
         }
 
-        // Generar el encabezado del reporte
+        // 2) Tomar usuario desde el cuerpo
+        String usuario = request.getUsuario() != null
+                ? request.getUsuario()
+                : "[Anónimo]";
+
+        // 3) Obtener nombre del doctor
+        String doctorTxt = "Doctor ID = " + request.getIdDoctor();
+        Optional<Doctor> optDoc = doctorService.getDoctorById(request.getIdDoctor());
+        if (optDoc.isPresent()) {
+            Doctor d = optDoc.get();
+            String nombreDoc;
+            if (d.getUsuario() != null && d.getUsuario().getNombreUsuario() != null) {
+                nombreDoc = d.getUsuario().getNombreUsuario();
+            } else if (d.getApellido() != null) {
+                nombreDoc = d.getApellido();
+            } else {
+                nombreDoc = "[Desconocido]";
+            }
+            doctorTxt = "Doctor: " + nombreDoc;
+        }
+
+        // 4) Construir encabezado
         String encabezado = "Reporte generado el: " + LocalDateTime.now() + "\n" +
-                            "Usuario: [NombreUsuario]\n" +
-                            "Parámetros: Doctor ID = " + request.getIdDoctor() +
+                            "Usuario: " + usuario + "\n" +
+                            "Parámetros: " + doctorTxt +
                             ", Fecha Inicio = " + request.getFechaInicio() +
                             ", Fecha Fin = " + request.getFechaFin() +
                             ", Tipo Reporte = " + request.getTipoReporte() + "\n";
 
+        // 5) Generar datos y devolver JSON
         if ("AGRUPADO".equalsIgnoreCase(request.getTipoReporte())) {
-            List<ReporteAgregadoDTO> reporte = reporteService.obtenerReporteAgregado(
+            List<ReporteAgregadoDTO> datos = reporteService.obtenerReporteAgregado(
                     request.getIdDoctor(),
                     request.getFechaInicio(),
-                    request.getFechaFin()
-            );
-            return Response.ok(new ReporteResponse<>(encabezado, reporte)).build();
-        } else { // Se asume "DETALLADO" para cualquier otro valor
-            List<ReporteDetalladoDTO> reporte = reporteService.obtenerReporteDetallado(
+                    request.getFechaFin());
+            return Response.ok(new ReporteResponse<>(encabezado, datos)).build();
+        } else {
+            List<ReporteDetalladoDTO> datos = reporteService.obtenerReporteDetallado(
                     request.getIdDoctor(),
                     request.getFechaInicio(),
-                    request.getFechaFin()
-            );
-            return Response.ok(new ReporteResponse<>(encabezado, reporte)).build();
+                    request.getFechaFin());
+            return Response.ok(new ReporteResponse<>(encabezado, datos)).build();
         }
     }
 
-    // Endpoint para exportar el reporte a Excel
+    // === Exportar reporte a Excel, recibiendo también `usuario` como query param ===
     @GET
     @Path("/consultas/excel")
     @Produces("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     public Response descargarReporteExcel(
-            @QueryParam("idDoctor") Long idDoctor,
+            @QueryParam("idDoctor")    Long idDoctor,
             @QueryParam("fechaInicio") String fechaInicioStr,
-            @QueryParam("fechaFin") String fechaFinStr,
+            @QueryParam("fechaFin")    String fechaFinStr,
             @QueryParam("tipoReporte") String tipoReporte,
-            @Context SecurityContext securityContext) {
+            @QueryParam("usuario")     String usuarioParam) {
 
-        // Convertir parámetros de fecha
         LocalDate fechaInicio = LocalDate.parse(fechaInicioStr);
-        LocalDate fechaFin = LocalDate.parse(fechaFinStr);
+        LocalDate fechaFin    = LocalDate.parse(fechaFinStr);
 
-        // Obtener el usuario del contexto o asignar un valor por defecto
-        String usuario = (securityContext.getUserPrincipal() != null)
-                ? securityContext.getUserPrincipal().getName()
-                : "[NombreUsuario]";
+        // Tomar usuario del query param
+        String usuario = usuarioParam != null
+                ? usuarioParam
+                : "[Anónimo]";
 
-        // Obtener los datos según el tipo de reporte
+        // Nombre de doctor (igual que en POST)
+        String doctorTxt = "Doctor ID = " + idDoctor;
+        Optional<Doctor> optDoc = doctorService.getDoctorById(idDoctor);
+        if (optDoc.isPresent()) {
+            Doctor d = optDoc.get();
+            String nombreDoc;
+            if (d.getUsuario() != null && d.getUsuario().getNombreUsuario() != null) {
+                nombreDoc = d.getUsuario().getNombreUsuario();
+            } else if (d.getApellido() != null) {
+                nombreDoc = d.getApellido();
+            } else {
+                nombreDoc = "[Desconocido]";
+            }
+            doctorTxt = "Doctor: " + nombreDoc;
+        }
+
+        // Obtener datos según el tipo de reporte
         List<?> reporte;
         if ("AGRUPADO".equalsIgnoreCase(tipoReporte)) {
             reporte = reporteService.obtenerReporteAgregado(idDoctor, fechaInicio, fechaFin);
@@ -106,71 +148,58 @@ public class ReporteResource {
         Sheet sheet = workbook.createSheet("Reporte");
         int rownum = 0;
 
-        // Encabezado 1: Fecha de generación
-        Row headerRow1 = sheet.createRow(rownum++);
-        headerRow1.createCell(0).setCellValue("Reporte generado el: " + LocalDateTime.now());
-
-        // Encabezado 2: Usuario
-        Row headerRow2 = sheet.createRow(rownum++);
-        headerRow2.createCell(0).setCellValue("Usuario: " + usuario);
-
-        // Encabezado 3: Parámetros
-        Row headerRow3 = sheet.createRow(rownum++);
-        headerRow3.createCell(0).setCellValue("Parámetros: Doctor ID = " + idDoctor +
-                ", Fecha Inicio = " + fechaInicio + ", Fecha Fin = " + fechaFin +
+        // Encabezados en Excel
+        Row r1 = sheet.createRow(rownum++);
+        r1.createCell(0).setCellValue("Reporte generado el: " + LocalDateTime.now());
+        Row r2 = sheet.createRow(rownum++);
+        r2.createCell(0).setCellValue("Usuario: " + usuario);
+        Row r3 = sheet.createRow(rownum++);
+        r3.createCell(0).setCellValue("Parámetros: " + doctorTxt +
+                ", Fecha Inicio = " + fechaInicio +
+                ", Fecha Fin = " + fechaFin +
                 ", Tipo Reporte = " + tipoReporte);
+        rownum++; // fila en blanco
 
-        // Fila en blanco para separar el encabezado de los datos
-        rownum++;
-
-        // Escribir datos si existen registros
         if (!reporte.isEmpty()) {
-            // Obtenemos los nombres de las propiedades del primer registro
-            Object primerRegistro = reporte.get(0);
-            java.lang.reflect.Field[] fields = primerRegistro.getClass().getDeclaredFields();
+            Object primer = reporte.get(0);
+            java.lang.reflect.Field[] fields = primer.getClass().getDeclaredFields();
 
-            Row tableHeader = sheet.createRow(rownum++);
-            int colnum = 0;
-            for (java.lang.reflect.Field field : fields) {
-                field.setAccessible(true);
-                tableHeader.createCell(colnum++).setCellValue(field.getName());
+            Row hdr = sheet.createRow(rownum++);
+            for (int i = 0; i < fields.length; i++) {
+                fields[i].setAccessible(true);
+                hdr.createCell(i).setCellValue(fields[i].getName());
             }
 
-            // Escribimos cada registro en una fila
-            for (Object registro : reporte) {
+            for (Object obj : reporte) {
                 Row row = sheet.createRow(rownum++);
-                colnum = 0;
-                for (java.lang.reflect.Field field : fields) {
-                    field.setAccessible(true);
-                    Object value;
+                for (int i = 0; i < fields.length; i++) {
+                    Object val;
                     try {
-                        value = field.get(registro);
+                        val = fields[i].get(obj);
                     } catch (IllegalAccessException e) {
-                        value = "Error";
+                        val = "Error";
                     }
-                    row.createCell(colnum++).setCellValue(value != null ? value.toString() : "");
+                    row.createCell(i).setCellValue(val != null ? val.toString() : "");
                 }
             }
-            // Ajustamos el ancho de las columnas
-            int numCols = fields.length;
-            for (int i = 0; i < numCols; i++) {
+            for (int i = 0; i < fields.length; i++) {
                 sheet.autoSizeColumn(i);
             }
         } else {
-            Row noDataRow = sheet.createRow(rownum++);
-            noDataRow.createCell(0).setCellValue("No se encontraron datos para los parámetros seleccionados.");
+            Row nr = sheet.createRow(rownum++);
+            nr.createCell(0).setCellValue("No se encontraron datos para los parámetros seleccionados.");
         }
 
-        StreamingOutput stream = output -> {
+        StreamingOutput stream = out -> {
             try {
-                workbook.write(output);
+                workbook.write(out);
             } finally {
                 workbook.close();
             }
         };
 
         return Response.ok(stream)
-                .header("Content-Disposition", "attachment; filename=\"Reporte.xlsx\"")
-                .build();
+                       .header("Content-Disposition", "attachment; filename=\"Reporte.xlsx\"")
+                       .build();
     }
 }

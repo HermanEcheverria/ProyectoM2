@@ -1,12 +1,25 @@
 package com.unis.resource;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+
 import com.unis.model.UserAcc;
 import com.unis.service.UserAccService;
+
 import jakarta.inject.Inject;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.util.Optional;
+import jakarta.ws.rs.core.SecurityContext;
+
 
 @Path("/usuarios")
 @Produces(MediaType.APPLICATION_JSON)
@@ -43,5 +56,15 @@ public class UserAccResource {
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
         }
+    }
+     @GET
+    @Path("/me")
+    public Response getCurrentUser(@Context SecurityContext sec) {
+        if (sec.getUserPrincipal() == null) {
+            return Response.status(Response.Status.UNAUTHORIZED).build();
+        }
+        String nombreUsuario = sec.getUserPrincipal().getName();
+        Map<String, String> result = Collections.singletonMap("nombreUsuario", nombreUsuario);
+        return Response.ok(result).build();
     }
 }

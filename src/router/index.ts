@@ -52,7 +52,7 @@ import AdminDynamicPages from "@/views/admin/AdminDynamicPages.vue";
 import AdminModerationView from "@/views/admin/AdminModerationView.vue";
 import DynamicPage from "@/views/DynamicPage.vue";
 
-import ReporteModeracionView from "@/views/admin/ReporteNoderacionView.vue"
+import ReporteModeracionView from "@/views/admin/ReporteModeracionView.vue"
 
 // Función para verificar si el usuario está autenticado
 const requireAuth = (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
