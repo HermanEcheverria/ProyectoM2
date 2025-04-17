@@ -52,6 +52,8 @@ import AdminDynamicPages from "@/views/admin/AdminDynamicPages.vue";
 import AdminModerationView from "@/views/admin/AdminModerationView.vue";
 import DynamicPage from "@/views/DynamicPage.vue";
 
+import ReporteModeracionView from "@/views/admin/ReporteNoderacionView.vue"
+
 // Función para verificar si el usuario está autenticado
 const requireAuth = (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
   const userId = localStorage.getItem("userId");
@@ -130,6 +132,7 @@ const router = createRouter({
     { path: "/admin/fichas-tecnicas", name: "admin-fichas-tecnicas", component: AdminFichasTecnicas, beforeEnter: requireRole(1) },
     {path: "/admin/reportes", name: "admin-reportes", component: ReporteView, beforeEnter: requireRole(1)},
     {path: "/admin/reportes-medicina", name: "admin-reportes-medicina", component: ReporteMedicinasView, beforeEnter: requireRole(1)},
+    {path: "/admin/reportes-moderacion", name: "admin-reportes-moderacion", component: ReporteModeracionView, beforeEnter: requireRole(1)},
     { path: "/doctorimagen", name: "doctor-imagen", component: DoctorImageView, beforeEnter: requireAuth },
     //componentes simulados de admin
     { path: "/admin/historial-pago", name: "historial-pago", component: HistorialPagos, beforeEnter: requireAuth },

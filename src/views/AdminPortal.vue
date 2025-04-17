@@ -24,6 +24,7 @@
       <button @click="router.push('/admin/historial-pago')" class="gestion-button"> Gestion de historial de pago </button>
       <button @click="router.push('/admin/reportes')" class="gestion-button"> Gestion de reportes</button>
       <button @click="router.push('/admin/reportes-medicina')" class="gestion-button"> Gestion de reportes de medicamentos</button>
+      <button @click="router.push('/admin/reportes-moderacion')" class="gestion-button"> Gestion de reportes de moderacion</button>
       <button @click="router.push('/admin/stock-medicamentos')" class="gestion-button"> Gestion de stock de medicamentos</button>
     </div>
 
