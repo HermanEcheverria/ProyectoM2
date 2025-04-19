@@ -6,8 +6,8 @@ import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 
 /**
- * Repositorio para la entidad {@link Rol}.
- * Esta clase utiliza PanacheRepository para simplificar las operaciones CRUD.
+ * Repository class for managing {@link Rol} entities.
+ * Provides CRUD operations and query methods using Panache.
  */
 @ApplicationScoped
 public class RolRepository implements PanacheRepository<Rol> {
