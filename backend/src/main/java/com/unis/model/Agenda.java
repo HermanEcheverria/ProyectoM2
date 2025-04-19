@@ -1,8 +1,14 @@
-/**
- * Entity representing a doctor's schedule.
- */
 package com.unis.model;
 
+/**
+ * Entity representing a doctor's schedule.
+ * <p>
+ * Represents the working agenda of a doctor, including available days,
+ * working hours, and additional notes.
+ * </p>
+ * 
+ * @author Herman
+ */
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
