@@ -1,19 +1,27 @@
 package com.unis.resource;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
 import com.unis.dto.ModeracionReporteDTO;
 import com.unis.service.ReporteModeracionExcelService;
 import com.unis.service.ReporteModeracionService;
 
 import jakarta.inject.Inject;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-
+/**
+ * REST resource for generating moderation reports.
+ */
 @Path("/api/reporte-moderacion")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -25,6 +33,14 @@ public class ReporteModeracionResource {
     @Inject
     ReporteModeracionExcelService excelService;
 
+    /**
+     * Retrieves a moderation report for users with rejections within a date range.
+     *
+     * @param inicio the start date of the report
+     * @param fin the end date of the report
+     * @param limite the maximum number of results
+     * @return a response containing the moderation report
+     */
     @GET
     @Path("/usuarios")
     public Response obtenerReporteUsuarios(
@@ -45,6 +61,14 @@ public class ReporteModeracionResource {
         }
     }
 
+    /**
+     * Exports a moderation report for users with rejections to Excel format.
+     *
+     * @param inicio the start date of the report
+     * @param fin the end date of the report
+     * @param limite the maximum number of results
+     * @return a response containing the Excel file
+     */
     @GET
     @Path("/usuarios/excel")
     @Produces("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")

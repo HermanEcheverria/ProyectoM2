@@ -2,18 +2,28 @@
 package com.unis.resource;
 
 import java.util.List;
-import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.json.JsonObject;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.unis.model.Cita;
 import com.unis.model.Doctor;
 import com.unis.service.CitaService;
 
+import jakarta.inject.Inject;
+import jakarta.json.JsonObject;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+/**
+ * REST resource for managing medical appointments (citas).
+ */
 @Path("/citas")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -22,17 +32,34 @@ public class CitaResource {
     @Inject
     CitaService citaService;
 
+    /**
+     * Retrieves all appointments.
+     *
+     * @return a list of all appointments
+     */
     @GET
     public List<Cita> obtenerCitas() {
         return citaService.obtenerCitas();
     }
 
+    /**
+     * Retrieves a specific appointment by its ID.
+     *
+     * @param id the ID of the appointment
+     * @return the appointment with the specified ID
+     */
     @GET
     @Path("/{id}")
     public Cita obtenerCita(@PathParam("id") Long id) {
         return citaService.obtenerCitaPorId(id);
     }
 
+    /**
+     * Schedules a new appointment.
+     *
+     * @param cita the appointment to be scheduled
+     * @return a response indicating the scheduling status
+     */
     @POST
     public Response agendarCita(Cita cita) {
         if (cita.getHoraInicio() == null || cita.getHoraInicio().isEmpty()) {
@@ -53,6 +80,13 @@ public class CitaResource {
                 .entity("✅ Cita agendada con éxito").build();
     }
 
+    /**
+     * Updates an existing appointment.
+     *
+     * @param id the ID of the appointment to be updated
+     * @param citaActualizada the updated appointment data
+     * @return a response indicating the update status
+     */
     @PUT
     @Path("/{id}")
     public Response actualizarCita(@PathParam("id") Long id, Cita citaActualizada) {
@@ -65,6 +99,12 @@ public class CitaResource {
         }
     }
 
+    /**
+     * Cancels an existing appointment.
+     *
+     * @param id the ID of the appointment to be canceled
+     * @return a response indicating the cancellation status
+     */
     @PUT
     @Path("/{id}/cancelar")
     public Response cancelarCita(@PathParam("id") Long id) {
@@ -77,6 +117,13 @@ public class CitaResource {
         }
     }
 
+    /**
+     * Reassigns a doctor to an existing appointment.
+     *
+     * @param id the ID of the appointment
+     * @param body the JSON body containing the new doctor's ID
+     * @return a response indicating the reassignment status
+     */
     @PUT
     @Path("/{id}/reasignar")
     public Response reasignarDoctor(@PathParam("id") Long id, JsonNode body) {
@@ -97,6 +144,13 @@ public class CitaResource {
         }
     }
 
+    /**
+     * Processes an appointment and sends results.
+     *
+     * @param id the ID of the appointment
+     * @param body the JSON body containing diagnosis and results
+     * @return a response indicating the processing status
+     */
     @PUT
     @Path("/{id}/procesar")
     public Response procesarCita(@PathParam("id") Long id, JsonNode body) {
@@ -112,19 +166,25 @@ public class CitaResource {
         }
     }
 
+    /**
+     * Receives an appointment from an external insurer.
+     *
+     * @param dto the JSON object containing appointment details
+     * @return a response indicating the reception status
+     */
     @POST
-@Path("/externa")
-@Consumes(MediaType.APPLICATION_JSON)
-@Transactional
-public Response recibirDesdeAseguradora(JsonObject dto) {
-    try {
-        citaService.crearCitaDesdeJson(dto);
-        return Response.status(Response.Status.CREATED).entity("✅ Cita recibida correctamente").build();
-    } catch (Exception e) {
-        e.printStackTrace();
-        return Response.status(Response.Status.BAD_REQUEST)
-            .entity("❌ Error al guardar cita: " + e.getMessage()).build();
+    @Path("/externa")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Transactional
+    public Response recibirDesdeAseguradora(JsonObject dto) {
+        try {
+            citaService.crearCitaDesdeJson(dto);
+            return Response.status(Response.Status.CREATED).entity("✅ Cita recibida correctamente").build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.BAD_REQUEST)
+                .entity("❌ Error al guardar cita: " + e.getMessage()).build();
+        }
     }
-}
 
 }

@@ -18,6 +18,9 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+/**
+ * REST resource for managing hospital requests.
+ */
 @Path("/hospital/solicitudes")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -26,6 +29,12 @@ public class SolicitudHospitalResource {
     @Inject
     SolicitudHospitalService servicio;
 
+    /**
+     * Sends a hospital request.
+     *
+     * @param solicitud the hospital request to be sent
+     * @return a response containing the saved request
+     */
     @POST
     @Transactional
     public Response enviar(SolicitudHospital solicitud) {
@@ -46,13 +55,24 @@ public class SolicitudHospitalResource {
         }
     }
 
+    /**
+     * Retrieves the history of hospital requests.
+     *
+     * @return a list of all hospital requests sorted by ID in descending order
+     */
     @GET
     @Path("/historial")
     public List<SolicitudHospital> listar() {
         return SolicitudHospital.listAll(Sort.descending("id"));
     }
 
-    //  actualizar estado de solicitud por nombre (usado por la aseguradora)
+    /**
+     * Updates the status of a hospital request by its name.
+     *
+     * @param nombre the name of the hospital request
+     * @param nuevoEstado the new status to be assigned
+     * @return a response indicating the update status
+     */
     @PATCH
     @Path("/{nombre}/estado")
     @Consumes(MediaType.TEXT_PLAIN)

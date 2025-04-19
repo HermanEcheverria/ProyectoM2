@@ -20,7 +20,9 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 
-
+/**
+ * REST resource for managing user accounts.
+ */
 @Path("/usuarios")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -29,6 +31,12 @@ public class UserAccResource {
     @Inject
     UserAccService userAccService;
 
+    /**
+     * Retrieves a user account by its ID.
+     *
+     * @param id the ID of the user account
+     * @return a response containing the user account or a NOT_FOUND status
+     */
     @GET
     @Path("/{id}")
     public Response getUserById(@PathParam("id") Long id) {
@@ -36,6 +44,13 @@ public class UserAccResource {
         return user.map(Response::ok).orElseGet(() -> Response.status(Response.Status.NOT_FOUND)).build();
     }
 
+    /**
+     * Updates an existing user account.
+     *
+     * @param id the ID of the user account to be updated
+     * @param updatedUser the updated user account data
+     * @return a response indicating the update status
+     */
     @PUT
     @Path("/{id}")
     public Response updateUser(@PathParam("id") Long id, UserAcc updatedUser) {
@@ -47,6 +62,13 @@ public class UserAccResource {
         }
     }
 
+    /**
+     * Changes the role of a user account.
+     *
+     * @param id the ID of the user account
+     * @param nuevoRol the new role to be assigned
+     * @return a response indicating the role change status
+     */
     @PUT
     @Path("/{id}/cambiar-rol")
     public Response changeUserRole(@PathParam("id") Long id, @QueryParam("nuevoRol") int nuevoRol) {
@@ -57,7 +79,14 @@ public class UserAccResource {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
         }
     }
-     @GET
+
+    /**
+     * Retrieves the current authenticated user.
+     *
+     * @param sec the security context
+     * @return a response containing the current user's username
+     */
+    @GET
     @Path("/me")
     public Response getCurrentUser(@Context SecurityContext sec) {
         if (sec.getUserPrincipal() == null) {

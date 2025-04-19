@@ -1,15 +1,27 @@
 package com.unis.resource;
 
+import java.util.List;
+
 import com.unis.model.PageContent;
 import com.unis.service.PageContentService;
+
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import java.util.List;
-
+/**
+ * REST resource for managing page content.
+ */
 @Path("/api/page-content")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -18,39 +30,62 @@ public class PageContentResource {
     @Inject
     PageContentService service;
 
-    // ✅ Obtener contenido publicado por página
+    /**
+     * Retrieves published content for a specific page.
+     *
+     * @param pageName the name of the page
+     * @return a list of published content for the page
+     */
     @GET
     @Path("/{pageName}")
     public List<PageContent> getPublished(@PathParam("pageName") String pageName) {
         return service.getPublishedContent(pageName);
     }
 
-    // ✅ Obtener contenido en estado PROCESO
+    /**
+     * Retrieves content in draft status.
+     *
+     * @return a list of draft content
+     */
     @GET
     @Path("/drafts")
     public List<PageContent> getDrafts() {
         return service.getDraftContent();
     }
 
-    // ✅ Obtener todos los pendientes (moderación)
+    /**
+     * Retrieves content pending moderation.
+     *
+     * @return a list of content in "PROCESO" status
+     */
     @GET
     @Path("/pendientes")
     public List<PageContent> getPendientesModeracion() {
         return service.getByStatus("PROCESO");
     }
 
+    /**
+     * Retrieves content by its ID.
+     *
+     * @param id the ID of the content
+     * @return a response containing the content or a NOT_FOUND status
+     */
     @GET
-@Path("/contenido/{id}")
-public Response getById(@PathParam("id") Long id) {
-    PageContent content = service.findById(id);
-    if (content == null) {
-        return Response.status(Response.Status.NOT_FOUND).build();
+    @Path("/contenido/{id}")
+    public Response getById(@PathParam("id") Long id) {
+        PageContent content = service.findById(id);
+        if (content == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        return Response.ok(content).build();
     }
-    return Response.ok(content).build();
-}
 
-
-    // ✅ Crear nuevo contenido (se guarda en estado PROCESO)
+    /**
+     * Creates new content in "PROCESO" status.
+     *
+     * @param content the content to be created
+     * @return a response containing the created content
+     */
     @POST
     @Transactional
     public Response create(PageContent content) {
@@ -59,7 +94,13 @@ public Response getById(@PathParam("id") Long id) {
         return Response.ok(created).status(Response.Status.CREATED).build();
     }
 
-    // ✅ Actualizar contenido
+    /**
+     * Updates existing content.
+     *
+     * @param id the ID of the content to be updated
+     * @param content the updated content data
+     * @return a response containing the updated content
+     */
     @PUT
     @Path("/{id}")
     @Transactional
@@ -68,7 +109,12 @@ public Response getById(@PathParam("id") Long id) {
         return Response.ok(updated).build();
     }
 
-    // ✅ Publicar contenido (aprobar)
+    /**
+     * Publishes (approves) content.
+     *
+     * @param id the ID of the content to be published
+     * @return a response containing the published content
+     */
     @PUT
     @Path("/{id}/publish")
     @Transactional
@@ -77,7 +123,13 @@ public Response getById(@PathParam("id") Long id) {
         return Response.ok(published).build();
     }
 
-    // ✅ Rechazar contenido (guardar motivo)
+    /**
+     * Rejects content and saves the reason.
+     *
+     * @param id the ID of the content to be rejected
+     * @param motivo the reason for rejection
+     * @return a response containing the rejected content
+     */
     @PUT
     @Path("/{id}/reject")
     @Transactional
@@ -86,7 +138,12 @@ public Response getById(@PathParam("id") Long id) {
         return Response.ok(rejected).build();
     }
 
-    // ✅ Eliminar contenido
+    /**
+     * Deletes content by its ID.
+     *
+     * @param id the ID of the content to be deleted
+     * @return a response indicating the deletion status
+     */
     @DELETE
     @Path("/{id}")
     @Transactional

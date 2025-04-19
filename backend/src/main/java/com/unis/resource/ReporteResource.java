@@ -29,6 +29,9 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
 
+/**
+ * REST resource for generating and exporting reports.
+ */
 @Path("/api/reportes")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -40,7 +43,12 @@ public class ReporteResource {
     @Inject
     DoctorService doctorService;
 
-    // === Generar reporte en JSON, usando request.getUsuario() ===
+    /**
+     * Generates a report in JSON format based on the provided request parameters.
+     *
+     * @param request the report request containing parameters
+     * @return a response containing the generated report
+     */
     @POST
     @Path("/consultas")
     public Response generarReporte(ReporteRequest request) {
@@ -100,7 +108,16 @@ public class ReporteResource {
         }
     }
 
-    // === Exportar reporte a Excel, recibiendo también `usuario` como query param ===
+    /**
+     * Exports a report to Excel format based on the provided query parameters.
+     *
+     * @param idDoctor the ID of the doctor
+     * @param fechaInicioStr the start date of the report
+     * @param fechaFinStr the end date of the report
+     * @param tipoReporte the type of report (e.g., "AGRUPADO")
+     * @param usuarioParam the user generating the report
+     * @return a response containing the Excel file
+     */
     @GET
     @Path("/consultas/excel")
     @Produces("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
