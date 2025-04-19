@@ -1,9 +1,15 @@
-/**
- * Request object for generating reports.
- */
 package com.unis.dto;
 
 import java.time.LocalDate;
+
+
+/**
+ * Data Transfer Object (DTO) representing a request to generate reports.
+ * <p>
+ * Contains the criteria used to filter and determine the type of report to generate,
+ * including doctor ID, date range, report type, and the requesting user.
+ * </p>
+ */
 
 public class ReporteRequest {
     /** The ID of the doctor associated with the report. */

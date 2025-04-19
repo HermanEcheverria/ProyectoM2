@@ -1,8 +1,11 @@
+
+package com.unis.dto;
 /**
  * Data Transfer Object (DTO) representing medicine report data.
+ * <p>
+ * Contains summarized data for medication usage and prescription statistics.
+ * </p>
  */
-package com.unis.dto;
-
 public class MedicinasReporteDTO {
     /** The popularity rank of the medicine. */
     public int popularidad;

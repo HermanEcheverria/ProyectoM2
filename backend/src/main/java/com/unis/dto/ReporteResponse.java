@@ -1,11 +1,18 @@
-/**
- * Generic response object for reports.
- *
- * @param <T> The type of data contained in the report.
- */
+
 package com.unis.dto;
 
 import java.util.List;
+
+
+/**
+ * Generic response object for reports.
+ * <p>
+ * Contains a header and a list of results of a given type.
+ * This class is used to wrap responses from aggregated or detailed reports.
+ * </p>
+ *
+ * @param <T> The type of data contained in the report.
+ */
 
 public class ReporteResponse<T> {
     /** The header of the report. */

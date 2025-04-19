@@ -1,9 +1,16 @@
-/**
- * Data Transfer Object (DTO) representing aggregated report data.
- */
 package com.unis.dto;
 
 import java.time.LocalDate;
+
+
+/**
+ * Data Transfer Object (DTO) representing aggregated report data.
+ * <p>
+ * Used to summarize consultation metrics for a given date,
+ * including totals by payment method (insurance or direct).
+ * </p>
+ */
+
 
 public class ReporteAgregadoDTO {
     /** The date of the report. */

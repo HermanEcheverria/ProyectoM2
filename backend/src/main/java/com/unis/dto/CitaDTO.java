@@ -1,10 +1,13 @@
-/**
- * Data Transfer Object (DTO) representing a medical appointment.
- */
+
 package com.unis.dto;
 
 import java.time.LocalDate;
-
+/**
+ * Data Transfer Object (DTO) representing a medical appointment.
+ * <p>
+ * Used to transfer patient and appointment-related data between layers.
+ * </p>
+ */
 public class CitaDTO {
     /** The unique identifier of the patient (DPI). */
     public String dpi;

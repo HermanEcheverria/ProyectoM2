@@ -1,10 +1,13 @@
-/**
- * Data Transfer Object (DTO) representing detailed report data.
- */
 package com.unis.dto;
 
 import java.time.LocalDate;
-
+/**
+ * Data Transfer Object (DTO) representing detailed report data.
+ * <p>
+ * Provides individual-level data for each medical consultation,
+ * including date, time, patient name, and payment type.
+ * </p>
+ */
 public class ReporteDetalladoDTO {
     /** The date of the consultation. */
     private LocalDate fecha;

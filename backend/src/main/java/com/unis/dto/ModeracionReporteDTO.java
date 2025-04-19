@@ -1,8 +1,11 @@
+package com.unis.dto;
 /**
  * Data Transfer Object (DTO) representing moderation report data.
+ * <p>
+ * Used for summarizing moderation actions such as rejections
+ * and tracking the user responsible for them.
+ * </p>
  */
-package com.unis.dto;
-
 public class ModeracionReporteDTO {
     /** The order number of the moderation report. */
     private int numeroOrden;
