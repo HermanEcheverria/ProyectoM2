@@ -10,12 +10,21 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
-@Path("/api/solicitudes/hospital") // Cambiar al path correcto del sistema de la aseguradora
+/**
+ * API REST para enviar solicitudes de hospitales a la aseguradora.
+ */
+@Path("/api/solicitudes/hospital")
 @RegisterRestClient(configKey = "solicitud-hospital-api")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public interface SolicitudHospitalAPI {
 
+    /**
+     * Envía una solicitud de hospital a la aseguradora.
+     *
+     * @param hospital Los datos de la solicitud de hospital.
+     * @return La solicitud enviada.
+     */
     @POST
     SolicitudHospital enviarSolicitud(SolicitudHospital hospital);
 }

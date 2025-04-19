@@ -1,14 +1,19 @@
 package com.unis.service;
 
+import java.util.List;
+import java.util.Optional;
+
 import com.unis.model.UsuarioInter;
 import com.unis.repository.UsuarioInterconexionRepository;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
-import java.util.List;
-import java.util.Optional;
 
+/**
+ * Servicio para gestionar las operaciones relacionadas con los usuarios interconectados.
+ */
 @ApplicationScoped
 public class UsuarioInterService {
 
@@ -18,14 +23,30 @@ public class UsuarioInterService {
     @Inject
     EntityManager entityManager;
 
+    /**
+     * Obtiene todos los usuarios interconectados registrados.
+     *
+     * @return Una lista de usuarios interconectados.
+     */
     public List<UsuarioInter> getAllUsuarios() {
         return usuarioInterconexionRepository.listAll();
     }
 
+    /**
+     * Obtiene un usuario interconectado por su ID.
+     *
+     * @param id El ID del usuario interconectado.
+     * @return Un Optional que contiene el usuario si se encuentra.
+     */
     public Optional<UsuarioInter> getUsuarioById(Long id) {
         return usuarioInterconexionRepository.findByIdOptional(id);
     }
 
+    /**
+     * Registra un nuevo usuario interconectado.
+     *
+     * @param usuario Los datos del usuario a registrar.
+     */
     @Transactional
     public void registrarUsuario(UsuarioInter usuario) {
         entityManager.createNativeQuery("BEGIN REGISTRAR_USUARIOINTER(?, ?, ?, ?, ?, ?, ?, ?, ?); END;")
@@ -41,6 +62,12 @@ public class UsuarioInterService {
             .executeUpdate();
     }
 
+    /**
+     * Actualiza los datos de un usuario interconectado existente.
+     *
+     * @param id      El ID del usuario a actualizar.
+     * @param usuario Los nuevos datos del usuario.
+     */
     @Transactional
     public void actualizarUsuario(Long id, UsuarioInter usuario) {
         entityManager.createNativeQuery("BEGIN ACTUALIZAR_USUARIOINTER(?, ?, ?, ?, ?, ?, ?, ?, ?); END;")
@@ -56,6 +83,11 @@ public class UsuarioInterService {
             .executeUpdate();
     }
 
+    /**
+     * Elimina un usuario interconectado por su ID.
+     *
+     * @param id El ID del usuario a eliminar.
+     */
     @Transactional
     public void eliminarUsuario(Long id) {
         entityManager.createNativeQuery("BEGIN ELIMINAR_USUARIOINTER(?); END;")

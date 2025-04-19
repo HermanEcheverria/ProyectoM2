@@ -1,23 +1,34 @@
-
 // ReporteModeracionService
 package com.unis.service;
-
-import com.unis.dto.ModeracionReporteDTO;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.Query;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.unis.dto.ModeracionReporteDTO;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
+
+/**
+ * Servicio para generar reportes relacionados con la moderación de contenido.
+ */
 @ApplicationScoped
 public class ReporteModeracionService {
 
     @Inject
     EntityManager em;
 
+    /**
+     * Obtiene un reporte de usuarios con rechazos en un intervalo de tiempo.
+     *
+     * @param inicio La fecha de inicio del intervalo.
+     * @param fin    La fecha de fin del intervalo.
+     * @param limite El número máximo de resultados a incluir.
+     * @return Una lista de objetos {@link ModeracionReporteDTO} con los datos del reporte.
+     */
     public List<ModeracionReporteDTO> obtenerUsuariosConRechazos(Date inicio, Date fin, int limite) {
         String sql = "SELECT * FROM (\n" +
                 "  SELECT editor AS usuario, COUNT(*) AS total_rechazos\n" +

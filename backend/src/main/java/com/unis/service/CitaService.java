@@ -7,7 +7,15 @@ import java.net.http.HttpResponse;
 import java.time.LocalDate;
 import java.util.List;
 
-import com.unis.model.*;
+import com.unis.model.Aseguradora;
+import com.unis.model.Cita;
+import com.unis.model.Doctor;
+import com.unis.model.EstadoCita;
+import com.unis.model.FichaTecnica;
+import com.unis.model.Paciente;
+import com.unis.model.PacienteFT;
+import com.unis.model.Rol;
+import com.unis.model.Usuario;
 import com.unis.repository.CitaRepository;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -17,6 +25,9 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 
+/**
+ * Servicio para gestionar las operaciones relacionadas con las citas médicas.
+ */
 @ApplicationScoped
 public class CitaService {
 
@@ -29,18 +40,42 @@ public class CitaService {
     @PersistenceContext
     EntityManager entityManager;
 
+    /**
+     * Obtiene todas las citas registradas.
+     *
+     * @return Una lista de citas.
+     */
     public List<Cita> obtenerCitas() {
         return citaRepository.listAll();
     }
 
+    /**
+     * Obtiene una cita específica por su ID.
+     *
+     * @param id El ID de la cita.
+     * @return La cita correspondiente al ID, o null si no se encuentra.
+     */
     public Cita obtenerCitaPorId(Long id) {
         return citaRepository.findById(id);
     }
 
+    /**
+     * Busca un doctor por su ID.
+     *
+     * @param id El ID del doctor.
+     * @return El doctor correspondiente al ID, o null si no se encuentra.
+     */
     public Doctor buscarDoctorPorId(Long id) {
         return doctorService.getDoctorById(id).orElse(null);
     }
 
+    /**
+     * Agenda una nueva cita médica.
+     *
+     * @param cita La cita a agendar.
+     * @throws IllegalArgumentException Si el ID del doctor o paciente no está presente,
+     *                                  o si no se encuentran en la base de datos.
+     */
     @Transactional
     public void agendarCita(Cita cita) {
         if (cita.getIdDoctor() == null || cita.getIdPaciente() == null) {
@@ -59,6 +94,12 @@ public class CitaService {
         citaRepository.persist(cita);
     }
 
+    /**
+     * Cancela una cita existente.
+     *
+     * @param id El ID de la cita a cancelar.
+     * @throws IllegalArgumentException Si no se encuentra la cita.
+     */
     @Transactional
     public void cancelarCita(Long id) {
         Cita cita = citaRepository.findById(id);
@@ -69,6 +110,13 @@ public class CitaService {
         }
     }
 
+    /**
+     * Actualiza una cita existente con los datos proporcionados.
+     *
+     * @param id               El ID de la cita a actualizar.
+     * @param citaActualizada  Los datos actualizados de la cita.
+     * @throws IllegalArgumentException Si no se encuentra la cita.
+     */
     @Transactional
     public void actualizarCita(Long id, Cita citaActualizada) {
         Cita cita = citaRepository.findById(id);
@@ -80,6 +128,12 @@ public class CitaService {
         if (citaActualizada.getResultados() != null) cita.setResultados(citaActualizada.getResultados());
     }
 
+    /**
+     * Marca una cita como finalizada.
+     *
+     * @param id El ID de la cita a procesar.
+     * @throws IllegalArgumentException Si no se encuentra la cita.
+     */
     @Transactional
     public void procesarCita(Long id) {
         Cita cita = citaRepository.findById(id);
@@ -89,6 +143,14 @@ public class CitaService {
         cita.setEstado(EstadoCita.FINALIZADA);
     }
 
+    /**
+     * Procesa una cita y envía los resultados a la aseguradora.
+     *
+     * @param id          El ID de la cita.
+     * @param diagnostico El diagnóstico de la cita.
+     * @param resultados  Los resultados de la cita.
+     * @throws IllegalArgumentException Si no se encuentra la cita.
+     */
     @Transactional
     public void procesarCitaYEnviarResultados(Long id, String diagnostico, String resultados) {
         Cita cita = citaRepository.findById(id);
@@ -101,35 +163,13 @@ public class CitaService {
         enviarResultadosAAseguradora(cita);
     }
 
-    private void enviarResultadosAAseguradora(Cita cita) {
-        try {
-            JsonObject json = jakarta.json.Json.createObjectBuilder()
-                .add("idCita", cita.getIdCita())
-                .add("documento", cita.getPaciente().getDocumento())
-                .add("nombre", cita.getPaciente().getUsuario().getNombreUsuario())
-                .add("apellido", cita.getPaciente().getApellido())
-                .add("diagnostico", cita.getDiagnostico())
-                .add("resultados", cita.getResultados())
-                .add("fecha", cita.getFecha().toString())
-                .add("doctor", cita.getDoctor().getUsuario().getNombreUsuario())
-                .build();
-
-            System.out.println("📤 Enviando resultado: " + json);
-
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:5001/api/resultados"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(json.toString()))
-                .build();
-
-            client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenAccept(response -> System.out.println("✅ Resultado enviado: " + response.statusCode()));
-        } catch (Exception e) {
-            System.err.println("❌ Error enviando resultados: " + e.getMessage());
-        }
-    }
-
+    /**
+     * Reasigna un doctor a una cita existente.
+     *
+     * @param idCita      El ID de la cita.
+     * @param nuevoDoctor El nuevo doctor a asignar.
+     * @throws IllegalArgumentException Si la cita o el doctor no son válidos.
+     */
     @Transactional
     public void reasignarDoctor(Long idCita, Doctor nuevoDoctor) {
         Cita cita = citaRepository.findById(idCita);
@@ -139,6 +179,13 @@ public class CitaService {
         cita.setDoctor(nuevoDoctor);
     }
 
+    /**
+     * Crea una nueva cita a partir de un objeto JSON.
+     *
+     * @param dto El objeto JSON con los datos de la cita.
+     * @throws IllegalArgumentException Si faltan datos obligatorios o si no se encuentran
+     *                                  entidades relacionadas en la base de datos.
+     */
     @Transactional
     public void crearCitaDesdeJson(JsonObject dto) {
         String documento = dto.getString("documento", null);
@@ -175,34 +222,32 @@ public class CitaService {
             entityManager.persist(usuario);
     
             // ✅ Crear nuevo paciente
-           // ✅ Crear nuevo paciente
-paciente = new Paciente();
-paciente.setDocumento(documento);
-paciente.setApellido(apellido);
-paciente.setUsuario(usuario);
-paciente.setIdUsuario(usuario.getId());
+            paciente = new Paciente();
+            paciente.setDocumento(documento);
+            paciente.setApellido(apellido);
+            paciente.setUsuario(usuario);
+            paciente.setIdUsuario(usuario.getId());
 
-entityManager.persist(paciente);
-System.out.println("✅ Usuario y paciente creados automáticamente");
+            entityManager.persist(paciente);
+            System.out.println("✅ Usuario y paciente creados automáticamente");
 
-// ⚠️ Necesitamos obtener el paciente como PacienteFT para la ficha técnica
-PacienteFT pacienteFT = entityManager
-    .createQuery("SELECT p FROM PacienteFT p WHERE p.documento = :doc", PacienteFT.class)
-    .setParameter("doc", documento)
-    .getSingleResult();
+            // ⚠️ Necesitamos obtener el paciente como PacienteFT para la ficha técnica
+            PacienteFT pacienteFT = entityManager
+                .createQuery("SELECT p FROM PacienteFT p WHERE p.documento = :doc", PacienteFT.class)
+                .setParameter("doc", documento)
+                .getSingleResult();
 
-// ✅ Crear ficha técnica asociada al nuevo paciente
-FichaTecnica ficha = new FichaTecnica();
-ficha.setPaciente(pacienteFT);
-ficha.setFechaCreacion(LocalDate.now());
-ficha.setHistorialServicios("");
-ficha.setNumeroAfiliacion(numeroAfiliacion);
-ficha.setCodigoSeguro(codigoSeguro);
-ficha.setCarnetSeguro(carnetSeguro);
+            // ✅ Crear ficha técnica asociada al nuevo paciente
+            FichaTecnica ficha = new FichaTecnica();
+            ficha.setPaciente(pacienteFT);
+            ficha.setFechaCreacion(LocalDate.now());
+            ficha.setHistorialServicios("");
+            ficha.setNumeroAfiliacion(numeroAfiliacion);
+            ficha.setCodigoSeguro(codigoSeguro);
+            ficha.setCarnetSeguro(carnetSeguro);
 
-entityManager.persist(ficha);
-System.out.println("✅ Ficha técnica creada automáticamente");
-
+            entityManager.persist(ficha);
+            System.out.println("✅ Ficha técnica creada automáticamente");
         }
     
         // 🔁 Crear cita
@@ -239,6 +284,38 @@ System.out.println("✅ Ficha técnica creada automáticamente");
         citaRepository.persist(cita);
         System.out.println("📅 Cita guardada correctamente");
     }
-    
-    
+
+    /**
+     * Envía los resultados de una cita a la aseguradora correspondiente.
+     *
+     * @param cita La cita cuyos resultados se enviarán.
+     */
+    private void enviarResultadosAAseguradora(Cita cita) {
+        try {
+            JsonObject json = jakarta.json.Json.createObjectBuilder()
+                .add("idCita", cita.getIdCita())
+                .add("documento", cita.getPaciente().getDocumento())
+                .add("nombre", cita.getPaciente().getUsuario().getNombreUsuario())
+                .add("apellido", cita.getPaciente().getApellido())
+                .add("diagnostico", cita.getDiagnostico())
+                .add("resultados", cita.getResultados())
+                .add("fecha", cita.getFecha().toString())
+                .add("doctor", cita.getDoctor().getUsuario().getNombreUsuario())
+                .build();
+
+            System.out.println("📤 Enviando resultado: " + json);
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:5001/api/resultados"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json.toString()))
+                .build();
+
+            client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(response -> System.out.println("✅ Resultado enviado: " + response.statusCode()));
+        } catch (Exception e) {
+            System.err.println("❌ Error enviando resultados: " + e.getMessage());
+        }
+    }
 }

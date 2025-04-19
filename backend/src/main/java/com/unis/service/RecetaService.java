@@ -1,4 +1,5 @@
 package com.unis.service;
+
 import java.util.Date;
 
 import com.unis.model.Medicamento;
@@ -11,6 +12,9 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
+/**
+ * Servicio para gestionar las operaciones relacionadas con las recetas médicas.
+ */
 @ApplicationScoped
 public class RecetaService {
 
@@ -20,6 +24,13 @@ public class RecetaService {
     @Inject
     RecetaRepository recetaRepository;
 
+    /**
+     * Crea una nueva receta médica.
+     *
+     * @param receta Los datos de la receta a crear.
+     * @return La receta creada.
+     * @throws RuntimeException Si faltan datos obligatorios o ocurre un error al guardar.
+     */
     @Transactional
     public Receta crearReceta(Receta receta) {
         try {
@@ -50,66 +61,81 @@ public class RecetaService {
         }
     }
 
-     @Transactional
-public Receta buscarPorIdCita(int idCita) {
-    Receta receta = recetaRepository.find("idCita", idCita).firstResult();
-    if (receta != null) {
-        // 💡 Forzar carga de medicamentos antes de devolver la receta
-        receta.getMedicamentos().size(); // Esto obliga a Hibernate a traer la lista
-    }
-    return receta;
-}
-
-
-@Transactional
-public Receta actualizarReceta(Long idReceta, Receta recetaActualizada) {
-    try {
-        System.out.println("📌 Iniciando actualización de receta con ID: " + idReceta);
-
-        Receta recetaExistente = em.find(Receta.class, idReceta);
-        if (recetaExistente == null) {
-            throw new RuntimeException("❌ Error: No se encontró la receta con ID " + idReceta);
+    /**
+     * Busca una receta por el ID de la cita asociada.
+     *
+     * @param idCita El ID de la cita.
+     * @return La receta asociada a la cita, o null si no se encuentra.
+     */
+    @Transactional
+    public Receta buscarPorIdCita(int idCita) {
+        Receta receta = recetaRepository.find("idCita", idCita).firstResult();
+        if (receta != null) {
+            // 💡 Forzar carga de medicamentos antes de devolver la receta
+            receta.getMedicamentos().size(); // Esto obliga a Hibernate a traer la lista
         }
+        return receta;
+    }
 
-        // ⚡ Actualizar solo los campos editables
-        recetaExistente.setAnotaciones(recetaActualizada.getAnotaciones());
-        recetaExistente.setNotasEspeciales(recetaActualizada.getNotasEspeciales());
+    /**
+     * Actualiza una receta existente.
+     *
+     * @param idReceta         El ID de la receta a actualizar.
+     * @param recetaActualizada Los nuevos datos de la receta.
+     * @return La receta actualizada.
+     * @throws RuntimeException Si no se encuentra la receta o ocurre un error al actualizar.
+     */
+    @Transactional
+    public Receta actualizarReceta(Long idReceta, Receta recetaActualizada) {
+        try {
+            System.out.println("📌 Iniciando actualización de receta con ID: " + idReceta);
 
-        // ⚡ Eliminar medicamentos anteriores
-        recetaExistente.getMedicamentos().clear();
-        em.flush(); // 🔥 Necesario para aplicar el cambio antes de agregar nuevos medicamentos
-
-        // ⚡ Agregar medicamentos actualizados
-        for (RecetaMedicamento med : recetaActualizada.getMedicamentos()) {
-            Medicamento medicamento = em.find(Medicamento.class, med.getMedicamento().getIdMedicamento());
-            if (medicamento == null) {
-                throw new RuntimeException("❌ Error: No se encontró el medicamento con ID " + med.getMedicamento().getIdMedicamento());
+            Receta recetaExistente = em.find(Receta.class, idReceta);
+            if (recetaExistente == null) {
+                throw new RuntimeException("❌ Error: No se encontró la receta con ID " + idReceta);
             }
 
-            med.setReceta(recetaExistente);
-            med.setMedicamento(medicamento);
+            // ⚡ Actualizar solo los campos editables
+            recetaExistente.setAnotaciones(recetaActualizada.getAnotaciones());
+            recetaExistente.setNotasEspeciales(recetaActualizada.getNotasEspeciales());
 
-            // ⚠️ Usar merge en lugar de persist para evitar error de detached entity
-            em.merge(med);
-            recetaExistente.getMedicamentos().add(med);
+            // ⚡ Eliminar medicamentos anteriores
+            recetaExistente.getMedicamentos().clear();
+            em.flush(); // 🔥 Necesario para aplicar el cambio antes de agregar nuevos medicamentos
+
+            // ⚡ Agregar medicamentos actualizados
+            for (RecetaMedicamento med : recetaActualizada.getMedicamentos()) {
+                Medicamento medicamento = em.find(Medicamento.class, med.getMedicamento().getIdMedicamento());
+                if (medicamento == null) {
+                    throw new RuntimeException("❌ Error: No se encontró el medicamento con ID " + med.getMedicamento().getIdMedicamento());
+                }
+
+                med.setReceta(recetaExistente);
+                med.setMedicamento(medicamento);
+
+                // ⚠️ Usar merge en lugar de persist para evitar error de detached entity
+                em.merge(med);
+                recetaExistente.getMedicamentos().add(med);
+            }
+
+            // 💾 Guardar cambios en la receta
+            em.merge(recetaExistente);
+
+            System.out.println("✅ Receta actualizada correctamente con ID: " + idReceta);
+            return recetaExistente;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("❌ Error al actualizar la receta: " + e.getMessage());
         }
-
-        // 💾 Guardar cambios en la receta
-        em.merge(recetaExistente);
-
-        System.out.println("✅ Receta actualizada correctamente con ID: " + idReceta);
-        return recetaExistente;
-    } catch (Exception e) {
-        e.printStackTrace();
-        throw new RuntimeException("❌ Error al actualizar la receta: " + e.getMessage());
     }
-}
 
-
-
-
-
-
+    /**
+     * Agrega un medicamento a una receta existente.
+     *
+     * @param recetaMedicamento Los datos del medicamento a agregar.
+     * @return El medicamento agregado a la receta.
+     * @throws RuntimeException Si faltan datos obligatorios o ocurre un error al agregar.
+     */
     @Transactional
     public RecetaMedicamento agregarMedicamento(RecetaMedicamento recetaMedicamento) {
         try {
@@ -145,11 +171,13 @@ public Receta actualizarReceta(Long idReceta, Receta recetaActualizada) {
         }
     }
 
-
-
-public Receta buscarPorCodigo(String codigoReceta) {
-    return recetaRepository.find("codigoReceta", codigoReceta).firstResult();
-
-}
-
+    /**
+     * Busca una receta por su código único.
+     *
+     * @param codigoReceta El código de la receta.
+     * @return La receta correspondiente al código, o null si no se encuentra.
+     */
+    public Receta buscarPorCodigo(String codigoReceta) {
+        return recetaRepository.find("codigoReceta", codigoReceta).firstResult();
+    }
 }

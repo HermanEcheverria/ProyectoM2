@@ -12,6 +12,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
+/**
+ * Servicio para gestionar las solicitudes de hospitales hacia aseguradoras y MongoDB.
+ */
 @ApplicationScoped
 public class SolicitudHospitalService {
 
@@ -19,6 +22,11 @@ public class SolicitudHospitalService {
     @RestClient
     SolicitudHospitalAPI aseguradoraClient;
 
+    /**
+     * Envía una solicitud de hospital a la aseguradora y MongoDB.
+     *
+     * @param solicitud Los datos de la solicitud a enviar.
+     */
     public void enviarSolicitud(SolicitudHospital solicitud) {
         try {
             // Validar datos antes de enviar
@@ -50,6 +58,11 @@ public class SolicitudHospitalService {
         }
     }
 
+    /**
+     * Envía una solicitud de hospital a MongoDB.
+     *
+     * @param solicitud Los datos de la solicitud a enviar.
+     */
     private void enviarSolicitudAMongo(SolicitudHospital solicitud) {
         try {
             URL url = new URL("http://localhost:5000/api/solicitudes/hospital");
@@ -83,6 +96,12 @@ public class SolicitudHospitalService {
         }
     }
 
+    /**
+     * Actualiza el estado de una solicitud de hospital.
+     *
+     * @param nombreHospital El nombre del hospital.
+     * @param estado         El nuevo estado de la solicitud.
+     */
     @Transactional
     public void actualizarEstado(String nombreHospital, String estado) {
         SolicitudHospital solicitud = SolicitudHospital.find("nombre", nombreHospital).firstResult();

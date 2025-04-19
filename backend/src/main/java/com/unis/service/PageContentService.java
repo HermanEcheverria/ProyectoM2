@@ -1,42 +1,71 @@
 package com.unis.service;
 
+import java.sql.Timestamp;
+import java.util.List;
+
 import com.unis.model.PageContent;
 import com.unis.repository.PageContentRepository;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
 
-import java.sql.Timestamp;
-import java.util.List;
-
+/**
+ * Servicio para gestionar las operaciones relacionadas con el contenido de las páginas.
+ */
 @ApplicationScoped
 public class PageContentService {
 
     @Inject
     PageContentRepository repository;
 
-    // ✅ Contenido publicado para mostrar en la vista pública
+    /**
+     * Obtiene el contenido publicado para una página específica.
+     *
+     * @param pageName El nombre de la página.
+     * @return Una lista de contenido publicado para la página.
+     */
     public List<PageContent> getPublishedContent(String pageName) {
         return repository.findPublishedByPage(pageName);
     }
 
-    // ✅ Contenido en borrador (PROCESO)
+    /**
+     * Obtiene el contenido en estado borrador (PROCESO).
+     *
+     * @return Una lista de contenido en estado borrador.
+     */
     public List<PageContent> getDraftContent() {
         return repository.findDrafts();
     }
 
-    // ✅ Contenido por estado (para moderación)
+    /**
+     * Obtiene el contenido filtrado por estado.
+     *
+     * @param status El estado del contenido (PROCESO, PUBLICADO, RECHAZADO).
+     * @return Una lista de contenido con el estado especificado.
+     */
     public List<PageContent> getByStatus(String status) {
         return repository.findByStatus(status);
     }
 
-    // ✅ Buscar por ID
+    /**
+     * Busca un contenido por su ID.
+     *
+     * @param id El ID del contenido.
+     * @return El contenido correspondiente al ID, o null si no se encuentra.
+     */
     public PageContent findById(Long id) {
         return repository.findById(id);
     }
 
-    // ✅ Crear nuevo contenido (por defecto se asume PROCESO)
+    /**
+     * Crea un nuevo contenido.
+     *
+     * @param content Los datos del contenido a crear.
+     * @return El contenido creado.
+     * @throws IllegalArgumentException Si falta el email del editor.
+     */
     @Transactional
     public PageContent create(PageContent content) {
         content.setLastModifiedDate(new Timestamp(System.currentTimeMillis()));
@@ -50,7 +79,14 @@ public class PageContentService {
         return content;
     }
 
-    // ✅ Actualizar contenido
+    /**
+     * Actualiza un contenido existente.
+     *
+     * @param id             El ID del contenido a actualizar.
+     * @param updatedContent Los nuevos datos del contenido.
+     * @return El contenido actualizado.
+     * @throws NotFoundException Si no se encuentra el contenido.
+     */
     @Transactional
     public PageContent update(Long id, PageContent updatedContent) {
         PageContent existing = repository.findById(id);
@@ -90,7 +126,13 @@ public class PageContentService {
         return existing;
     }
 
-    // ✅ Aprobar contenido (PUBLICADO)
+    /**
+     * Publica un contenido cambiando su estado a PUBLICADO.
+     *
+     * @param id El ID del contenido a publicar.
+     * @return El contenido publicado.
+     * @throws NotFoundException Si no se encuentra el contenido.
+     */
     @Transactional
     public PageContent publish(Long id) {
         PageContent existing = repository.findById(id);
@@ -104,7 +146,14 @@ public class PageContentService {
         return existing;
     }
 
-    // ✅ Rechazar contenido con motivo
+    /**
+     * Rechaza un contenido con un motivo.
+     *
+     * @param id     El ID del contenido a rechazar.
+     * @param motivo El motivo del rechazo.
+     * @return El contenido rechazado.
+     * @throws NotFoundException Si no se encuentra el contenido.
+     */
     @Transactional
     public PageContent reject(Long id, String motivo) {
         PageContent existing = repository.findById(id);
@@ -118,7 +167,11 @@ public class PageContentService {
         return existing;
     }
 
-    // ✅ Eliminar contenido
+    /**
+     * Elimina un contenido por su ID.
+     *
+     * @param id El ID del contenido a eliminar.
+     */
     @Transactional
     public void delete(Long id) {
         repository.deleteById(id);

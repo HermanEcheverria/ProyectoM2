@@ -14,6 +14,9 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 
+/**
+ * Servicio para gestionar las operaciones relacionadas con los doctores.
+ */
 @ApplicationScoped
 public class DoctorService {
 
@@ -23,14 +26,31 @@ public class DoctorService {
     @PersistenceContext
     EntityManager entityManager;
 
+    /**
+     * Obtiene todos los doctores registrados.
+     *
+     * @return Una lista de doctores.
+     */
     public List<Doctor> getAllDoctores() {
         return doctorRepository.listAll();
     }
 
+    /**
+     * Obtiene un doctor específico por su ID.
+     *
+     * @param id El ID del doctor.
+     * @return Un Optional que contiene el doctor si se encuentra.
+     */
     public Optional<Doctor> getDoctorById(Long id) {
         return doctorRepository.findByIdOptional(id);
     }
 
+    /**
+     * Registra un nuevo doctor en el sistema.
+     *
+     * @param doctor Los datos del doctor a registrar.
+     * @throws WebApplicationException Si ocurre un error durante el registro.
+     */
     @Transactional
     public void registrarDoctor(Doctor doctor) {
         try {
@@ -54,6 +74,13 @@ public class DoctorService {
         }
     }
 
+    /**
+     * Actualiza los datos de un doctor existente.
+     *
+     * @param id     El ID del doctor a actualizar.
+     * @param doctor Los nuevos datos del doctor.
+     * @return true si la actualización fue exitosa, false en caso contrario.
+     */
     @Transactional
     public boolean actualizarDoctor(Long id, Doctor doctor) {
         try {
@@ -79,6 +106,12 @@ public class DoctorService {
         }
     }
 
+    /**
+     * Elimina un doctor del sistema.
+     *
+     * @param id El ID del doctor a eliminar.
+     * @return true si la eliminación fue exitosa, false en caso contrario.
+     */
     @Transactional
     public boolean eliminarDoctor(Long id) {
         try {

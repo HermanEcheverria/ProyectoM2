@@ -1,5 +1,9 @@
 package com.unis.service;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 import com.unis.dto.MedicinasReporteDTO;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -8,16 +12,23 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.ParameterMode;
 import jakarta.persistence.StoredProcedureQuery;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
+/**
+ * Servicio para generar reportes relacionados con las medicinas más populares.
+ */
 @ApplicationScoped
 public class ReporteMedicinaService {
 
     @Inject
     EntityManager em;
 
+    /**
+     * Obtiene un reporte de las medicinas más populares en un intervalo de tiempo.
+     *
+     * @param fechaInicio La fecha de inicio del intervalo.
+     * @param fechaFin    La fecha de fin del intervalo.
+     * @param limite      El número máximo de resultados a incluir.
+     * @return Una lista de objetos {@link MedicinasReporteDTO} con los datos del reporte.
+     */
     public List<MedicinasReporteDTO> obtenerReporte(Date fechaInicio, Date fechaFin, int limite) {
         StoredProcedureQuery query = em.createStoredProcedureQuery("REPORTE_MEDICINAS_POPULARES");
 

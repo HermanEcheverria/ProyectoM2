@@ -1,21 +1,39 @@
 package com.unis.service;
 
+import java.util.Optional;
+
 import com.unis.model.DoctorAcc;
 import com.unis.repository.DoctorAccRepository;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import java.util.Optional;
 
+/**
+ * Servicio para gestionar las operaciones relacionadas con los accesos de doctores.
+ */
 @ApplicationScoped
 public class DoctorAccService {
+
     @Inject
     DoctorAccRepository doctorAccRepository;
 
+    /**
+     * Obtiene un doctor por su ID de usuario.
+     *
+     * @param id El ID del usuario asociado al doctor.
+     * @return Un Optional que contiene el doctor si se encuentra.
+     */
     public Optional<DoctorAcc> getDoctorById(Long id) {
         return doctorAccRepository.find("usuario.idUsuario", id).firstResultOptional();
     }
 
+    /**
+     * Actualiza los datos de un doctor existente.
+     *
+     * @param id         El ID del usuario asociado al doctor.
+     * @param doctorData Los nuevos datos del doctor.
+     */
     @Transactional
     public void updateDoctor(Long id, DoctorAcc doctorData) {
         Optional<DoctorAcc> existingDoctor = doctorAccRepository.find("usuario.idUsuario", id).firstResultOptional();

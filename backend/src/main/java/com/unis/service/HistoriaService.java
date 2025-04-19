@@ -1,14 +1,18 @@
 package com.unis.service;
 
+import java.util.List;
+
 import com.unis.model.Historia;
 import com.unis.repository.HistoriaRepository;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
 
-import java.util.List;
-
+/**
+ * Servicio para gestionar las operaciones relacionadas con las historias.
+ */
 @ApplicationScoped
 public class HistoriaService {
 
@@ -16,28 +20,40 @@ public class HistoriaService {
     HistoriaRepository historiaRepository;
 
     /**
-     * Listar todas las historias.
+     * Lista todas las historias registradas.
+     *
+     * @return Una lista de historias.
      */
     public List<Historia> listar() {
         return historiaRepository.listAll();
     }
 
     /**
-     * Listar historias por estado (PROCESO, PUBLICADO, RECHAZADO).
+     * Lista las historias filtradas por estado.
+     *
+     * @param estado El estado de las historias (PROCESO, PUBLICADO, RECHAZADO).
+     * @return Una lista de historias con el estado especificado.
      */
     public List<Historia> listarPorEstado(String estado) {
         return historiaRepository.findByStatus(estado);
     }
 
     /**
-     * Obtener historia por ID.
+     * Obtiene una historia por su ID.
+     *
+     * @param id El ID de la historia.
+     * @return La historia correspondiente al ID, o null si no se encuentra.
      */
     public Historia obtenerPorId(Long id) {
         return historiaRepository.findById(id);
     }
 
     /**
-     * Crear una nueva historia.
+     * Crea una nueva historia.
+     *
+     * @param historia Los datos de la historia a crear.
+     * @return La historia creada.
+     * @throws IllegalArgumentException Si el email del editor no está presente.
      */
     @Transactional
     public Historia crear(Historia historia) {
@@ -50,7 +66,12 @@ public class HistoriaService {
     }
 
     /**
-     * Actualizar una historia existente.
+     * Actualiza una historia existente.
+     *
+     * @param id                El ID de la historia a actualizar.
+     * @param historiaActualizada Los nuevos datos de la historia.
+     * @return La historia actualizada.
+     * @throws NotFoundException Si no se encuentra la historia.
      */
     @Transactional
     public Historia actualizar(Long id, Historia historiaActualizada) {
@@ -71,7 +92,11 @@ public class HistoriaService {
     }
 
     /**
-     * Aprobar historia (cambia estado a PUBLICADO).
+     * Aprueba una historia cambiando su estado a PUBLICADO.
+     *
+     * @param id El ID de la historia a aprobar.
+     * @return La historia aprobada.
+     * @throws NotFoundException Si no se encuentra la historia.
      */
     @Transactional
     public Historia aprobar(Long id) {
@@ -85,7 +110,12 @@ public class HistoriaService {
     }
 
     /**
-     * Rechazar historia con motivo.
+     * Rechaza una historia con un motivo.
+     *
+     * @param id     El ID de la historia a rechazar.
+     * @param motivo El motivo del rechazo.
+     * @return La historia rechazada.
+     * @throws NotFoundException Si no se encuentra la historia.
      */
     @Transactional
     public Historia rechazar(Long id, String motivo) {
@@ -99,7 +129,10 @@ public class HistoriaService {
     }
 
     /**
-     * Eliminar historia por ID.
+     * Elimina una historia por su ID.
+     *
+     * @param id El ID de la historia a eliminar.
+     * @return true si la eliminación fue exitosa, false en caso contrario.
      */
     @Transactional
     public boolean eliminar(Long id) {
