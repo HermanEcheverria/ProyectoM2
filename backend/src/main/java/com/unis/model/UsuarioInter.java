@@ -1,64 +1,141 @@
+/**
+ * Entity representing a user for interconnection purposes.
+ */
 package com.unis.model;
 
-import jakarta.persistence.*;
 import java.util.Date;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
 
 @Entity
 @Table(name = "USUARIO_INTERCONEXION")
 public class UsuarioInter {
 
+    /** The unique identifier of the interconnection user. */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID_INTERCONEXION")
     private Long idInterconexion;
 
+    /** The last name of the interconnection user. */
     @Column(name = "APELLIDO", nullable = false)
     private String apellido;
 
+    /** The document identifier of the interconnection user. */
     @Column(name = "DOCUMENTO", nullable = false)
     private String documento;
 
+    /** The birth date of the interconnection user. */
     @Column(name = "FECHA_NACIMIENTO")
     @Temporal(TemporalType.DATE)
     private Date fechaNacimiento;
 
+    /** The gender of the interconnection user. */
     @Column(name = "GENERO")
     private String genero;
 
+    /** The phone number of the interconnection user. */
     @Column(name = "TELEFONO", length = 15)
     private String telefono;
 
+    /** The ID of the hospital associated with the interconnection user. */
     @Column(name = "ID_HOSPITAL")
     private Long idHospital;
 
+    /** The user entity associated with the interconnection user. */
     @ManyToOne
     @JoinColumn(name = "ID_USUARIO", insertable = false, updatable = false)
     private Usuario usuario;
 
+    // Getters and Setters
 
-    // Getters y Setters
-    public Long getIdInterconexion() { return idInterconexion; }
-    public void setIdInterconexion(Long idInterconexion) { this.idInterconexion = idInterconexion; }
+    /** @return the unique identifier of the interconnection user. */
+    public Long getIdInterconexion() {
+        return idInterconexion;
+    }
 
-    public String getApellido() { return apellido; }
-    public void setApellido(String apellido) { this.apellido = apellido; }
+    /** @param idInterconexion the unique identifier of the interconnection user. */
+    public void setIdInterconexion(Long idInterconexion) {
+        this.idInterconexion = idInterconexion;
+    }
 
-    public String getDocumento() { return documento; }
-    public void setDocumento(String documento) { this.documento = documento; }
+    /** @return the last name of the interconnection user. */
+    public String getApellido() {
+        return apellido;
+    }
 
-    public Date getFechaNacimiento() { return fechaNacimiento; }
-    public void setFechaNacimiento(Date fechaNacimiento) { this.fechaNacimiento = fechaNacimiento; }
+    /** @param apellido the last name of the interconnection user. */
+    public void setApellido(String apellido) {
+        this.apellido = apellido;
+    }
 
-    public String getGenero() { return genero; }
-    public void setGenero(String genero) { this.genero = genero; }
+    /** @return the document identifier of the interconnection user. */
+    public String getDocumento() {
+        return documento;
+    }
 
-    public String getTelefono() { return telefono; }
-    public void setTelefono(String telefono) { this.telefono = telefono; }
+    /** @param documento the document identifier of the interconnection user. */
+    public void setDocumento(String documento) {
+        this.documento = documento;
+    }
 
-    public Long getIdHospital() { return idHospital; }
-    public void setIdHospital(Long idHospital) { this.idHospital = idHospital; }
+    /** @return the birth date of the interconnection user. */
+    public Date getFechaNacimiento() {
+        return fechaNacimiento;
+    }
 
-    public Usuario getUsuario() { return usuario; }
-    public void setUsuario(Usuario usuario) { this.usuario = usuario; }
+    /** @param fechaNacimiento the birth date of the interconnection user. */
+    public void setFechaNacimiento(Date fechaNacimiento) {
+        this.fechaNacimiento = fechaNacimiento;
+    }
+
+    /** @return the gender of the interconnection user. */
+    public String getGenero() {
+        return genero;
+    }
+
+    /** @param genero the gender of the interconnection user. */
+    public void setGenero(String genero) {
+        this.genero = genero;
+    }
+
+    /** @return the phone number of the interconnection user. */
+    public String getTelefono() {
+        return telefono;
+    }
+
+    /** @param telefono the phone number of the interconnection user. */
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
+    }
+
+    /** @return the ID of the hospital associated with the interconnection user. */
+    public Long getIdHospital() {
+        return idHospital;
+    }
+
+    /** @param idHospital the ID of the hospital associated with the interconnection user. */
+    public void setIdHospital(Long idHospital) {
+        this.idHospital = idHospital;
+    }
+
+    /** @return the user entity associated with the interconnection user. */
+    public Usuario getUsuario() {
+        return usuario;
+    }
+
+    /** @param usuario the user entity associated with the interconnection user. */
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
+    }
 }
 

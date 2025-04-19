@@ -1,56 +1,84 @@
+/**
+ * Entity representing a doctor.
+ */
 package com.unis.model;
 
-import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.Date;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
 
 @Entity
 @Table(name = "DOCTOR")
 public class DoctorAcc implements Serializable {
+
+    /** The unique identifier of the doctor. */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID_DOCTOR")
     private Long idDoctor;
 
+    /** The user account associated with the doctor. */
     @OneToOne
     @JoinColumn(name = "ID_USUARIO", nullable = false)
     private UserAcc usuario;
 
+    /** The last name of the doctor. */
     @Column(name = "APELLIDO", nullable = false, length = 100)
     private String apellido;
 
+    /** The document identifier of the doctor. */
     @Column(name = "DOCUMENTO", nullable = false, length = 20)
     private String documento;
 
+    /** The birth date of the doctor. */
     @Column(name = "FECHA_NACIMIENTO")
     @Temporal(TemporalType.DATE)
     private Date fechaNacimiento;
 
+    /** The gender of the doctor. */
     @Column(name = "GENERO", length = 10)
     private String genero;
 
+    /** The phone number of the doctor. */
     @Column(name = "TELEFONO", length = 15)
     private String telefono;
 
+    /** The ID of the hospital where the doctor works. */
     @Column(name = "ID_HOSPITAL")
     private Long idHospital;
 
+    /** The specialty of the doctor. */
     @Column(name = "ESPECIALIDAD", length = 100)
     private String especialidad;
 
+    /** The collegiate number of the doctor. */
     @Column(name = "NUMERO_COLEGIADO", length = 50)
     private String numeroColegiado;
 
+    /** The working hours of the doctor. */
     @Column(name = "HORARIO_ATENCION", length = 255)
     private String horarioAtencion;
 
+    /** The graduation date of the doctor. */
     @Column(name = "FECHA_GRADUACION")
     @Temporal(TemporalType.DATE)
     private Date fechaGraduacion;
 
+    /** The university where the doctor graduated. */
     @Column(name = "UNIVERSIDAD_GRADUACION", length = 150)
     private String universidadGraduacion;
 
+    /** The availability of the doctor. */
     @Column(name = "DISPONIBILIDAD", length = 255)
     private String disponibilidad;
 

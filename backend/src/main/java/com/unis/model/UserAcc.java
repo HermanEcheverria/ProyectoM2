@@ -1,70 +1,152 @@
+/**
+ * Entity representing a user account.
+ */
 package com.unis.model;
 
-import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.Date;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
 
 @Entity
 @Table(name = "USUARIO")
 public class UserAcc implements Serializable {
+
+    /** The unique identifier of the user account. */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID_USUARIO")
     private Long idUsuario;
 
+    /** The username of the user account. */
     @Column(name = "NOMBRE_USUARIO", nullable = false, length = 50)
     private String nombreUsuario;
 
+    /** The password of the user account. */
     @Column(name = "CONTRASENA", nullable = false, length = 128)
     private String contrasena;
 
+    /** The role ID associated with the user account. */
     @Column(name = "ROL_ID", nullable = false)
     private int rolId;
 
+    /** The email address of the user account. */
     @Column(name = "CORREO", nullable = false, length = 100)
     private String correo;
 
+    /** The status of the user account (e.g., active or inactive). */
     @Column(name = "ESTADO")
     private int estado;
 
+    /** The creation date of the user account. */
     @Column(name = "FECHA_CREACTION")
     @Temporal(TemporalType.DATE)
     private Date fechaCreacion;
 
+    /** The ID of the hospital associated with the user account. */
     @Column(name = "IDHOSPITAL")
     private Long idHospital;
 
+    /** The doctor entity associated with the user account. */
     @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL)
     private DoctorAcc doctor;
 
+    /** The employee entity associated with the user account. */
     @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL)
     private EmpleadoAcc empleado;
 
+    /** The patient entity associated with the user account. */
     @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL)
     private PacienteAcc paciente;
 
-    // Getters y Setters
-    public Long getIdUsuario() { return idUsuario; }
-    public void setIdUsuario(Long idUsuario) { this.idUsuario = idUsuario; }
+    // Getters and Setters
 
-    public String getNombreUsuario() { return nombreUsuario; }
-    public void setNombreUsuario(String nombreUsuario) { this.nombreUsuario = nombreUsuario; }
+    /** @return the unique identifier of the user account. */
+    public Long getIdUsuario() {
+        return idUsuario;
+    }
 
-    public String getContrasena() { return contrasena; }
-    public void setContrasena(String contrasena) { this.contrasena = contrasena; }
+    /** @param idUsuario the unique identifier of the user account. */
+    public void setIdUsuario(Long idUsuario) {
+        this.idUsuario = idUsuario;
+    }
 
-    public int getRolId() { return rolId; }
-    public void setRolId(int rolId) { this.rolId = rolId; }
+    /** @return the username of the user account. */
+    public String getNombreUsuario() {
+        return nombreUsuario;
+    }
 
-    public String getCorreo() { return correo; }
-    public void setCorreo(String correo) { this.correo = correo; }
+    /** @param nombreUsuario the username of the user account. */
+    public void setNombreUsuario(String nombreUsuario) {
+        this.nombreUsuario = nombreUsuario;
+    }
 
-    public int getEstado() { return estado; }
-    public void setEstado(int estado) { this.estado = estado; }
+    /** @return the password of the user account. */
+    public String getContrasena() {
+        return contrasena;
+    }
 
-    public Date getFechaCreacion() { return fechaCreacion; }
-    public void setFechaCreacion(Date fechaCreacion) { this.fechaCreacion = fechaCreacion; }
+    /** @param contrasena the password of the user account. */
+    public void setContrasena(String contrasena) {
+        this.contrasena = contrasena;
+    }
 
-    public Long getIdHospital() { return idHospital; }
-    public void setIdHospital(Long idHospital) { this.idHospital = idHospital; }
+    /** @return the role ID associated with the user account. */
+    public int getRolId() {
+        return rolId;
+    }
+
+    /** @param rolId the role ID associated with the user account. */
+    public void setRolId(int rolId) {
+        this.rolId = rolId;
+    }
+
+    /** @return the email address of the user account. */
+    public String getCorreo() {
+        return correo;
+    }
+
+    /** @param correo the email address of the user account. */
+    public void setCorreo(String correo) {
+        this.correo = correo;
+    }
+
+    /** @return the status of the user account. */
+    public int getEstado() {
+        return estado;
+    }
+
+    /** @param estado the status of the user account. */
+    public void setEstado(int estado) {
+        this.estado = estado;
+    }
+
+    /** @return the creation date of the user account. */
+    public Date getFechaCreacion() {
+        return fechaCreacion;
+    }
+
+    /** @param fechaCreacion the creation date of the user account. */
+    public void setFechaCreacion(Date fechaCreacion) {
+        this.fechaCreacion = fechaCreacion;
+    }
+
+    /** @return the ID of the hospital associated with the user account. */
+    public Long getIdHospital() {
+        return idHospital;
+    }
+
+    /** @param idHospital the ID of the hospital associated with the user account. */
+    public void setIdHospital(Long idHospital) {
+        this.idHospital = idHospital;
+    }
 }

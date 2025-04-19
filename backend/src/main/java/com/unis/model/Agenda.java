@@ -1,3 +1,6 @@
+/**
+ * Entity representing a doctor's schedule.
+ */
 package com.unis.model;
 
 import jakarta.persistence.Column;
@@ -11,23 +14,28 @@ import jakarta.persistence.Table;
 @Table(name = "AGENDA")
 public class Agenda {
 
+    /** The unique identifier of the schedule. */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** The ID of the doctor associated with the schedule. */
     @Column(name = "ID_DOCTOR", nullable = false)
     private Long idDoctor;
 
-    // Se guardan los días de atención en formato de cadena, ej. "Lunes,Martes,Miércoles"
+    /** The days of attention in string format, e.g., "Monday,Tuesday,Wednesday". */
     @Column(name = "DIAS_ATENCION", nullable = false)
     private String diasAtencion;
 
+    /** The start time of the schedule. */
     @Column(name = "HORA_INICIO", nullable = false)
     private String horaInicio;
 
+    /** The end time of the schedule. */
     @Column(name = "HORA_FIN", nullable = false)
     private String horaFin;
 
+    /** Additional notes for the schedule. */
     @Column(name = "NOTAS")
     private String notas;
 

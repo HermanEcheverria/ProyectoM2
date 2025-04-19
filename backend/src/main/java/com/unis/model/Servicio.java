@@ -1,3 +1,6 @@
+/**
+ * Entity representing a service.
+ */
 package com.unis.model;
 
 import java.util.HashSet;
@@ -20,38 +23,43 @@ import jakarta.persistence.Table;
 @Table(name = "SERVICIO")
 public class Servicio extends PanacheEntity {
 
+    /** The name of the service. */
     @Column(nullable = false)
     public String nombre;
 
+    /** The cost of the service. */
     @Column(nullable = false)
     public double costo;
 
+    /** Indicates whether the service is covered by insurance. */
     @Column(nullable = false)
     public boolean cubiertoSeguro;
 
-    // 🔹 Relación ManyToOne para indicar el servicio padre
+    /** The parent service, if applicable. */
     @ManyToOne
     @JoinColumn(name = "PARENT_ID")
     @JsonBackReference
     public Servicio servicioPadre;
 
-    // 🔹 Relación OneToMany con subservicios
+    /** The set of sub-services associated with this service. */
     @OneToMany(mappedBy = "servicioPadre", cascade = CascadeType.MERGE, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonManagedReference
-    public Set<Servicio> subServicios = new HashSet<>(); // ✅ Inicializado para evitar `null`
+    public Set<Servicio> subServicios = new HashSet<>();
 
-    // ✅ Quitar setParentId() ya que causa entidades detached
+    // Getters
+
+    /** @return the ID of the parent service, if applicable. */
     public Long getParentId() {
         return servicioPadre != null ? servicioPadre.id : null;
     }
 
+    /** @return the unique identifier of the service. */
     public Long getId() {
         return this.id;
     }
 
+    /** @return the unique identifier of the service. */
     public Long getIdServicio() {
         return this.id;
     }
-    
-    
 }
