@@ -1,6 +1,4 @@
-/**
- * Entity representing a hospital.
- */
+
 package com.unis.model;
 
 import java.time.LocalDateTime;
@@ -11,7 +9,18 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-
+/**
+ * Entity representing a hospital within the system.
+ * <p>
+ * Stores core hospital details such as contact information, registration state,
+ * and creation timestamp. Also includes the reference to its MongoDB representation,
+ * if applicable.
+ * </p>
+ * 
+ * <p><b>Database Table:</b> HOSPITAL</p>
+ * 
+ * @author Herman
+ */
 @Entity
 @Table(name = "HOSPITAL")
 public class Hospital {
@@ -26,7 +35,7 @@ public class Hospital {
     @Column(name = "NOMBRE", nullable = false, length = 100)
     private String nombre;
 
-    /** The address of the hospital. */
+    /** The physical address of the hospital. */
     @Column(name = "DIRECCION", nullable = false, length = 200)
     private String direccion;
 
@@ -34,23 +43,25 @@ public class Hospital {
     @Column(name = "TELEFONO", length = 15)
     private String telefono;
 
-    /** The email address of the hospital. */
+    /** The official email address of the hospital. */
     @Column(name = "CORREO", length = 100)
     private String correo;
 
-    /** The status of the hospital (e.g., active or inactive). */
+    /** The current operational status of the hospital (e.g., active, inactive). */
     @Column(name = "ESTADO", length = 1)
     private String estado;
 
-    /** The creation date and time of the hospital record. */
+    /** The timestamp when the hospital record was created. */
     @Column(name = "FECHA_CREACION")
     private LocalDateTime fechaCreacion;
 
-    /** The MongoDB identifier associated with the hospital. */
+    /** The corresponding MongoDB ID if the hospital is mirrored in a NoSQL database. */
     @Column(name = "MONGO_ID", length = 50)
     private String mongoId;
 
+    // ========================
     // Getters and Setters
+    // ========================
 
     /** @return the unique identifier of the hospital. */
     public Long getId() {

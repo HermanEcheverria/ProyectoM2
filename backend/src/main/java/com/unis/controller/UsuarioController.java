@@ -19,7 +19,11 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 /**
- * Controlador REST para gestionar operaciones relacionadas con los usuarios.
+ * REST controller for managing user-related operations.
+ * <p>
+ * Handles user registration, login, activation, role assignment,
+ * listing of active/inactive users, and role retrieval.
+ * </p>
  */
 @Path("/usuarios")
 @Produces(MediaType.APPLICATION_JSON)

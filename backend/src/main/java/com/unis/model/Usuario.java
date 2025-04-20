@@ -1,6 +1,4 @@
-/**
- * Entity representing a user.
- */
+
 package com.unis.model;
 
 import java.util.Date;
@@ -16,6 +14,14 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 
+/**
+ * Entity representing a user.
+ * <p>
+ * This entity is used to manage user accounts in the system. It includes
+ * details such as username, email, password, role, and account status.
+ * </p>
+ */
+
 @Entity
 @Table(name = "USUARIO")
 public class Usuario {
@@ -26,28 +32,58 @@ public class Usuario {
     @Column(name = "ID_USUARIO")
     private Long id;
 
-    /** The username of the user. */
+    /** 
+     * The username of the user.
+     * <p>
+     * This field stores the user's login name.
+     * </p>
+     */
     @Column(name = "NOMBRE_USUARIO", nullable = false, length = 50)
     private String nombreUsuario;
 
-    /** The email address of the user. */
+    /** 
+     * The email address of the user.
+     * <p>
+     * This field stores the user's email, which must be unique in the system.
+     * </p>
+     */
     @Column(name = "CORREO", nullable = false, unique = true, length = 100)
     private String correo;
 
-    /** The password of the user. */
+    /** 
+     * The password of the user.
+     * <p>
+     * This field stores the user's encrypted password.
+     * </p>
+     */
     @Column(name = "CONTRASENA", nullable = false, length = 100)
     private String contrasena;
 
-    /** The role associated with the user. */
+    /** 
+     * The role associated with the user.
+     * <p>
+     * This field establishes a many-to-one relationship with the role entity.
+     * </p>
+     */
     @ManyToOne
     @JoinColumn(name = "ROL_ID", nullable = true)
     private Rol rol;
 
-    /** The status of the user (e.g., active or inactive). */
+    /** 
+     * The status of the user (e.g., active or inactive).
+     * <p>
+     * This field indicates whether the user account is currently active.
+     * </p>
+     */
     @Column(name = "ESTADO", nullable = false)
     private int estado = 0;
 
-    /** The creation date of the user record. */
+    /** 
+     * The creation date of the user record.
+     * <p>
+     * This field stores the timestamp when the user account was created.
+     * </p>
+     */
     @Column(name = "FECHA_CREACTION", nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date fechaCreaction = new Date();

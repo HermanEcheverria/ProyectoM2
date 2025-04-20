@@ -1,6 +1,4 @@
-/**
- * Entity representing a patient.
- */
+
 package com.unis.model;
 
 import java.util.ArrayList;
@@ -22,7 +20,21 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
-
+/**
+ * Entity representing a patient.
+ * <p>
+ * This class maps to the <strong>PACIENTE</strong> table in the database and stores personal
+ * and medical-related information about patients, including user linkage, demographic data,
+ * and associated medical appointments.
+ * </p>
+ * 
+ * <p>Each patient is linked to a {@link Usuario} entity and can have multiple {@link Cita}
+ * appointments.</p>
+ * 
+ * <p><b>Note:</b> The patient's photo is stored as a binary large object (BLOB).</p>
+ * 
+ * @author Herman
+ */
 @Entity
 @Table(name = "PACIENTE")
 public class Paciente {
@@ -58,7 +70,7 @@ public class Paciente {
     @Column(name = "TELEFONO")
     private String telefono;
 
-    /** The photograph of the patient. */
+    /** The photograph of the patient (stored as BLOB). */
     @Column(name = "FOTOGRAFIA")
     @Lob
     private byte[] fotografia;
@@ -73,7 +85,9 @@ public class Paciente {
     @JsonIgnore
     private List<Cita> citas = new ArrayList<>();
 
+    // ========================
     // Getters and Setters
+    // ========================
 
     /** @return the unique identifier of the patient. */
     public Long getIdPaciente() {

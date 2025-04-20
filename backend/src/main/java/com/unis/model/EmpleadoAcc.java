@@ -1,6 +1,4 @@
-/**
- * Entity representing an employee.
- */
+
 package com.unis.model;
 
 import java.io.Serializable;
@@ -17,6 +15,15 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 
+/**
+ * Entity representing an employee (alternative schema).
+ * <p>
+ * Stores personal information, employment details, and references a user account and hospital.
+ * This version uses {@link UserAcc} for the associated user.
+ * </p>
+ * 
+ * @author Herman
+ */
 @Entity
 @Table(name = "EMPLEADOS")
 public class EmpleadoAcc implements Serializable {
@@ -57,35 +64,101 @@ public class EmpleadoAcc implements Serializable {
     @Column(name = "ID_HOSPITAL")
     private Long idHospital;
 
-    /** The position of the employee. */
+    /** The job position of the employee. */
     @Column(name = "PUESTO", length = 50)
     private String puesto;
 
-    // 🔹 Getters y Setters
-    public Long getIdEmpleado() { return idEmpleado; }
-    public void setIdEmpleado(Long idEmpleado) { this.idEmpleado = idEmpleado; }
+    // =======================
+    // Getters and Setters
+    // =======================
 
-    public UserAcc getUsuario() { return usuario; }
-    public void setUsuario(UserAcc usuario) { this.usuario = usuario; }
+    /** @return the unique identifier of the employee */
+    public Long getIdEmpleado() {
+        return idEmpleado;
+    }
 
-    public String getApellido() { return apellido; }
-    public void setApellido(String apellido) { this.apellido = apellido; }
+    /** @param idEmpleado the employee ID to set */
+    public void setIdEmpleado(Long idEmpleado) {
+        this.idEmpleado = idEmpleado;
+    }
 
-    public String getDocumento() { return documento; }
-    public void setDocumento(String documento) { this.documento = documento; }
+    /** @return the user account associated with the employee */
+    public UserAcc getUsuario() {
+        return usuario;
+    }
 
-    public Date getFechaNacimiento() { return fechaNacimiento; }
-    public void setFechaNacimiento(Date fechaNacimiento) { this.fechaNacimiento = fechaNacimiento; }
+    /** @param usuario the user account to associate */
+    public void setUsuario(UserAcc usuario) {
+        this.usuario = usuario;
+    }
 
-    public String getGenero() { return genero; }
-    public void setGenero(String genero) { this.genero = genero; }
+    /** @return the last name of the employee */
+    public String getApellido() {
+        return apellido;
+    }
 
-    public String getTelefono() { return telefono; }
-    public void setTelefono(String telefono) { this.telefono = telefono; }
+    /** @param apellido the last name to set */
+    public void setApellido(String apellido) {
+        this.apellido = apellido;
+    }
 
-    public Long getIdHospital() { return idHospital; }
-    public void setIdHospital(Long idHospital) { this.idHospital = idHospital; }
+    /** @return the document identifier */
+    public String getDocumento() {
+        return documento;
+    }
 
-    public String getPuesto() { return puesto; }
-    public void setPuesto(String puesto) { this.puesto = puesto; }
+    /** @param documento the document identifier to set */
+    public void setDocumento(String documento) {
+        this.documento = documento;
+    }
+
+    /** @return the birth date */
+    public Date getFechaNacimiento() {
+        return fechaNacimiento;
+    }
+
+    /** @param fechaNacimiento the birth date to set */
+    public void setFechaNacimiento(Date fechaNacimiento) {
+        this.fechaNacimiento = fechaNacimiento;
+    }
+
+    /** @return the gender */
+    public String getGenero() {
+        return genero;
+    }
+
+    /** @param genero the gender to set */
+    public void setGenero(String genero) {
+        this.genero = genero;
+    }
+
+    /** @return the phone number */
+    public String getTelefono() {
+        return telefono;
+    }
+
+    /** @param telefono the phone number to set */
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
+    }
+
+    /** @return the hospital ID where the employee works */
+    public Long getIdHospital() {
+        return idHospital;
+    }
+
+    /** @param idHospital the hospital ID to set */
+    public void setIdHospital(Long idHospital) {
+        this.idHospital = idHospital;
+    }
+
+    /** @return the job position of the employee */
+    public String getPuesto() {
+        return puesto;
+    }
+
+    /** @param puesto the job position to set */
+    public void setPuesto(String puesto) {
+        this.puesto = puesto;
+    }
 }

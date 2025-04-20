@@ -1,6 +1,4 @@
-/**
- * Entity representing a doctor.
- */
+
 package com.unis.model;
 
 import java.util.ArrayList;
@@ -22,6 +20,15 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 
+/**
+ * Entity representing a doctor.
+ * <p>
+ * Contains personal, academic, and professional details about a doctor,
+ * including relationships with user accounts and appointments.
+ * </p>
+ * 
+ * @author Herman
+ */
 @Entity
 @Table(name = "DOCTOR")
 public class Doctor {
@@ -88,144 +95,144 @@ public class Doctor {
     @JsonIgnore
     private List<Cita> citas = new ArrayList<>();
 
-    // Getters and Setters
+    // ===== Getters and Setters (documentados) =====
 
     /** @return the unique identifier of the doctor. */
     public Long getIdDoctor() {
         return idDoctor;
     }
 
-    /** @param idDoctor the unique identifier of the doctor. */
+    /** @param idDoctor the ID of the doctor */
     public void setIdDoctor(Long idDoctor) {
         this.idDoctor = idDoctor;
     }
 
-    /** @return the unique identifier of the user associated with the doctor. */
+    /** @return the user ID associated with the doctor */
     public Long getIdUsuario() {
         return idUsuario;
     }
 
-    /** @param idUsuario the unique identifier of the user associated with the doctor. */
+    /** @param idUsuario the user ID to associate with the doctor */
     public void setIdUsuario(Long idUsuario) {
         this.idUsuario = idUsuario;
     }
 
-    /** @return the last name of the doctor. */
+    /** @return the last name of the doctor */
     public String getApellido() {
         return apellido;
     }
 
-    /** @param apellido the last name of the doctor. */
+    /** @param apellido the last name of the doctor */
     public void setApellido(String apellido) {
         this.apellido = apellido;
     }
 
-    /** @return the document identifier of the doctor. */
+    /** @return the document identifier of the doctor */
     public String getDocumento() {
         return documento;
     }
 
-    /** @param documento the document identifier of the doctor. */
+    /** @param documento the document identifier to set */
     public void setDocumento(String documento) {
         this.documento = documento;
     }
 
-    /** @return the birth date of the doctor. */
+    /** @return the birth date of the doctor */
     public Date getFechaNacimiento() {
         return fechaNacimiento;
     }
 
-    /** @param fechaNacimiento the birth date of the doctor. */
+    /** @param fechaNacimiento the birth date to set */
     public void setFechaNacimiento(Date fechaNacimiento) {
         this.fechaNacimiento = fechaNacimiento;
     }
 
-    /** @return the gender of the doctor. */
+    /** @return the gender of the doctor */
     public String getGenero() {
         return genero;
     }
 
-    /** @param genero the gender of the doctor. */
+    /** @param genero the gender to set */
     public void setGenero(String genero) {
         this.genero = genero;
     }
 
-    /** @return the phone number of the doctor. */
+    /** @return the phone number of the doctor */
     public String getTelefono() {
         return telefono;
     }
 
-    /** @param telefono the phone number of the doctor. */
+    /** @param telefono the phone number to set */
     public void setTelefono(String telefono) {
         this.telefono = telefono;
     }
 
-    /** @return the specialty of the doctor. */
+    /** @return the medical specialty of the doctor */
     public String getEspecialidad() {
         return especialidad;
     }
 
-    /** @param especialidad the specialty of the doctor. */
+    /** @param especialidad the specialty to set */
     public void setEspecialidad(String especialidad) {
         this.especialidad = especialidad;
     }
 
-    /** @return the collegiate number of the doctor. */
+    /** @return the collegiate number */
     public String getNumeroColegiado() {
         return numeroColegiado;
     }
 
-    /** @param numeroColegiado the collegiate number of the doctor. */
+    /** @param numeroColegiado the collegiate number to set */
     public void setNumeroColegiado(String numeroColegiado) {
         this.numeroColegiado = numeroColegiado;
     }
 
-    /** @return the working hours of the doctor. */
+    /** @return the working hours of the doctor */
     public String getHorarioAtencion() {
         return horarioAtencion;
     }
 
-    /** @param horarioAtencion the working hours of the doctor. */
+    /** @param horarioAtencion the working hours to set */
     public void setHorarioAtencion(String horarioAtencion) {
         this.horarioAtencion = horarioAtencion;
     }
 
-    /** @return the graduation date of the doctor. */
+    /** @return the graduation date */
     public Date getFechaGraduacion() {
         return fechaGraduacion;
     }
 
-    /** @param fechaGraduacion the graduation date of the doctor. */
+    /** @param fechaGraduacion the graduation date to set */
     public void setFechaGraduacion(Date fechaGraduacion) {
         this.fechaGraduacion = fechaGraduacion;
     }
 
-    /** @return the university where the doctor graduated. */
+    /** @return the university from which the doctor graduated */
     public String getUniversidadGraduacion() {
         return universidadGraduacion;
     }
 
-    /** @param universidadGraduacion the university where the doctor graduated. */
+    /** @param universidadGraduacion the university to set */
     public void setUniversidadGraduacion(String universidadGraduacion) {
         this.universidadGraduacion = universidadGraduacion;
     }
 
-    /** @return the user entity associated with the doctor. */
+    /** @return the user entity linked to the doctor */
     public Usuario getUsuario() {
         return usuario;
     }
 
-    /** @param usuario the user entity associated with the doctor. */
+    /** @param usuario the user entity to set */
     public void setUsuario(Usuario usuario) {
         this.usuario = usuario;
     }
 
-    /** @return the list of appointments associated with the doctor. */
+    /** @return the list of appointments assigned to the doctor */
     public List<Cita> getCitas() {
         return citas;
     }
 
-    /** @param citas the list of appointments associated with the doctor. */
+    /** @param citas the list of appointments to associate */
     public void setCitas(List<Cita> citas) {
         this.citas = citas;
     }

@@ -1,6 +1,4 @@
-/**
- * Entity representing a user for interconnection purposes.
- */
+
 package com.unis.model;
 
 import java.util.Date;
@@ -16,6 +14,14 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 
+/**
+ * Entity representing a user for interconnection purposes.
+ * <p>
+ * This entity is used to manage user information for interconnection
+ * between systems. It includes personal details, contact information,
+ * and associations with hospitals.
+ * </p>
+ */
 @Entity
 @Table(name = "USUARIO_INTERCONEXION")
 public class UsuarioInter {
@@ -26,32 +32,67 @@ public class UsuarioInter {
     @Column(name = "ID_INTERCONEXION")
     private Long idInterconexion;
 
-    /** The last name of the interconnection user. */
+    /** 
+     * The last name of the interconnection user.
+     * <p>
+     * This field stores the user's family name.
+     * </p>
+     */
     @Column(name = "APELLIDO", nullable = false)
     private String apellido;
 
-    /** The document identifier of the interconnection user. */
+    /** 
+     * The document identifier of the interconnection user.
+     * <p>
+     * This is typically a national ID or passport number.
+     * </p>
+     */
     @Column(name = "DOCUMENTO", nullable = false)
     private String documento;
 
-    /** The birth date of the interconnection user. */
+    /** 
+     * The birth date of the interconnection user.
+     * <p>
+     * This field stores the user's date of birth.
+     * </p>
+     */
     @Column(name = "FECHA_NACIMIENTO")
     @Temporal(TemporalType.DATE)
     private Date fechaNacimiento;
 
-    /** The gender of the interconnection user. */
+    /** 
+     * The gender of the interconnection user.
+     * <p>
+     * This field stores the user's gender (e.g., male, female, etc.).
+     * </p>
+     */
     @Column(name = "GENERO")
     private String genero;
 
-    /** The phone number of the interconnection user. */
+    /** 
+     * The phone number of the interconnection user.
+     * <p>
+     * This field stores the user's contact phone number.
+     * </p>
+     */
     @Column(name = "TELEFONO", length = 15)
     private String telefono;
 
-    /** The ID of the hospital associated with the interconnection user. */
+    /** 
+     * The ID of the hospital associated with the interconnection user.
+     * <p>
+     * This field links the user to a specific hospital in the system.
+     * </p>
+     */
     @Column(name = "ID_HOSPITAL")
     private Long idHospital;
 
-    /** The user entity associated with the interconnection user. */
+    /** 
+     * The user entity associated with the interconnection user.
+     * <p>
+     * This field establishes a many-to-one relationship with the main user entity.
+     * </p>
+     */
     @ManyToOne
     @JoinColumn(name = "ID_USUARIO", insertable = false, updatable = false)
     private Usuario usuario;

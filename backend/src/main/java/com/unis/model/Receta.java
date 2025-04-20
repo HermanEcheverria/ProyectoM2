@@ -1,6 +1,4 @@
-/**
- * Entity representing a medical prescription.
- */
+
 package com.unis.model;
 
 import java.io.Serializable;
@@ -20,7 +18,19 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
-
+/**
+ * Entity representing a medical prescription.
+ * <p>
+ * This entity stores information about a medical prescription, including
+ * details about the associated patient, doctor, and medications. It is used
+ * to manage and track prescriptions issued during medical appointments.
+ * </p>
+ * 
+ * <p>
+ * Each prescription is uniquely identified by a code and may include
+ * additional notes or special instructions for the patient.
+ * </p>
+ */
 @Entity
 @Table(name = "RECETA")
 public class Receta implements Serializable {
@@ -48,19 +58,40 @@ public class Receta implements Serializable {
     @Column(name = "ID_DOCTOR", nullable = false)
     private Long idDoctor;
 
-    /** The unique code of the prescription. */
+    /** 
+     * The unique code of the prescription.
+     * <p>
+     * This code is used to uniquely identify the prescription in the system.
+     * </p>
+     */
     @Column(name = "CODIGO_RECETA", nullable = false, unique = true, length = 50)
     private String codigoReceta;
 
-    /** Additional notes for the prescription. */
+    /** 
+     * Additional notes for the prescription.
+     * <p>
+     * These notes may include general instructions or observations for the patient.
+     * </p>
+     */
     @Column(name = "ANOTACIONES", length = 1000)
     private String anotaciones;
 
-    /** Special notes for the prescription. */
+    /** 
+     * Special notes for the prescription.
+     * <p>
+     * These notes may include warnings, precautions, or specific instructions
+     * for the patient regarding the prescribed medications.
+     * </p>
+     */
     @Column(name = "NOTAS_ESPECIALES", length = 1000)
     private String notasEspeciales;
 
-    /** The list of medications associated with the prescription. */
+    /** 
+     * The list of medications associated with the prescription.
+     * <p>
+     * Each medication includes details such as dosage, frequency, and duration.
+     * </p>
+     */
     @OneToMany(mappedBy = "receta", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JsonManagedReference
     private List<RecetaMedicamento> medicamentos;

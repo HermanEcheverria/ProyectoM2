@@ -1,6 +1,4 @@
-/**
- * Entity representing a user account.
- */
+
 package com.unis.model;
 
 import java.io.Serializable;
@@ -16,7 +14,26 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
-
+/**
+ * Entity representing a user account.
+ * <p>
+ * This entity is used to manage user accounts in the system. It includes
+ * details such as username, password, email, role, and account status.
+ * Each user account can be associated with a doctor, employee, or patient entity.
+ * </p>
+ * 
+ * <p>
+ * The entity also tracks the creation date and the hospital associated with the user.
+ * </p>
+ * 
+ * <p>
+ * Relationships with other entities are managed using one-to-one mappings.
+ * </p>
+ * 
+ * <p>
+ * This entity is critical for authentication and authorization processes.
+ * </p>
+ */
 @Entity
 @Table(name = "USUARIO")
 public class UserAcc implements Serializable {
@@ -27,44 +44,94 @@ public class UserAcc implements Serializable {
     @Column(name = "ID_USUARIO")
     private Long idUsuario;
 
-    /** The username of the user account. */
+    /** 
+     * The username of the user account.
+     * <p>
+     * This field stores the user's login name.
+     * </p>
+     */
     @Column(name = "NOMBRE_USUARIO", nullable = false, length = 50)
     private String nombreUsuario;
 
-    /** The password of the user account. */
+    /** 
+     * The password of the user account.
+     * <p>
+     * This field stores the user's encrypted password.
+     * </p>
+     */
     @Column(name = "CONTRASENA", nullable = false, length = 128)
     private String contrasena;
 
-    /** The role ID associated with the user account. */
+    /** 
+     * The role ID associated with the user account.
+     * <p>
+     * This field links the user to a specific role in the system.
+     * </p>
+     */
     @Column(name = "ROL_ID", nullable = false)
     private int rolId;
 
-    /** The email address of the user account. */
+    /** 
+     * The email address of the user account.
+     * <p>
+     * This field stores the user's email, which must be unique in the system.
+     * </p>
+     */
     @Column(name = "CORREO", nullable = false, length = 100)
     private String correo;
 
-    /** The status of the user account (e.g., active or inactive). */
+    /** 
+     * The status of the user account (e.g., active or inactive).
+     * <p>
+     * This field indicates whether the user account is currently active.
+     * </p>
+     */
     @Column(name = "ESTADO")
     private int estado;
 
-    /** The creation date of the user account. */
+    /** 
+     * The creation date of the user account.
+     * <p>
+     * This field stores the timestamp when the user account was created.
+     * </p>
+     */
     @Column(name = "FECHA_CREACTION")
     @Temporal(TemporalType.DATE)
     private Date fechaCreacion;
 
-    /** The ID of the hospital associated with the user account. */
+    /** 
+     * The ID of the hospital associated with the user account.
+     * <p>
+     * This field links the user to a specific hospital in the system.
+     * </p>
+     */
     @Column(name = "IDHOSPITAL")
     private Long idHospital;
 
-    /** The doctor entity associated with the user account. */
+    /** 
+     * The doctor entity associated with the user account.
+     * <p>
+     * This field establishes a one-to-one relationship with the doctor entity.
+     * </p>
+     */
     @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL)
     private DoctorAcc doctor;
 
-    /** The employee entity associated with the user account. */
+    /** 
+     * The employee entity associated with the user account.
+     * <p>
+     * This field establishes a one-to-one relationship with the employee entity.
+     * </p>
+     */
     @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL)
     private EmpleadoAcc empleado;
 
-    /** The patient entity associated with the user account. */
+    /** 
+     * The patient entity associated with the user account.
+     * <p>
+     * This field establishes a one-to-one relationship with the patient entity.
+     * </p>
+     */
     @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL)
     private PacienteAcc paciente;
 

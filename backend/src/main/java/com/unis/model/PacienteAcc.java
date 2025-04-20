@@ -1,6 +1,4 @@
-/**
- * Entity representing a patient.
- */
+
 package com.unis.model;
 
 import java.io.Serializable;
@@ -16,7 +14,19 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
-
+/**
+ * Entity representing a patient.
+ * <p>
+ * This entity maps to the <strong>PACIENTE</strong> table and holds patient demographic data 
+ * and hospital association information. It is designed to be used with user account linkage through {@link UserAcc}.
+ * </p>
+ *
+ * <p>
+ * The patient is uniquely identified by a generated ID and must be linked to a user account.
+ * </p>
+ * 
+ * @author Herman
+ */
 @Entity
 @Table(name = "PACIENTE")
 public class PacienteAcc implements Serializable {
@@ -57,84 +67,150 @@ public class PacienteAcc implements Serializable {
     @Column(name = "ID_HOSPITAL")
     private Long idHospital;
 
+    // ========================
     // Getters and Setters
+    // ========================
 
-    /** @return the unique identifier of the patient. */
+    /**
+     * Gets the unique identifier of the patient.
+     * 
+     * @return the patient ID
+     */
     public Long getIdPaciente() {
         return idPaciente;
     }
 
-    /** @param idPaciente the unique identifier of the patient. */
+    /**
+     * Sets the unique identifier of the patient.
+     * 
+     * @param idPaciente the patient ID to set
+     */
     public void setIdPaciente(Long idPaciente) {
         this.idPaciente = idPaciente;
     }
 
-    /** @return the user account associated with the patient. */
+    /**
+     * Gets the user account associated with the patient.
+     * 
+     * @return the associated user
+     */
     public UserAcc getUsuario() {
         return usuario;
     }
 
-    /** @param usuario the user account associated with the patient. */
+    /**
+     * Sets the user account associated with the patient.
+     * 
+     * @param usuario the associated user to set
+     */
     public void setUsuario(UserAcc usuario) {
         this.usuario = usuario;
     }
 
-    /** @return the last name of the patient. */
+    /**
+     * Gets the last name of the patient.
+     * 
+     * @return the patient's last name
+     */
     public String getApellido() {
         return apellido;
     }
 
-    /** @param apellido the last name of the patient. */
+    /**
+     * Sets the last name of the patient.
+     * 
+     * @param apellido the last name to set
+     */
     public void setApellido(String apellido) {
         this.apellido = apellido;
     }
 
-    /** @return the document identifier of the patient. */
+    /**
+     * Gets the document identifier of the patient.
+     * 
+     * @return the patient's document ID
+     */
     public String getDocumento() {
         return documento;
     }
 
-    /** @param documento the document identifier of the patient. */
+    /**
+     * Sets the document identifier of the patient.
+     * 
+     * @param documento the document ID to set
+     */
     public void setDocumento(String documento) {
         this.documento = documento;
     }
 
-    /** @return the birth date of the patient. */
+    /**
+     * Gets the birth date of the patient.
+     * 
+     * @return the birth date
+     */
     public Date getFechaNacimiento() {
         return fechaNacimiento;
     }
 
-    /** @param fechaNacimiento the birth date of the patient. */
+    /**
+     * Sets the birth date of the patient.
+     * 
+     * @param fechaNacimiento the birth date to set
+     */
     public void setFechaNacimiento(Date fechaNacimiento) {
         this.fechaNacimiento = fechaNacimiento;
     }
 
-    /** @return the gender of the patient. */
+    /**
+     * Gets the gender of the patient.
+     * 
+     * @return the gender
+     */
     public String getGenero() {
         return genero;
     }
 
-    /** @param genero the gender of the patient. */
+    /**
+     * Sets the gender of the patient.
+     * 
+     * @param genero the gender to set
+     */
     public void setGenero(String genero) {
         this.genero = genero;
     }
 
-    /** @return the phone number of the patient. */
+    /**
+     * Gets the phone number of the patient.
+     * 
+     * @return the phone number
+     */
     public String getTelefono() {
         return telefono;
     }
 
-    /** @param telefono the phone number of the patient. */
+    /**
+     * Sets the phone number of the patient.
+     * 
+     * @param telefono the phone number to set
+     */
     public void setTelefono(String telefono) {
         this.telefono = telefono;
     }
 
-    /** @return the ID of the hospital associated with the patient. */
+    /**
+     * Gets the hospital ID associated with the patient.
+     * 
+     * @return the hospital ID
+     */
     public Long getIdHospital() {
         return idHospital;
     }
 
-    /** @param idHospital the ID of the hospital associated with the patient. */
+    /**
+     * Sets the hospital ID associated with the patient.
+     * 
+     * @param idHospital the hospital ID to set
+     */
     public void setIdHospital(Long idHospital) {
         this.idHospital = idHospital;
     }

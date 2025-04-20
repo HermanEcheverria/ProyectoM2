@@ -1,3 +1,4 @@
+
 package com.unis.model;
 
 import java.time.LocalDate;
@@ -17,6 +18,12 @@ import jakarta.persistence.Table;
 
 /**
  * Entity representing a medical appointment.
+ * <p>
+ * Contains all relevant data regarding a patient's appointment, including doctor, patient,
+ * date, time, hospital, service, insurance, diagnosis, and results.
+ * </p>
+ * 
+ * @author Herman
  */
 @Entity
 @Table(name = "CITA")
@@ -108,20 +115,24 @@ public class Cita {
     @JoinColumn(name = "ID_ASEGURADORA", insertable = false, updatable = false)
     private Aseguradora aseguradora;
 
-    // Getters and Setters
+    // ======= Getters and Setters (documentados) =======
 
+    /** @return the appointment ID */
     public Long getIdCita() {
         return idCita;
     }
 
+    /** @param idCita the appointment ID to set */
     public void setIdCita(Long idCita) {
         this.idCita = idCita;
     }
 
+    /** @return the doctor entity */
     public Doctor getDoctor() {
         return doctor;
     }
 
+    /** @param doctor the doctor to assign */
     public void setDoctor(Doctor doctor) {
         this.doctor = doctor;
         if (doctor != null) {
@@ -129,10 +140,12 @@ public class Cita {
         }
     }
 
+    /** @return the patient entity */
     public Paciente getPaciente() {
         return paciente;
     }
 
+    /** @param paciente the patient to assign */
     public void setPaciente(Paciente paciente) {
         this.paciente = paciente;
         if (paciente != null) {
@@ -140,130 +153,162 @@ public class Cita {
         }
     }
 
+    /** @return the ID of the doctor */
     public Long getIdDoctor() {
         return idDoctor;
     }
 
+    /** @param idDoctor the doctor ID */
     public void setIdDoctor(Long idDoctor) {
         this.idDoctor = idDoctor;
     }
 
+    /** @return the ID of the patient */
     public Long getIdPaciente() {
         return idPaciente;
     }
 
+    /** @param idPaciente the patient ID */
     public void setIdPaciente(Long idPaciente) {
         this.idPaciente = idPaciente;
     }
 
+    /** @return the authorization number */
     public String getNumeroAutorizacion() {
         return numeroAutorizacion;
     }
 
+    /** @param numeroAutorizacion the authorization number to set */
     public void setNumeroAutorizacion(String numeroAutorizacion) {
         this.numeroAutorizacion = numeroAutorizacion;
     }
 
+    /** @return the date of the appointment */
     public LocalDate getFecha() {
         return fecha;
     }
 
+    /** @param fecha the date of the appointment */
     public void setFecha(LocalDate fecha) {
         this.fecha = fecha;
     }
 
+    /** @return the start time of the appointment */
     public String getHoraInicio() {
         return horaInicio;
     }
 
+    /** @param horaInicio the start time */
     public void setHoraInicio(String horaInicio) {
         this.horaInicio = horaInicio;
     }
 
+    /** @return the end time of the appointment */
     public String getHoraFin() {
         return horaFin;
     }
 
+    /** @param horaFin the end time */
     public void setHoraFin(String horaFin) {
         this.horaFin = horaFin;
     }
 
+    /** @return the hospital ID */
     public Long getIdHospital() {
         return idHospital;
     }
 
+    /** @param idHospital the hospital ID */
     public void setIdHospital(Long idHospital) {
         this.idHospital = idHospital;
     }
 
+    /** @return the service ID */
     public Long getIdServicio() {
         return idServicio;
     }
 
+    /** @param idServicio the service ID */
     public void setIdServicio(Long idServicio) {
         this.idServicio = idServicio;
     }
 
+    /** @return the insurance company ID */
     public Long getIdAseguradora() {
         return idAseguradora;
     }
 
+    /** @param idAseguradora the insurance company ID */
     public void setIdAseguradora(Long idAseguradora) {
         this.idAseguradora = idAseguradora;
     }
 
+    /** @return the appointment status */
     public EstadoCita getEstado() {
         return estado;
     }
 
+    /** @param estado the status to set */
     public void setEstado(EstadoCita estado) {
         this.estado = estado;
     }
 
+    /** @return the reason for the appointment */
     public String getMotivo() {
         return motivo;
     }
 
+    /** @param motivo the reason for the appointment */
     public void setMotivo(String motivo) {
         this.motivo = motivo;
     }
 
+    /** @return the diagnosis for the appointment */
     public String getDiagnostico() {
         return diagnostico;
     }
 
+    /** @param diagnostico the diagnosis to set */
     public void setDiagnostico(String diagnostico) {
         this.diagnostico = diagnostico;
     }
 
+    /** @return the results of the appointment */
     public String getResultados() {
         return resultados;
     }
 
+    /** @param resultados the results to set */
     public void setResultados(String resultados) {
         this.resultados = resultados;
     }
 
+    /** @return the hospital entity */
     public Hospital getHospital() {
         return hospital;
     }
 
+    /** @param hospital the hospital to set */
     public void setHospital(Hospital hospital) {
         this.hospital = hospital;
     }
 
+    /** @return the service entity */
     public Servicio getServicio() {
         return servicio;
     }
 
+    /** @param servicio the service to set */
     public void setServicio(Servicio servicio) {
         this.servicio = servicio;
     }
 
+    /** @return the insurance company entity */
     public Aseguradora getAseguradora() {
         return aseguradora;
     }
 
+    /** @param aseguradora the insurance company to set */
     public void setAseguradora(Aseguradora aseguradora) {
         this.aseguradora = aseguradora;
     }

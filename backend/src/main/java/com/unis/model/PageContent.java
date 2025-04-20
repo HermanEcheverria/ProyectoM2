@@ -1,6 +1,4 @@
-/**
- * Entity representing the content of a page.
- */
+
 package com.unis.model;
 
 import java.sql.Timestamp;
@@ -13,7 +11,21 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
-
+/**
+ * Entity representing the content of a web page.
+ * <p>
+ * This entity is used to manage dynamic sections within pages of the system.
+ * Each content block is associated with a specific page and section,
+ * and may include HTML content, images, and metadata for moderation and versioning.
+ * </p>
+ * 
+ * <p>
+ * Content can be in one of several states such as DRAFT, PUBLISHED, or REJECTED,
+ * and is tracked by the user and timestamp of the last modification.
+ * </p>
+ * 
+ * @author Herman
+ */
 @Entity
 @Table(name = "PAGE_CONTENT")
 public class PageContent {

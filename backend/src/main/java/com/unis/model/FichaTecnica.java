@@ -1,6 +1,4 @@
-/**
- * Entity representing a technical record (Ficha Técnica) for a patient.
- */
+
 package com.unis.model;
 
 import java.time.LocalDate;
@@ -16,6 +14,19 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
+/**
+ * Entity representing a technical record (Ficha Técnica) for a patient.
+ * <p>
+ * This entity holds extended medical and administrative information 
+ * related to a patient's interaction with healthcare services.
+ * It includes service history, insurance details, and a reference 
+ * to the patient who owns this record.
+ * </p>
+ * 
+ * <p><b>Database Table:</b> FICHATECNICA</p>
+ * 
+ * @author Herman
+ */
 @Entity
 @Table(name = "FICHATECNICA")
 public class FichaTecnica {
@@ -27,7 +38,7 @@ public class FichaTecnica {
     @Column(name = "ID_FICHA")
     private Long idFicha;
 
-    /** The ID of the associated service. */
+    /** The ID of the service associated with this record. */
     @Column(name = "ID_SERVICIO")
     private Long idServicio;
 
@@ -35,28 +46,30 @@ public class FichaTecnica {
     @Column(name = "FECHA_CREACION")
     private LocalDate fechaCreacion;
 
-    /** The service history associated with the technical record. */
+    /** The service history associated with this record. */
     @Column(name = "HISTORIAL_SERVICIOS")
     private String historialServicios;
 
-    /** The affiliation number associated with the patient. */
+    /** The affiliation number provided by the insurance. */
     @Column(name = "NUMEROAFILIACION")
     private String numeroAfiliacion;
 
-    /** The insurance code associated with the patient. */
+    /** The insurance code identifying the coverage plan. */
     @Column(name = "CODIGOSEGURO")
     private String codigoSeguro;
 
-    /** The insurance card number associated with the patient. */
+    /** The insurance card number of the patient. */
     @Column(name = "CARNETSEGURO")
     private String carnetSeguro;
 
-    /** The patient associated with the technical record. */
+    /** The patient linked to this technical record. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_PACIENTE", referencedColumnName = "ID_PACIENTE", nullable = false)
     private PacienteFT paciente;
 
+    // ========================
     // Getters and Setters
+    // ========================
 
     /** @return the unique identifier of the technical record. */
     public Long getIdFicha() {

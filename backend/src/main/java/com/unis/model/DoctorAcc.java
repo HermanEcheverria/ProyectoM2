@@ -1,6 +1,4 @@
-/**
- * Entity representing a doctor.
- */
+
 package com.unis.model;
 
 import java.io.Serializable;
@@ -16,6 +14,17 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
+
+/**
+ * Entity representing a doctor (alternative schema).
+ * <p>
+ * Includes personal and professional details, hospital association, and user account linkage.
+ * This version uses a one-to-one relationship with the {@link UserAcc} entity.
+ * </p>
+ * 
+ * @author Herman
+ */
+
 
 @Entity
 @Table(name = "DOCTOR")
@@ -57,7 +66,7 @@ public class DoctorAcc implements Serializable {
     @Column(name = "ID_HOSPITAL")
     private Long idHospital;
 
-    /** The specialty of the doctor. */
+    /** The medical specialty of the doctor. */
     @Column(name = "ESPECIALIDAD", length = 100)
     private String especialidad;
 
@@ -78,50 +87,151 @@ public class DoctorAcc implements Serializable {
     @Column(name = "UNIVERSIDAD_GRADUACION", length = 150)
     private String universidadGraduacion;
 
-    /** The availability of the doctor. */
+    /** The availability of the doctor (e.g., full-time, part-time). */
     @Column(name = "DISPONIBILIDAD", length = 255)
     private String disponibilidad;
 
-    // 🔹 Getters y Setters
-    public Long getIdDoctor() { return idDoctor; }
-    public void setIdDoctor(Long idDoctor) { this.idDoctor = idDoctor; }
+    // =======================
+    // Getters and Setters
+    // =======================
 
-    public UserAcc getUsuario() { return usuario; }
-    public void setUsuario(UserAcc usuario) { this.usuario = usuario; }
+    /** @return the doctor's ID */
+    public Long getIdDoctor() {
+        return idDoctor;
+    }
 
-    public String getApellido() { return apellido; }
-    public void setApellido(String apellido) { this.apellido = apellido; }
+    /** @param idDoctor the doctor's ID to set */
+    public void setIdDoctor(Long idDoctor) {
+        this.idDoctor = idDoctor;
+    }
 
-    public String getDocumento() { return documento; }
-    public void setDocumento(String documento) { this.documento = documento; }
+    /** @return the associated user account */
+    public UserAcc getUsuario() {
+        return usuario;
+    }
 
-    public Date getFechaNacimiento() { return fechaNacimiento; }
-    public void setFechaNacimiento(Date fechaNacimiento) { this.fechaNacimiento = fechaNacimiento; }
+    /** @param usuario the user account to associate */
+    public void setUsuario(UserAcc usuario) {
+        this.usuario = usuario;
+    }
 
-    public String getGenero() { return genero; }
-    public void setGenero(String genero) { this.genero = genero; }
+    /** @return the doctor's last name */
+    public String getApellido() {
+        return apellido;
+    }
 
-    public String getTelefono() { return telefono; }
-    public void setTelefono(String telefono) { this.telefono = telefono; }
+    /** @param apellido the last name to set */
+    public void setApellido(String apellido) {
+        this.apellido = apellido;
+    }
 
-    public Long getIdHospital() { return idHospital; }
-    public void setIdHospital(Long idHospital) { this.idHospital = idHospital; }
+    /** @return the doctor's document ID */
+    public String getDocumento() {
+        return documento;
+    }
 
-    public String getEspecialidad() { return especialidad; }
-    public void setEspecialidad(String especialidad) { this.especialidad = especialidad; }
+    /** @param documento the document ID to set */
+    public void setDocumento(String documento) {
+        this.documento = documento;
+    }
 
-    public String getNumeroColegiado() { return numeroColegiado; }
-    public void setNumeroColegiado(String numeroColegiado) { this.numeroColegiado = numeroColegiado; }
+    /** @return the doctor's birth date */
+    public Date getFechaNacimiento() {
+        return fechaNacimiento;
+    }
 
-    public String getHorarioAtencion() { return horarioAtencion; }
-    public void setHorarioAtencion(String horarioAtencion) { this.horarioAtencion = horarioAtencion; }
+    /** @param fechaNacimiento the birth date to set */
+    public void setFechaNacimiento(Date fechaNacimiento) {
+        this.fechaNacimiento = fechaNacimiento;
+    }
 
-    public Date getFechaGraduacion() { return fechaGraduacion; }
-    public void setFechaGraduacion(Date fechaGraduacion) { this.fechaGraduacion = fechaGraduacion; }
+    /** @return the doctor's gender */
+    public String getGenero() {
+        return genero;
+    }
 
-    public String getUniversidadGraduacion() { return universidadGraduacion; }
-    public void setUniversidadGraduacion(String universidadGraduacion) { this.universidadGraduacion = universidadGraduacion; }
+    /** @param genero the gender to set */
+    public void setGenero(String genero) {
+        this.genero = genero;
+    }
 
-    public String getDisponibilidad() { return disponibilidad; }
-    public void setDisponibilidad(String disponibilidad) { this.disponibilidad = disponibilidad; }
+    /** @return the doctor's phone number */
+    public String getTelefono() {
+        return telefono;
+    }
+
+    /** @param telefono the phone number to set */
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
+    }
+
+    /** @return the ID of the hospital where the doctor works */
+    public Long getIdHospital() {
+        return idHospital;
+    }
+
+    /** @param idHospital the hospital ID to set */
+    public void setIdHospital(Long idHospital) {
+        this.idHospital = idHospital;
+    }
+
+    /** @return the doctor's specialty */
+    public String getEspecialidad() {
+        return especialidad;
+    }
+
+    /** @param especialidad the specialty to set */
+    public void setEspecialidad(String especialidad) {
+        this.especialidad = especialidad;
+    }
+
+    /** @return the collegiate number */
+    public String getNumeroColegiado() {
+        return numeroColegiado;
+    }
+
+    /** @param numeroColegiado the collegiate number to set */
+    public void setNumeroColegiado(String numeroColegiado) {
+        this.numeroColegiado = numeroColegiado;
+    }
+
+    /** @return the working schedule */
+    public String getHorarioAtencion() {
+        return horarioAtencion;
+    }
+
+    /** @param horarioAtencion the working schedule to set */
+    public void setHorarioAtencion(String horarioAtencion) {
+        this.horarioAtencion = horarioAtencion;
+    }
+
+    /** @return the graduation date */
+    public Date getFechaGraduacion() {
+        return fechaGraduacion;
+    }
+
+    /** @param fechaGraduacion the graduation date to set */
+    public void setFechaGraduacion(Date fechaGraduacion) {
+        this.fechaGraduacion = fechaGraduacion;
+    }
+
+    /** @return the university of graduation */
+    public String getUniversidadGraduacion() {
+        return universidadGraduacion;
+    }
+
+    /** @param universidadGraduacion the university to set */
+    public void setUniversidadGraduacion(String universidadGraduacion) {
+        this.universidadGraduacion = universidadGraduacion;
+    }
+
+    /** @return the doctor's availability */
+    public String getDisponibilidad() {
+        return disponibilidad;
+    }
+
+    /** @param disponibilidad the availability to set */
+    public void setDisponibilidad(String disponibilidad) {
+        this.disponibilidad = disponibilidad;
+    }
 }

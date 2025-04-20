@@ -1,6 +1,4 @@
-/**
- * Entity representing a user for interconnection purposes.
- */
+
 package com.unis.model;
 
 import java.io.Serializable;
@@ -17,6 +15,14 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 
+/**
+ * Entity representing a user for interconnection purposes.
+ * <p>
+ * This entity is used to manage user information for interconnection
+ * between systems. It includes personal details, contact information,
+ * and associations with hospitals.
+ * </p>
+ */
 @Entity
 @Table(name = "USUARIO_INTERCONEXION")
 public class UsuarioInterAcc implements Serializable {
@@ -27,7 +33,12 @@ public class UsuarioInterAcc implements Serializable {
     @Column(name = "ID_INTERCONEXION")
     private Long idInterconexion;
 
-    /** The user entity associated with the interconnection user. */
+    /** 
+     * The user entity associated with the interconnection user.
+     * <p>
+     * This field establishes a one-to-one relationship with the main user entity.
+     * </p>
+     */
     @OneToOne
     @JoinColumn(name = "ID_USUARIO", nullable = false)
     private Usuario usuario;
@@ -36,7 +47,12 @@ public class UsuarioInterAcc implements Serializable {
     @Column(name = "APELLIDO", nullable = false, length = 100)
     private String apellido;
 
-    /** The document identifier of the interconnection user. */
+    /** 
+     * The document identifier of the interconnection user.
+     * <p>
+     * This is typically a national ID or passport number.
+     * </p>
+     */
     @Column(name = "DOCUMENTO", nullable = false, length = 20)
     private String documento;
 
@@ -53,7 +69,12 @@ public class UsuarioInterAcc implements Serializable {
     @Column(name = "TELEFONO", length = 15)
     private String telefono;
 
-    /** The ID of the hospital associated with the interconnection user. */
+    /** 
+     * The ID of the hospital associated with the interconnection user.
+     * <p>
+     * This field links the user to a specific hospital in the system.
+     * </p>
+     */
     @Column(name = "ID_HOSPITAL")
     private Long idHospital;
 

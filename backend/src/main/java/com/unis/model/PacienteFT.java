@@ -1,6 +1,4 @@
-/**
- * Entity representing a patient with technical records.
- */
+
 package com.unis.model;
 
 import java.time.LocalDate;
@@ -20,7 +18,20 @@ import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-
+/**
+ * Entity representing a patient with technical records.
+ * <p>
+ * This entity stores patient information used for linking with technical
+ * medical records (fichas técnicas) in the system. Each patient is
+ * associated with a user account and can have multiple medical technical records.
+ * </p>
+ *
+ * <p>
+ * The technical records are eagerly fetched for reporting and auditing purposes.
+ * </p>
+ * 
+ * @author Herman
+ */
 @Entity
 @Table(name = "PACIENTE")
 public class PacienteFT {
@@ -58,74 +69,132 @@ public class PacienteFT {
     @JsonIgnore
     private List<FichaTecnica> fichasTecnicas;
 
+    // ========================
     // Getters and Setters
+    // ========================
 
-    /** @return the unique identifier of the patient. */
+    /**
+     * Gets the unique identifier of the patient.
+     * 
+     * @return the patient ID
+     */
     public Long getIdPaciente() {
         return idPaciente;
     }
 
-    /** @param idPaciente the unique identifier of the patient. */
+    /**
+     * Sets the unique identifier of the patient.
+     * 
+     * @param idPaciente the patient ID to set
+     */
     public void setIdPaciente(Long idPaciente) {
         this.idPaciente = idPaciente;
     }
 
-    /** @return the unique identifier of the user associated with the patient. */
+    /**
+     * Gets the unique identifier of the user associated with the patient.
+     * 
+     * @return the user ID
+     */
     public Long getIdUsuario() {
         return idUsuario;
     }
 
-    /** @param idUsuario the unique identifier of the user associated with the patient. */
+    /**
+     * Sets the unique identifier of the user associated with the patient.
+     * 
+     * @param idUsuario the user ID to set
+     */
     public void setIdUsuario(Long idUsuario) {
         this.idUsuario = idUsuario;
     }
 
-    /** @return the document identifier of the patient. */
+    /**
+     * Gets the document identifier of the patient.
+     * 
+     * @return the document ID
+     */
     public String getDocumento() {
         return documento;
     }
 
-    /** @param documento the document identifier of the patient. */
+    /**
+     * Sets the document identifier of the patient.
+     * 
+     * @param documento the document ID to set
+     */
     public void setDocumento(String documento) {
         this.documento = documento;
     }
 
-    /** @return the birth date of the patient. */
+    /**
+     * Gets the birth date of the patient.
+     * 
+     * @return the birth date
+     */
     public LocalDate getFechaNacimiento() {
         return fechaNacimiento;
     }
 
-    /** @param fechaNacimiento the birth date of the patient. */
+    /**
+     * Sets the birth date of the patient.
+     * 
+     * @param fechaNacimiento the birth date to set
+     */
     public void setFechaNacimiento(LocalDate fechaNacimiento) {
         this.fechaNacimiento = fechaNacimiento;
     }
 
-    /** @return the photograph of the patient. */
+    /**
+     * Gets the photograph of the patient.
+     * 
+     * @return the photograph as a byte array
+     */
     public byte[] getFotografia() {
         return fotografia;
     }
 
-    /** @param fotografia the photograph of the patient. */
+    /**
+     * Sets the photograph of the patient.
+     * 
+     * @param fotografia the photograph as a byte array
+     */
     public void setFotografia(byte[] fotografia) {
         this.fotografia = fotografia;
     }
 
-    /** @return the user entity associated with the patient. */
+    /**
+     * Gets the user entity associated with the patient.
+     * 
+     * @return the user entity
+     */
     public Usuario getUsuario() {
         return usuario;
     }
 
-    /** @param usuario the user entity associated with the patient. */
+    /**
+     * Sets the user entity associated with the patient.
+     * 
+     * @param usuario the user entity to set
+     */
     public void setUsuario(Usuario usuario) {
         this.usuario = usuario;
     }
 
-    /** @return the list of technical records associated with the patient. */
+    /**
+     * Gets the list of technical records associated with the patient.
+     * 
+     * @return the list of {@link FichaTecnica}
+     */
     public List<FichaTecnica> getFichasTecnicas() {
         return fichasTecnicas;
     }
 
-    /** @param fichasTecnicas the list of technical records associated with the patient. */
+    /**
+     * Sets the list of technical records associated with the patient.
+     * 
+     * @param fichasTecnicas the list of {@link FichaTecnica} to set
+     */
     public void setFichasTecnicas(List<FichaTecnica> fichasTecnicas) {
         this.fichasTecnicas = fichasTecnicas;
     }

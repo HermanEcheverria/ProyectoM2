@@ -1,15 +1,31 @@
 package com.unis.controller;
 
+import java.util.List;
+
 import com.unis.model.Historia;
 import com.unis.service.HistoriaService;
+
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import java.util.List;
-
+/**
+ * REST controller for managing institutional history entries.
+ * <p>
+ * Provides endpoints to create, update, approve, reject, list and delete
+ * historical content related to entities such as hospitals, pharmacies, or insurers.
+ * </p>
+ */
 @Path("/historias")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -18,17 +34,33 @@ public class HistoriaController {
     @Inject
     HistoriaService historiaService;
 
+    /**
+     * Retrieves all history entries.
+     *
+     * @return a list of all {@link Historia} records
+     */
     @GET
     public List<Historia> getHistorias() {
         return historiaService.listar();
     }
 
+    /**
+     * Retrieves all published history entries.
+     *
+     * @return a list of published {@link Historia} records
+     */
     @GET
     @Path("/publicadas")
     public List<Historia> getHistoriasPublicadas() {
         return historiaService.listarPorEstado("PUBLICADO");
     }
 
+    /**
+     * Retrieves a single history entry by its ID.
+     *
+     * @param id the ID of the history entry
+     * @return the history entry or 404 if not found
+     */
     @GET
     @Path("/{id}")
     public Response getHistoria(@PathParam("id") Long id) {
@@ -39,6 +71,12 @@ public class HistoriaController {
         return Response.ok(historia).build();
     }
 
+    /**
+     * Creates a new history entry with status "PROCESO".
+     *
+     * @param historia the history object to create
+     * @return the created history with HTTP 201 or error if validation fails
+     */
     @POST
     @Transactional
     public Response createHistoria(Historia historia) {
@@ -52,6 +90,13 @@ public class HistoriaController {
         return Response.status(Response.Status.CREATED).entity(creado).build();
     }
 
+    /**
+     * Updates an existing history entry by its ID.
+     *
+     * @param id the ID of the history entry
+     * @param historiaActualizada the new data for the history entry
+     * @return the updated history or error response
+     */
     @PUT
     @Path("/{id}")
     @Transactional
@@ -79,13 +124,18 @@ public class HistoriaController {
         if (historiaActualizada.getRejectionReason() != null)
             historia.setRejectionReason(historiaActualizada.getRejectionReason());
 
-        // ✅ Muy importante: asignar siempre el editorEmail actualizado
         historia.setEditorEmail(historiaActualizada.getEditorEmail());
 
         historiaService.actualizar(id, historia);
         return Response.ok(historia).build();
     }
 
+    /**
+     * Deletes a history entry by its ID.
+     *
+     * @param id the ID of the history entry
+     * @return 204 if deleted, 404 if not found
+     */
     @DELETE
     @Path("/{id}")
     @Transactional
@@ -97,12 +147,23 @@ public class HistoriaController {
         return Response.noContent().build();
     }
 
+    /**
+     * Retrieves all history entries pending moderation.
+     *
+     * @return list of {@link Historia} entries with status "PROCESO"
+     */
     @GET
     @Path("/pendientes")
     public List<Historia> getPendientesModeracion() {
         return historiaService.listarPorEstado("PROCESO");
     }
 
+    /**
+     * Approves a history entry and sets its status to "PUBLICADO".
+     *
+     * @param id the ID of the history entry
+     * @return the updated history or 404 if not found
+     */
     @PUT
     @Path("/aprobar/{id}")
     @Transactional
@@ -116,6 +177,13 @@ public class HistoriaController {
         return Response.ok(historiaService.actualizar(id, historia)).build();
     }
 
+    /**
+     * Rejects a history entry with a given reason.
+     *
+     * @param id the ID of the history entry
+     * @param motivo the reason for rejection
+     * @return the updated history or 404 if not found
+     */
     @PUT
     @Path("/rechazar/{id}")
     @Transactional

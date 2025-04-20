@@ -1,6 +1,4 @@
-/**
- * Entity representing an employee.
- */
+
 package com.unis.model;
 
 import java.io.Serializable;
@@ -17,6 +15,15 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 
+/**
+ * Entity representing an employee.
+ * <p>
+ * This entity stores personal and job-related information for a hospital system employee.
+ * It includes a one-to-one relationship with the {@link Usuario} account entity.
+ * </p>
+ * 
+ * @author Herman
+ */
 @Entity
 @Table(name = "EMPLEADOS")
 public class Empleado implements Serializable {
@@ -53,88 +60,90 @@ public class Empleado implements Serializable {
     @Column(name = "TELEFONO", nullable = false)
     private String telefono;
 
-    /** The position of the employee. */
+    /** The job position of the employee. */
     @Column(name = "PUESTO", nullable = false)
     private String puesto;
 
+    // =======================
     // Getters and Setters
+    // =======================
 
-    /** @return the unique identifier of the employee. */
+    /** @return the unique identifier of the employee */
     public Long getIdEmpleado() {
         return idEmpleado;
     }
 
-    /** @param idEmpleado the unique identifier of the employee. */
+    /** @param idEmpleado the unique identifier to set */
     public void setIdEmpleado(Long idEmpleado) {
         this.idEmpleado = idEmpleado;
     }
 
-    /** @return the user account associated with the employee. */
+    /** @return the user account associated with the employee */
     public Usuario getUsuario() {
         return usuario;
     }
 
-    /** @param usuario the user account associated with the employee. */
+    /** @param usuario the user account to associate */
     public void setUsuario(Usuario usuario) {
         this.usuario = usuario;
     }
 
-    /** @return the last name of the employee. */
+    /** @return the last name of the employee */
     public String getApellido() {
         return apellido;
     }
 
-    /** @param apellido the last name of the employee. */
+    /** @param apellido the last name to set */
     public void setApellido(String apellido) {
         this.apellido = apellido;
     }
 
-    /** @return the document identifier of the employee. */
+    /** @return the document ID of the employee */
     public String getDocumento() {
         return documento;
     }
 
-    /** @param documento the document identifier of the employee. */
+    /** @param documento the document ID to set */
     public void setDocumento(String documento) {
         this.documento = documento;
     }
 
-    /** @return the birth date of the employee. */
+    /** @return the employee's birth date */
     public Date getFechaNacimiento() {
         return fechaNacimiento;
     }
 
-    /** @param fechaNacimiento the birth date of the employee. */
+    /** @param fechaNacimiento the birth date to set */
     public void setFechaNacimiento(Date fechaNacimiento) {
         this.fechaNacimiento = fechaNacimiento;
     }
 
-    /** @return the gender of the employee. */
+    /** @return the gender of the employee */
     public String getGenero() {
         return genero;
     }
 
-    /** @param genero the gender of the employee. */
+    /** @param genero the gender to set */
     public void setGenero(String genero) {
         this.genero = genero;
     }
 
-    /** @return the phone number of the employee. */
+    /** @return the employee's phone number */
     public String getTelefono() {
         return telefono;
     }
 
-    /** @param telefono the phone number of the employee. */
+    /** @param telefono the phone number to set */
     public void setTelefono(String telefono) {
         this.telefono = telefono;
     }
 
-    /** @return the position of the employee. */
+    /** @return the job position of the employee */
     public String getPuesto() {
         return puesto;
     }
 
-    /** @param puesto the position of the employee. */
+    /** @param puesto the job position to set */
     public void setPuesto(String puesto) {
         this.puesto = puesto;
     }

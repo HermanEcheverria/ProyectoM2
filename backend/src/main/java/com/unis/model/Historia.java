@@ -1,6 +1,4 @@
-/**
- * Entity representing the history of an entity.
- */
+
 package com.unis.model;
 
 import jakarta.persistence.Column;
@@ -11,7 +9,18 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
-
+/**
+ * Entity representing the historical background of an institution or organization.
+ * <p>
+ * This class stores comprehensive historical information, notable achievements,
+ * and a timeline of relevant events. It also includes moderation metadata such as
+ * status, rejection reasons, and the editor responsible for the latest update.
+ * </p>
+ * 
+ * <p><b>Database Table:</b> HISTORIA</p>
+ * 
+ * @author Herman
+ */
 @Entity
 @Table(name = "HISTORIA")
 public class Historia {
@@ -22,34 +31,36 @@ public class Historia {
     @SequenceGenerator(name = "historia_seq", sequenceName = "HISTORIA_SEQ", allocationSize = 1)
     private Long id;
 
-    /** The name of the entity associated with the history. */
+    /** The name of the institution or entity. */
     private String nombreEntidad;
 
-    /** The detailed history of the entity. */
+    /** A detailed narrative of the entity's history. */
     @Lob
     private String historia;
 
-    /** The merits or achievements of the entity. */
+    /** Achievements and recognitions of the entity. */
     @Lob
     private String meritos;
 
-    /** The timeline of the entity's history. */
+    /** A chronological timeline of the entity's development. */
     @Lob
     private String lineaDelTiempo;
 
-    /** The status of the history record (e.g., PROCESO, PUBLICADO, RECHAZADO). */
+    /** The publication status of the history record. */
     @Column(name = "STATUS", length = 20)
     private String status;
 
-    /** The reason for rejection, if applicable. */
+    /** The reason provided if the history entry was rejected. */
     @Column(name = "REJECTION_REASON", length = 500)
     private String rejectionReason;
 
-    /** The email of the editor who last modified the history record. */
+    /** The email address of the editor responsible for the last update. */
     @Column(name = "EDITOR_EMAIL", length = 150)
     private String editorEmail;
 
+    // ========================
     // Getters and Setters
+    // ========================
 
     /** @return the unique identifier of the history record. */
     public Long getId() {

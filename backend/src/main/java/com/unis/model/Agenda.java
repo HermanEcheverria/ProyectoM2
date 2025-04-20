@@ -1,5 +1,12 @@
 package com.unis.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
 /**
  * Entity representing a doctor's schedule.
  * <p>
@@ -9,13 +16,6 @@ package com.unis.model;
  * 
  * @author Herman
  */
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-
 @Entity
 @Table(name = "AGENDA")
 public class Agenda {
@@ -45,47 +45,101 @@ public class Agenda {
     @Column(name = "NOTAS")
     private String notas;
 
-    // Getters y Setters
+    /**
+     * Gets the unique identifier of the schedule.
+     *
+     * @return the schedule ID
+     */
     public Long getId() {
         return id;
     }
 
+    /**
+     * Gets the ID of the associated doctor.
+     *
+     * @return the doctor ID
+     */
     public Long getIdDoctor() {
         return idDoctor;
     }
 
+    /**
+     * Sets the ID of the associated doctor.
+     *
+     * @param idDoctor the doctor ID to set
+     */
     public void setIdDoctor(Long idDoctor) {
         this.idDoctor = idDoctor;
     }
 
+    /**
+     * Gets the days of attention.
+     *
+     * @return the days of attention (e.g., "Monday,Tuesday")
+     */
     public String getDiasAtencion() {
         return diasAtencion;
     }
 
+    /**
+     * Sets the days of attention.
+     *
+     * @param diasAtencion the days of attention
+     */
     public void setDiasAtencion(String diasAtencion) {
         this.diasAtencion = diasAtencion;
     }
 
+    /**
+     * Gets the start time of the schedule.
+     *
+     * @return the start time (e.g., "08:00")
+     */
     public String getHoraInicio() {
         return horaInicio;
     }
 
+    /**
+     * Sets the start time of the schedule.
+     *
+     * @param horaInicio the start time
+     */
     public void setHoraInicio(String horaInicio) {
         this.horaInicio = horaInicio;
     }
 
+    /**
+     * Gets the end time of the schedule.
+     *
+     * @return the end time (e.g., "16:30")
+     */
     public String getHoraFin() {
         return horaFin;
     }
 
+    /**
+     * Sets the end time of the schedule.
+     *
+     * @param horaFin the end time
+     */
     public void setHoraFin(String horaFin) {
         this.horaFin = horaFin;
     }
 
+    /**
+     * Gets additional notes for the schedule.
+     *
+     * @return notes or comments
+     */
     public String getNotas() {
         return notas;
     }
 
+    /**
+     * Sets additional notes for the schedule.
+     *
+     * @param notas notes or comments to set
+     */
     public void setNotas(String notas) {
         this.notas = notas;
     }
