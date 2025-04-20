@@ -11,6 +11,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,7 +36,6 @@ public class PageContentServiceTest {
         MockitoAnnotations.openMocks(this);
     }
 
-    // Test para getPublishedContent
     @Test
     public void testGetPublishedContent() {
         String pageName = "home";
@@ -42,49 +43,49 @@ public class PageContentServiceTest {
         when(repository.findPublishedByPage(pageName)).thenReturn(expectedList);
 
         List<PageContent> result = pageContentService.getPublishedContent(pageName);
-        assertEquals(expectedList, result, "La lista de contenidos publicados debe coincidir con la esperada");
+        assertEquals(expectedList, result);
     }
 
-    // Test para getDraftContent
     @Test
     public void testGetDraftContent() {
         List<PageContent> expectedDrafts = Arrays.asList(new PageContent(), new PageContent());
         when(repository.findDrafts()).thenReturn(expectedDrafts);
 
         List<PageContent> result = pageContentService.getDraftContent();
-        assertEquals(expectedDrafts, result, "La lista de borradores debe coincidir con la esperada");
+        assertEquals(expectedDrafts, result);
     }
 
-    // Test para create
     @Test
     public void testCreate() {
         PageContent content = new PageContent();
-        // Antes de crear, lastModifiedDate puede ser nulo
+        content.setEditorEmail("editor@hospital.com");
         content.setLastModifiedDate(null);
 
-        // No simulamos nada en persist (es void), solo verificamos que se invoque
         PageContent result = pageContentService.create(content);
 
-        verify(repository, times(1)).persist(content);
-        // Se espera que se asigne un Timestamp
-        assertNotNull(result.getLastModifiedDate(), "El contenido debe tener asignada una fecha de modificación");
+        verify(repository, times(1)).persist(Mockito.<PageContent>any());
+        assertNotNull(result.getLastModifiedDate());
     }
 
-    // Test para update (caso exitoso)
+    @Test
+    public void testCreateSinEditorEmail() {
+        PageContent content = new PageContent(); // sin editorEmail
+
+        Exception ex = assertThrows(IllegalArgumentException.class, () -> {
+            pageContentService.create(content);
+        });
+
+        assertEquals("Editor email es requerido", ex.getMessage());
+        verify(repository, never()).persist(Mockito.<PageContent>any());
+    }
+
     @Test
     public void testUpdateFound() {
         Long id = 1L;
         PageContent existing = new PageContent();
-        // Asignar valores iniciales
-        existing.setPageName("OldPage");
-        existing.setSectionName("OldSection");
-        existing.setContentTitle("OldTitle");
-        existing.setContentBody("OldBody");
-        // Si image es byte[] y modifiedBy es Long:
+        existing.setStatus("DRAFT");
         existing.setImage("oldImage.png".getBytes());
         existing.setModifiedBy(111L);
-        existing.setStatus("DRAFT");
-        // Se ignora lastModifiedDate inicial
 
         PageContent updateData = new PageContent();
         updateData.setPageName("NewPage");
@@ -103,27 +104,44 @@ public class PageContentServiceTest {
         assertEquals("NewSection", result.getSectionName());
         assertEquals("NewTitle", result.getContentTitle());
         assertEquals("NewBody", result.getContentBody());
-        // Comparar arrays de bytes:
         assertArrayEquals("newImage.png".getBytes(), result.getImage());
         assertEquals(222L, result.getModifiedBy());
         assertEquals("UPDATED", result.getStatus());
-        assertNotNull(result.getLastModifiedDate(), "La fecha de modificación debe ser actualizada");
+        assertNotNull(result.getLastModifiedDate());
     }
 
-    // Test para update cuando no se encuentra el contenido
+    @Test
+    public void testUpdateCuandoEsPublicado() {
+        Long id = 1L;
+        PageContent publicado = new PageContent();
+        publicado.setStatus("PUBLICADO");
+
+        PageContent nuevo = new PageContent();
+        nuevo.setEditorEmail("editor@hospital.com");
+        nuevo.setPageName("Nueva Página");
+
+        when(repository.findById(id)).thenReturn(publicado);
+
+        PageContent result = pageContentService.update(id, nuevo);
+
+        assertEquals("PROCESO", result.getStatus());
+        assertEquals("editor@hospital.com", result.getEditorEmail());
+        assertEquals("Nueva Página", result.getPageName());
+        assertNotNull(result.getLastModifiedDate());
+        verify(repository).persist(Mockito.<PageContent>any());
+    }
+
     @Test
     public void testUpdateNotFound() {
-        Long id = 1L;
-        PageContent updateData = new PageContent();
-        when(repository.findById(id)).thenReturn(null);
+        when(repository.findById(1L)).thenReturn(null);
 
         NotFoundException ex = assertThrows(NotFoundException.class, () -> {
-            pageContentService.update(id, updateData);
+            pageContentService.update(1L, new PageContent());
         });
+
         assertEquals("Contenido no encontrado", ex.getMessage());
     }
 
-    // Test para publish cuando se encuentra el contenido
     @Test
     public void testPublishFound() {
         Long id = 1L;
@@ -134,28 +152,37 @@ public class PageContentServiceTest {
 
         PageContent result = pageContentService.publish(id);
 
-        assertEquals("PUBLICADO", result.getStatus(), "El estado debe actualizarse a 'PUBLICADO'");
-        assertNotNull(result.getLastModifiedDate(), "La fecha de modificación debe actualizarse");
+        assertEquals("PUBLICADO", result.getStatus());
+        assertNotNull(result.getLastModifiedDate());
     }
 
-    // Test para publish cuando no se encuentra el contenido
     @Test
     public void testPublishNotFound() {
-        Long id = 1L;
-        when(repository.findById(id)).thenReturn(null);
+        when(repository.findById(1L)).thenReturn(null);
 
         NotFoundException ex = assertThrows(NotFoundException.class, () -> {
-            pageContentService.publish(id);
+            pageContentService.publish(1L);
         });
+
         assertEquals("Contenido no encontrado", ex.getMessage());
     }
 
-    // Test para delete
+    @Test
+    public void testReject() {
+        Long id = 1L;
+        PageContent existing = new PageContent();
+        existing.setStatus("DRAFT");
+        when(repository.findById(id)).thenReturn(existing);
+
+        PageContent result = pageContentService.reject(id, "Contenido no aprobado");
+
+        assertEquals("RECHAZADO", result.getStatus());
+    }
+
     @Test
     public void testDelete() {
         Long id = 1L;
-        // Simulamos que deleteById 
-when(repository.deleteById(id)).thenReturn(true);
+        when(repository.deleteById(id)).thenReturn(true);
 
         pageContentService.delete(id);
 

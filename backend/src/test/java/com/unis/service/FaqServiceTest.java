@@ -5,6 +5,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,17 +19,17 @@ import static org.mockito.Mockito.when;
 import org.mockito.MockitoAnnotations;
 
 import com.unis.model.Faq;
+import com.unis.repository.FaqRepository;
 
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.TypedQuery;
 
 public class FaqServiceTest {
 
     @Mock
-    EntityManager entityManager;
+    FaqRepository faqRepository;
 
     @Mock
-    TypedQuery<Faq> query;
+    EntityManager entityManager;
 
     @InjectMocks
     FaqService faqService;
@@ -36,68 +37,90 @@ public class FaqServiceTest {
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
+        when(faqRepository.getEntityManager()).thenReturn(entityManager);
     }
 
-    // Test para guardar una pregunta (guardarPregunta)
     @Test
     public void testGuardarPregunta() {
         Faq faq = new Faq();
-        // Se podría configurar propiedades de faq si se requiere
+        faq.setEditadoPor("admin@hospital.com");
+
         faqService.guardarPregunta(faq);
-        verify(entityManager, times(1)).persist(faq);
+
+        verify(faqRepository, times(1)).persist(any(Faq.class));
     }
 
-    // Test para listar todas las preguntas (listarPreguntas)
+    @Test
+    public void testGuardarPreguntaSinEditor() {
+        Faq faq = new Faq();
+
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            faqService.guardarPregunta(faq);
+        });
+
+        assertEquals("El campo 'editadoPor' es obligatorio.", exception.getMessage());
+        verify(faqRepository, never()).persist(any(Faq.class));
+    }
+
     @Test
     public void testListarPreguntas() {
         List<Faq> expectedFaqs = Arrays.asList(new Faq(), new Faq());
-        when(entityManager.createQuery("SELECT f FROM Faq f", Faq.class)).thenReturn(query);
-        when(query.getResultList()).thenReturn(expectedFaqs);
+        when(faqRepository.listAll()).thenReturn(expectedFaqs);
 
         List<Faq> result = faqService.listarPreguntas();
         assertEquals(expectedFaqs, result);
     }
 
-    // Test para buscar una pregunta por ID (buscarPorId)
     @Test
     public void testBuscarPorId() {
         Faq faq = new Faq();
-        Long id = 1L;
-        when(entityManager.find(Faq.class, id)).thenReturn(faq);
+        when(faqRepository.findById(1L)).thenReturn(faq);
 
-        Faq result = faqService.buscarPorId(id);
+        Faq result = faqService.buscarPorId(1L);
         assertEquals(faq, result);
     }
 
-    // Test para actualizar una FAQ (actualizarFaq)
     @Test
     public void testActualizarFaq() {
         Faq faq = new Faq();
-        // Se puede configurar faq según sea necesario
+        faq.setEditadoPor("admin@hospital.com");
+
         faqService.actualizarFaq(faq);
+
         verify(entityManager, times(1)).merge(faq);
     }
 
-    // Test para eliminar una FAQ cuando se encuentra
     @Test
-    public void testEliminarFaqFound() {
+    public void testActualizarFaqSinEditor() {
         Faq faq = new Faq();
-        Long id = 1L;
-        when(entityManager.find(Faq.class, id)).thenReturn(faq);
 
-        boolean result = faqService.eliminarFaq(id);
-        verify(entityManager, times(1)).remove(faq);
-        assertTrue(result);
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            faqService.actualizarFaq(faq);
+        });
+
+        assertEquals("El campo 'editadoPor' es obligatorio para actualizar.", exception.getMessage());
+        verify(faqRepository, never()).persist(any(Faq.class));
     }
 
-    // Test para eliminar una FAQ cuando no se encuentra
     @Test
-    public void testEliminarFaqNotFound() {
-        Long id = 1L;
-        when(entityManager.find(Faq.class, id)).thenReturn(null);
+public void testEliminarFaqFound() {
+    when(faqRepository.deleteById(1L)).thenReturn(true); 
 
-        boolean result = faqService.eliminarFaq(id);
-        verify(entityManager, never()).remove(any(Faq.class));
-        assertFalse(result);
-    }
+    boolean result = faqService.eliminarFaq(1L);
+
+    assertTrue(result);
+    verify(faqRepository, times(1)).deleteById(1L);
+}
+
+
+   @Test
+public void testEliminarFaqNotFound() {
+    when(faqRepository.deleteById(1L)).thenReturn(false);
+
+    boolean result = faqService.eliminarFaq(1L);
+
+    assertFalse(result);
+    verify(faqRepository, times(1)).deleteById(1L);
+}
+
 }
