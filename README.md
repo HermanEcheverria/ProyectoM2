@@ -63,6 +63,8 @@ npm run test:e2e -- --debug
 npm run lint
 ```
 cd backend
+
+./mvnw quarkus:dev Este es el que debemos usar para el backend ahora por los test
 mvn quarkus:dev
 mvn quarkus:dev "-Dquarkus.http.host=0.0.0.0"
 
