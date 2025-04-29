@@ -163,13 +163,35 @@ public class CitaService {
         enviarResultadosAAseguradora(cita);
     }
 
-    /**
-     * Reasigna un doctor a una cita existente.
-     *
-     * @param idCita      El ID de la cita.
-     * @param nuevoDoctor El nuevo doctor a asignar.
-     * @throws IllegalArgumentException Si la cita o el doctor no son válidos.
-     */
+    private void enviarResultadosAAseguradora(Cita cita) {
+        try {
+            JsonObject json = jakarta.json.Json.createObjectBuilder()
+                .add("idCita", cita.getIdCita())
+                .add("documento", cita.getPaciente().getDocumento())
+                .add("nombre", cita.getPaciente().getUsuario().getNombreUsuario())
+                .add("apellido", cita.getPaciente().getApellido())
+                .add("diagnostico", cita.getDiagnostico())
+                .add("resultados", cita.getResultados())
+                .add("fecha", cita.getFecha().toString())
+                .add("doctor", cita.getDoctor().getUsuario().getNombreUsuario())
+                .build();
+
+            System.out.println("📤 Enviando resultado: " + json);
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:5001/api/resultados"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json.toString()))
+                .build();
+
+            client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(response -> System.out.println("✅ Resultado enviado: " + response.statusCode()));
+        } catch (Exception e) {
+            System.err.println("❌ Error enviando resultados: " + e.getMessage());
+        }
+    }
+
     @Transactional
     public void reasignarDoctor(Long idCita, Doctor nuevoDoctor) {
         Cita cita = citaRepository.findById(idCita);
@@ -200,7 +222,7 @@ public class CitaService {
             throw new IllegalArgumentException("El campo 'documento' es obligatorio");
         }
     
-        // 🔎 Verificar si ya existe un paciente con ese documento
+        // Verificar si ya existe un paciente con ese documento
         Paciente paciente = entityManager
             .createQuery("SELECT p FROM Paciente p WHERE p.documento = :doc", Paciente.class)
             .setParameter("doc", documento)
@@ -209,48 +231,50 @@ public class CitaService {
             .orElse(null);
     
         if (paciente == null) {
-            // ✅ Crear nuevo usuario
+            //  Crear nuevo usuario
             Usuario usuario = new Usuario();
             usuario.setNombreUsuario(nombre);
             usuario.setCorreo("auto_" + documento + "@hospital.com");
             usuario.setContrasena("1234");
     
-            // 👉 Asignar rol paciente (ID 4)
+            //  Asignar rol paciente (ID 4)
             Rol rolPaciente = entityManager.find(Rol.class, 4L);
             usuario.setRol(rolPaciente);
     
             entityManager.persist(usuario);
     
             // ✅ Crear nuevo paciente
-            paciente = new Paciente();
-            paciente.setDocumento(documento);
-            paciente.setApellido(apellido);
-            paciente.setUsuario(usuario);
-            paciente.setIdUsuario(usuario.getId());
+           // ✅ Crear nuevo paciente
+paciente = new Paciente();
+paciente.setDocumento(documento);
+paciente.setApellido(apellido);
+paciente.setUsuario(usuario);
+paciente.setIdUsuario(usuario.getId());
 
-            entityManager.persist(paciente);
-            System.out.println("✅ Usuario y paciente creados automáticamente");
+entityManager.persist(paciente);
+System.out.println("✅ Usuario y paciente creados automáticamente");
 
-            // ⚠️ Necesitamos obtener el paciente como PacienteFT para la ficha técnica
-            PacienteFT pacienteFT = entityManager
-                .createQuery("SELECT p FROM PacienteFT p WHERE p.documento = :doc", PacienteFT.class)
-                .setParameter("doc", documento)
-                .getSingleResult();
+// ⚠️ Necesitamos obtener el paciente como PacienteFT para la ficha técnica
+PacienteFT pacienteFT = entityManager
+    .createQuery("SELECT p FROM PacienteFT p WHERE p.documento = :doc", PacienteFT.class)
+    .setParameter("doc", documento)
+    .getSingleResult();
 
-            // ✅ Crear ficha técnica asociada al nuevo paciente
-            FichaTecnica ficha = new FichaTecnica();
-            ficha.setPaciente(pacienteFT);
-            ficha.setFechaCreacion(LocalDate.now());
-            ficha.setHistorialServicios("");
-            ficha.setNumeroAfiliacion(numeroAfiliacion);
-            ficha.setCodigoSeguro(codigoSeguro);
-            ficha.setCarnetSeguro(carnetSeguro);
+// ✅ Crear ficha técnica asociada al nuevo paciente
+FichaTecnica ficha = new FichaTecnica();
+ficha.setPaciente(pacienteFT);
+ficha.setFechaCreacion(LocalDate.now());
+ficha.setHistorialServicios("");
+ficha.setNumeroAfiliacion(numeroAfiliacion);
+ficha.setCodigoSeguro(codigoSeguro);
+ficha.setCarnetSeguro(carnetSeguro);
 
-            entityManager.persist(ficha);
-            System.out.println("✅ Ficha técnica creada automáticamente");
+entityManager.persist(ficha);
+System.out.println("✅ Ficha técnica creada automáticamente");
+
         }
     
-        // 🔁 Crear cita
+        //  Crear cita
         Cita cita = new Cita();
         cita.setPaciente(paciente);
         cita.setIdPaciente(paciente.getIdPaciente());
@@ -261,7 +285,7 @@ public class CitaService {
         cita.setNumeroAutorizacion(dto.getString("numeroAutorizacion", "AUTO-GEN"));
         cita.setEstado(EstadoCita.CONFIRMADA);
     
-        // 🔗 Asociar aseguradora si viene
+        //  Asociar aseguradora si viene
         if (nombreAseguradora != null && !nombreAseguradora.isBlank()) {
             Aseguradora aseguradora = entityManager
                 .createQuery("SELECT a FROM Aseguradora a WHERE UPPER(a.nombre) = :nombre", Aseguradora.class)
@@ -282,7 +306,7 @@ public class CitaService {
         }
     
         citaRepository.persist(cita);
-        System.out.println("📅 Cita guardada correctamente");
+        System.out.println(" Cita guardada correctamente");
     }
 
     /**

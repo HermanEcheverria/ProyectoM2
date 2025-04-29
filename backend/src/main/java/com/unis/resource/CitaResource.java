@@ -158,7 +158,7 @@ public class CitaResource {
             String diagnostico = body.get("diagnostico").asText(null);
             String resultados = body.get("resultados").asText(null);
             citaService.procesarCitaYEnviarResultados(id, diagnostico, resultados);
-            return Response.ok("✅ Cita procesada y resultados enviados").build();
+            return Response.ok(" Cita procesada y resultados enviados").build();
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
         } catch (Exception e) {
@@ -173,18 +173,18 @@ public class CitaResource {
      * @return a response indicating the reception status
      */
     @POST
-    @Path("/externa")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Transactional
-    public Response recibirDesdeAseguradora(JsonObject dto) {
-        try {
-            citaService.crearCitaDesdeJson(dto);
-            return Response.status(Response.Status.CREATED).entity("✅ Cita recibida correctamente").build();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Response.status(Response.Status.BAD_REQUEST)
-                .entity("❌ Error al guardar cita: " + e.getMessage()).build();
-        }
+@Path("/externa")
+@Consumes(MediaType.APPLICATION_JSON)
+@Transactional
+public Response recibirDesdeAseguradora(JsonObject dto) {
+    try {
+        citaService.crearCitaDesdeJson(dto);
+        return Response.status(Response.Status.CREATED).entity("✅ Cita recibida correctamente").build();
+    } catch (Exception e) {
+        e.printStackTrace();
+        return Response.status(Response.Status.BAD_REQUEST)
+            .entity("❌ Error al guardar cita: " + e.getMessage()).build();
     }
+}
 
 }

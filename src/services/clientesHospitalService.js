@@ -1,6 +1,7 @@
 import axios from "axios";
+import API_URL from "../config"; // 👈 importa tu config
 
-const API_URL = "http://localhost:5001/api/clientes";
+const CLIENTES_API_URL = `${API_URL}/clientes`;
 
 /**
  * Buscar un cliente por su número de documento (DPI) y aseguradora.
@@ -10,7 +11,7 @@ const API_URL = "http://localhost:5001/api/clientes";
  */
 export const buscarClientePorDpiYAseguradora = async (documento, aseguradoraId) => {
   try {
-    const response = await axios.get(`${API_URL}/historial/buscar`, {
+    const response = await axios.get(`${CLIENTES_API_URL}/historial/buscar`, {
       params: {
         documento,
         aseguradoraId,
@@ -18,12 +19,12 @@ export const buscarClientePorDpiYAseguradora = async (documento, aseguradoraId) 
     });
 
     if (response.status === 200) {
-      return response.data.cliente; // 👈 solo retornamos el cliente
+      return response.data.cliente; // Solo retornamos el cliente
     } else {
       throw new Error("Cliente no encontrado");
     }
   } catch (error) {
-    console.error("❌ Error al buscar cliente:", error.response?.data || error.message);
+    console.error("Error al buscar cliente:", error.response?.data || error.message);
     throw error;
   }
 };

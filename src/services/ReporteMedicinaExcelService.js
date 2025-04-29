@@ -1,3 +1,5 @@
+import API_URL from "../config"; //  Importa tu configuración de URL
+
 export async function descargarReporteExcel({ inicio, fin, limite, usuario }) {
   const params = new URLSearchParams({
     inicio,
@@ -6,7 +8,7 @@ export async function descargarReporteExcel({ inicio, fin, limite, usuario }) {
     usuario,
   });
 
-  const response = await fetch(`http://localhost:8080/reporte-medicinas/excel?${params.toString()}`);
+  const response = await fetch(`${API_URL}/reporte-medicinas/excel?${params.toString()}`);
 
   if (!response.ok) throw new Error("No se pudo generar el reporte");
 
@@ -16,6 +18,8 @@ export async function descargarReporteExcel({ inicio, fin, limite, usuario }) {
   const a = document.createElement("a");
   a.href = url;
   a.download = "medicinas_reporte.xlsx";
+  document.body.appendChild(a); // Mejor agregar el enlace al body (opcional)
   a.click();
+  document.body.removeChild(a);
   window.URL.revokeObjectURL(url);
 }

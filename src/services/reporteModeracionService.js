@@ -1,6 +1,5 @@
 import axios from 'axios';
-
-const API_URL = 'http://localhost:8080';
+import API_URL from "../config"; //  Importa la configuración correcta
 
 export async function obtenerReporteModeracion(fechaInicio, fechaFin, limite = 10) {
   try {
@@ -13,7 +12,7 @@ export async function obtenerReporteModeracion(fechaInicio, fechaFin, limite = 1
     });
     return response.data;
   } catch (error) {
-    console.error('Error obteniendo reporte de moderación:', error);
+    console.error('Error obteniendo reporte de moderación:', error.response?.data || error.message);
     throw error;
   }
 }

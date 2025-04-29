@@ -21,7 +21,7 @@ public class ServicioService {
     ServicioRepository servicioRepository;
 
     @Inject
-    EntityManager entityManager; // ✅ Se usa para `merge()`
+    EntityManager entityManager; //  Se usa para `merge()`
 
     /**
      * Lista todos los servicios registrados.
@@ -101,23 +101,15 @@ public class ServicioService {
             throw new WebApplicationException("Servicio o Subservicio no encontrado", 404);
         }
 
-        // ✅ Asignar el servicioPadre al subServicio explícitamente
-        subServicio.servicioPadre = servicioPadre;
+    // ✅ Asignar el servicioPadre al subServicio explícitamente
+    subServicio.servicioPadre = servicioPadre;
 
-        // ✅ Guardar los cambios en la base de datos
-        entityManager.merge(subServicio);
-    }
-
-    /**
-     * Elimina la relación entre un servicio padre y un subservicio.
-     *
-     * @param servicioPadreId El ID del servicio padre.
-     * @param subServicioId   El ID del subservicio.
-     * @return true si la relación fue eliminada, false en caso contrario.
-     */
-    @Transactional
-    public boolean eliminarRelacion(Long servicioPadreId, Long subServicioId) {
-        Servicio subServicio = servicioRepository.findById(subServicioId);
+    // ✅ Guardar los cambios en la base de datos
+    entityManager.merge(subServicio);
+}
+@Transactional
+public boolean eliminarRelacion(Long servicioPadreId, Long subServicioId) {
+    Servicio subServicio = servicioRepository.findById(subServicioId);
 
         if (subServicio != null && subServicio.servicioPadre != null && subServicio.servicioPadre.id.equals(servicioPadreId)) {
             subServicio.servicioPadre = null; // 🔹 Elimina la relación

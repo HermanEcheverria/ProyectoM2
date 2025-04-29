@@ -1,6 +1,5 @@
 import axios from 'axios';
-
-const API_URL = 'http://localhost:8080';
+import API_URL from "../config"; //  Importa tu config para que no esté quemado el localhost
 
 export async function obtenerReporteMedicinas(fechaInicio, fechaFin, limite = 10) {
   try {
@@ -13,7 +12,7 @@ export async function obtenerReporteMedicinas(fechaInicio, fechaFin, limite = 10
     });
     return response.data;
   } catch (error) {
-    console.error('Error obteniendo reporte:', error);
+    console.error('Error obteniendo reporte:', error.response?.data || error.message);
     throw error;
   }
 }

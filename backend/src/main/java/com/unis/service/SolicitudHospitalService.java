@@ -34,12 +34,12 @@ public class SolicitudHospitalService {
                 solicitud.direccion == null || solicitud.direccion.isEmpty() ||
                 solicitud.telefono == null || solicitud.telefono.isEmpty() ||
                 solicitud.aseguradora == null || solicitud.aseguradora.isEmpty()) {
-                System.err.println("❌ Datos incompletos. No se puede enviar la solicitud: " + solicitud);
+                System.err.println(" Datos incompletos. No se puede enviar la solicitud: " + solicitud);
                 return;
             }
 
-            System.out.println("📤 Enviando solicitud a la aseguradora: " + solicitud);
-            System.out.println("📋 Datos enviados: " +
+            System.out.println("Enviando solicitud a la aseguradora: " + solicitud);
+            System.out.println("Datos enviados: " +
                 "Nombre: " + solicitud.nombre + ", " +
                 "Dirección: " + solicitud.direccion + ", " +
                 "Teléfono: " + solicitud.telefono + ", " +
@@ -48,12 +48,12 @@ public class SolicitudHospitalService {
 
             // Enviar solicitud a la aseguradora
             aseguradoraClient.enviarSolicitud(solicitud);
-            System.out.println("✅ Solicitud enviada correctamente a la aseguradora.");
+            System.out.println("Solicitud enviada correctamente a la aseguradora.");
 
             // Enviar la solicitud a MongoDB
             enviarSolicitudAMongo(solicitud);
         } catch (Exception e) {
-            System.err.println("❌ Error al enviar solicitud a la aseguradora o MongoDB: " + e.getMessage());
+            System.err.println(" Error al enviar solicitud a la aseguradora o MongoDB: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -76,7 +76,7 @@ public class SolicitudHospitalService {
                 solicitud.nombre, solicitud.direccion, solicitud.telefono, solicitud.aseguradora, solicitud.estado, solicitud.origen
             );
 
-            System.out.println("📤 Enviando solicitud a MongoDB con datos: " + input);
+            System.out.println("Enviando solicitud a MongoDB con datos: " + input);
 
             try (OutputStream os = conn.getOutputStream()) {
                 os.write(input.getBytes());
@@ -84,14 +84,14 @@ public class SolicitudHospitalService {
             }
 
             if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                System.err.println("❌ Error al enviar solicitud a MongoDB: " + conn.getResponseMessage());
+                System.err.println("Error al enviar solicitud a MongoDB: " + conn.getResponseMessage());
             } else {
-                System.out.println("✅ Solicitud enviada correctamente a MongoDB.");
+                System.out.println("Solicitud enviada correctamente a MongoDB.");
             }
 
             conn.disconnect();
         } catch (Exception e) {
-            System.err.println("❌ Error al enviar solicitud a MongoDB: " + e.getMessage());
+            System.err.println("Error al enviar solicitud a MongoDB: " + e.getMessage());
             e.printStackTrace();
         }
     }

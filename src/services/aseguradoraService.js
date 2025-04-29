@@ -1,7 +1,7 @@
 import axios from "axios";
+import API_URL from "../config"; //  Correcto, traemos el config
 
-// Este apunta a tu backend Quarkus (el hospital)
-const API = "http://localhost:8080/hospital/solicitudes";
+const API = `${API_URL}/hospital/solicitudes`;
 
 export const enviarSolicitudHospital = async (hospital) => {
   const res = await axios.post(API, hospital);

@@ -90,7 +90,7 @@ const estadoSolicitud = ref<any>(null);
 const seguros = ref<any[]>([]);
 const historialSolicitudes = ref<any[]>([]);
 
-// 🔄 Cargar seguros desde backend Express
+//  Cargar seguros desde backend Express
 const cargarSeguros = async () => {
   try {
     const res = await fetch(`${EXPRESS_URL}/api/seguros`);
@@ -98,7 +98,7 @@ const cargarSeguros = async () => {
       seguros.value = await res.json();
     }
   } catch (err) {
-    console.error("❌ Error cargando seguros:", err);
+    console.error(" Error cargando seguros:", err);
   }
 };
 
@@ -110,11 +110,11 @@ const cargarHistorial = async () => {
       historialSolicitudes.value = await res.json();
     }
   } catch (err) {
-    console.error("❌ Error al cargar historial:", err);
+    console.error(" Error al cargar historial:", err);
   }
 };
 
-// 📤 Enviar solicitud al backend Quarkus
+// Enviar solicitud al backend Quarkus
 const enviar = async () => {
   const yaAprobada = historialSolicitudes.value.some((s) => s.estado === "aprobado");
   if (yaAprobada) {
@@ -136,15 +136,15 @@ const enviar = async () => {
       form.value = { nombre: "", direccion: "", telefono: "", aseguradora: "" };
       cargarHistorial(); // Refrescar después de enviar
     } else {
-      mensaje.value = "❌ Error al enviar solicitud.";
+      mensaje.value = "Error al enviar solicitud.";
     }
   } catch (err) {
     console.error(err);
-    mensaje.value = "❌ Error de conexión.";
+    mensaje.value = " Error de conexión.";
   }
 };
 
-// 🚀 Inicialización
+//  Inicialización
 onMounted(() => {
   cargarSeguros();
   cargarHistorial();
