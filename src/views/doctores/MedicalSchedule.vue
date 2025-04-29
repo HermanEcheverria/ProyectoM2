@@ -39,9 +39,15 @@
             <td>{{ cita.horaFin }}</td>
             <td>{{ cita.estado }}</td>
             <td>
-              <button v-if="cita.estado === 'PENDIENTE'" @click="abrirModalProcesar(cita)">Procesar</button>
-              <button v-if="cita.estado === 'PENDIENTE'" @click="cancelarCita(cita)">Cancelar</button>
-              <button v-if="isAdmin && cita.estado === 'PENDIENTE'" @click="abrirModalReasignar(cita)">Reasignar</button>
+             <!-- Procesar: permitir si está CONFIRMADA o PENDIENTE -->
+<button v-if="['PENDIENTE', 'CONFIRMADA'].includes(cita.estado)" @click="abrirModalProcesar(cita)">Procesar</button>
+
+<!-- Cancelar: solo si está PENDIENTE -->
+<button v-if="cita.estado === 'PENDIENTE'" @click="cancelarCita(cita)">Cancelar</button>
+
+<!-- Reasignar: permitir si está CONFIRMADA o PENDIENTE y es admin -->
+<button v-if="isAdmin && ['PENDIENTE', 'CONFIRMADA'].includes(cita.estado)" @click="abrirModalReasignar(cita)">Reasignar</button>
+
             </td>
             <td>
               <button @click="gestionarReceta(cita)">Gestionar Receta</button>
