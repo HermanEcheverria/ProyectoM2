@@ -314,32 +314,4 @@ System.out.println("✅ Ficha técnica creada automáticamente");
      *
      * @param cita La cita cuyos resultados se enviarán.
      */
-    private void enviarResultadosAAseguradora(Cita cita) {
-        try {
-            JsonObject json = jakarta.json.Json.createObjectBuilder()
-                .add("idCita", cita.getIdCita())
-                .add("documento", cita.getPaciente().getDocumento())
-                .add("nombre", cita.getPaciente().getUsuario().getNombreUsuario())
-                .add("apellido", cita.getPaciente().getApellido())
-                .add("diagnostico", cita.getDiagnostico())
-                .add("resultados", cita.getResultados())
-                .add("fecha", cita.getFecha().toString())
-                .add("doctor", cita.getDoctor().getUsuario().getNombreUsuario())
-                .build();
-
-            System.out.println("📤 Enviando resultado: " + json);
-
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:5001/api/resultados"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(json.toString()))
-                .build();
-
-            client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenAccept(response -> System.out.println("✅ Resultado enviado: " + response.statusCode()));
-        } catch (Exception e) {
-            System.err.println("❌ Error enviando resultados: " + e.getMessage());
-        }
-    }
 }

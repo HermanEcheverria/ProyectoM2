@@ -672,7 +672,7 @@ async editarReceta() {
   --color-menta:        #172018;
   --color-teal:         #259c8a;
   --color-teal-oscuro:  #13678A;
-  --color-azul-noche:   #012030;
+  --color-azul-noche:   #45C4B0;
 
   --color-texto-claro:  #FFFFFF;
   --color-texto-oscuro: #1C1C1C;

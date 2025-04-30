@@ -224,7 +224,7 @@ td select {
 
 td button {
   padding: 8px 15px;
-  background-color: #DAFDBA;
+  background-color: #76f59c;
   border: none;
   color: white;
   cursor: pointer;
@@ -233,7 +233,7 @@ td button {
 }
 
 button.desactivar {
-  background-color: #ff8a7d;
+  background-color: #fa6757;
 }
 
 button:hover {

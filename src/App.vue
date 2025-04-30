@@ -146,7 +146,7 @@ const myAccountRoute = () => {
 .app-main {
   margin-top: 80px;
   min-height: calc(100vh - 140px);
-  background-color: #012030;
+  background-color: ;
   padding: 20px;
   width: 100%;
   display: flex;
