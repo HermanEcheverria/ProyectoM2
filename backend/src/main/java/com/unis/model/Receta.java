@@ -1,4 +1,3 @@
-
 package com.unis.model;
 
 import java.io.Serializable;
@@ -6,6 +5,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -14,6 +14,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
@@ -51,8 +53,13 @@ public class Receta implements Serializable {
     private Date fechaCreacion;
 
     /** The ID of the patient associated with the prescription. */
+    @JsonProperty("idPaciente")
     @Column(name = "ID_PACIENTE", nullable = false)
     private Long idPaciente;
+
+    @ManyToOne
+    @JoinColumn(name = "ID_PACIENTE", insertable = false, updatable = false)
+    private Paciente paciente;
 
     /** The ID of the doctor who issued the prescription. */
     @Column(name = "ID_DOCTOR", nullable = false)
@@ -138,6 +145,10 @@ public class Receta implements Serializable {
         this.idPaciente = idPaciente;
     }
 
+    public Paciente getPaciente() {
+        return paciente;
+    }
+
     /** @return the ID of the doctor who issued the prescription. */
     public Long getIdDoctor() {
         return idDoctor;
@@ -186,5 +197,20 @@ public class Receta implements Serializable {
     /** @param medicamentos the list of medications associated with the prescription. */
     public void setMedicamentos(List<RecetaMedicamento> medicamentos) {
         this.medicamentos = medicamentos;
+    }
+
+    @Override
+    public String toString() {
+        return "Receta{" +
+                "idReceta=" + idReceta +
+                ", idCita=" + idCita +
+                ", fechaCreacion=" + fechaCreacion +
+                ", idPaciente=" + idPaciente +
+                ", idDoctor=" + idDoctor +
+                ", codigoReceta='" + codigoReceta + '\'' +
+                ", anotaciones='" + anotaciones + '\'' +
+                ", notasEspeciales='" + notasEspeciales + '\'' +
+                ", medicamentos=" + medicamentos +
+                '}';
     }
 }

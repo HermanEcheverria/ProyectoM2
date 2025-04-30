@@ -44,6 +44,14 @@ public class RecetaService {
                 throw new RuntimeException("❌ Error: Código de receta es obligatorio.");
             }
 
+            // Validar que el idPaciente esté presente en la receta recibida
+            if (receta.getIdPaciente() == null) {
+                throw new RuntimeException("❌ Error: La receta no contiene un idPaciente.");
+            }
+
+            // Log para depuración
+            System.out.println("📥 Receta recibida desde el hospital: " + receta);
+
             // Asignar fecha de creación si es null
             if (receta.getFechaCreacion() == null) {
                 receta.setFechaCreacion(new Date());
@@ -178,6 +186,12 @@ public class RecetaService {
      * @return La receta correspondiente al código, o null si no se encuentra.
      */
     public Receta buscarPorCodigo(String codigoReceta) {
-        return recetaRepository.find("codigoReceta", codigoReceta).firstResult();
+        Receta receta = recetaRepository.find("codigoReceta", codigoReceta).firstResult();
+        if (receta != null) {
+            // Forzar la carga de datos relacionados, como el idPaciente
+            receta.getIdPaciente(); // Asegura que el idPaciente esté cargado
+            System.out.println("📋 Receta encontrada: " + receta); // Log para depuración
+        }
+        return receta;
     }
 }

@@ -1,4 +1,3 @@
-
 package com.unis.model;
 
 import java.util.ArrayList;
@@ -187,5 +186,10 @@ public class Paciente {
     /** @param citas the list of appointments associated with the patient. */
     public void setCitas(List<Cita> citas) {
         this.citas = citas;
+    }
+
+    /** @return the full name of the patient. */
+    public String getNombre() {
+        return this.apellido + " " + (this.documento != null ? this.documento : "");
     }
 }

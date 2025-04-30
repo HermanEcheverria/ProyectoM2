@@ -1,5 +1,7 @@
 package com.unis.resource;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.unis.dto.RecetaDTO;
 import com.unis.model.Receta;
 import com.unis.model.RecetaMedicamento;
 import com.unis.service.RecetaService;
@@ -117,11 +119,27 @@ public class RecetaResource {
     public Response obtenerRecetaPorCodigo(@PathParam("codigoReceta") String codigoReceta) {
         Receta receta = recetaService.buscarPorCodigo(codigoReceta);
         if (receta != null) {
-            return Response.ok(receta).build();
+            // Incluir el nombre del paciente en la respuesta
+            String nombrePaciente = receta.getPaciente().getNombre();
+            try {
+                System.out.println("📋 Respuesta enviada al frontend: " + new ObjectMapper().writeValueAsString(new RecetaDTO(receta, nombrePaciente)));
+            } catch (Exception e) {
+                System.err.println("Error al serializar la respuesta: " + e.getMessage());
+            }
+            return Response.ok(new RecetaDTO(receta, nombrePaciente)).build();
         } else {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity("Receta no encontrada con código: " + codigoReceta)
                     .build();
         }
+    }
+
+    /**
+     * Validates the insurance for a prescription.
+     *
+     * @param validacionSeguro the insurance validation response
+     */
+    public void validarSeguro(String validacionSeguro) {
+        System.out.println("📋 Validación con aseguradora: " + validacionSeguro);
     }
 }

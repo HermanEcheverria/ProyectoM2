@@ -33,4 +33,20 @@ public class RecetaMedicamentoRepository implements PanacheRepository<RecetaMedi
     public List<RecetaMedicamento> listarPorMedicamento(Long idMedicamento) {
         return list("medicamento.idMedicamento", idMedicamento);
     }
+
+    /**
+     * Lists all {@link RecetaMedicamento} entities associated with a specific recipe
+     * and fetches the patient's name along with the data.
+     *
+     * @param idReceta the ID of the recipe
+     * @return a list of objects where each object contains a {@link RecetaMedicamento} entity
+     *         and the patient's name
+     */
+    public List<Object[]> listarPorRecetaConNombre(Long idReceta) {
+        return getEntityManager().createQuery(
+            "SELECT rm, r.paciente.nombre FROM RecetaMedicamento rm " +
+            "JOIN rm.receta r WHERE r.idReceta = :idReceta", Object[].class)
+            .setParameter("idReceta", idReceta)
+            .getResultList();
+    }
 }

@@ -29,6 +29,16 @@ public class RecetaMedicamentoService {
     }
 
     /**
+     * Lista los medicamentos asociados a una receta específica junto con el nombre del paciente.
+     *
+     * @param idReceta El ID de la receta.
+     * @return Una lista de objetos que contienen los datos del medicamento y el nombre del paciente.
+     */
+    public List<Object[]> listarPorRecetaConNombre(Long idReceta) {
+        return recetaMedicamentoRepository.listarPorRecetaConNombre(idReceta);
+    }
+
+    /**
      * Agrega un medicamento a una receta.
      *
      * @param recetaMedicamento Los datos del medicamento a agregar.

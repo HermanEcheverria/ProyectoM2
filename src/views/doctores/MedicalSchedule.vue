@@ -601,7 +601,15 @@ async editarReceta() {
 
       this.citaSeleccionada = { ...cita };
       this.nuevaReceta.idCita = cita.idCita;
-      this.nuevaReceta.idPaciente = cita.paciente?.idPaciente || null;
+
+      // Validar que el idPaciente esté presente antes de asignarlo
+      if (!cita.paciente?.idPaciente) {
+        console.error("Error: La cita no tiene un idPaciente válido.");
+        alert("Error: La cita no tiene un paciente asignado correctamente.");
+        return;
+      }
+      this.nuevaReceta.idPaciente = cita.paciente.idPaciente;
+
       this.nuevaReceta.idDoctor = cita.doctor?.idDoctor || null;
 
       if (!this.nuevaReceta.idPaciente || !this.nuevaReceta.idDoctor) {
