@@ -81,11 +81,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 
-// ✅ Aquí declaramos todos los backends aseguradoras (original, dos, tres...)
+//  Aquí declaramos todos los backends aseguradoras (original, dos, tres...)
 const EXPRESS_URLS = [
   "http://localhost:5001",
   "http://localhost:5022",
-  "http://localhost:5033"
+
 ];
 
 const form = ref({

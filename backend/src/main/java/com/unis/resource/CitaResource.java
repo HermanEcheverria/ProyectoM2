@@ -183,7 +183,7 @@ public Response recibirDesdeAseguradora(JsonObject dto) {
     } catch (Exception e) {
         e.printStackTrace();
         return Response.status(Response.Status.BAD_REQUEST)
-            .entity("❌ Error al guardar cita: " + e.getMessage()).build();
+            .entity("Error al guardar cita: " + e.getMessage()).build();
     }
 }
 
