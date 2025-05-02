@@ -6,6 +6,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -147,7 +148,7 @@ public class ServicioServiceTest {
 
         List<Servicio> result = servicioService.listarSubServicios(1L);
 
-        assertEquals(Arrays.asList(sub1, sub2), result);
+    assertIterableEquals(Arrays.asList(sub1, sub2), result);
     }
 
     @Test
