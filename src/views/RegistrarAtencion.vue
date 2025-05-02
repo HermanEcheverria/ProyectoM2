@@ -3,12 +3,13 @@
     <h2>Registrar Atención Hospitalaria</h2>
 
     <form @submit.prevent="registrarAtencion">
+
       <!-- Aseguradora -->
       <div class="mb-3">
         <label class="form-label">Aseguradora</label>
-        <select v-model="form.aseguradoraId" class="form-select" required @change="cargarClientes">
+        <select v-model="form.aseguradoraUrl" class="form-select" required @change="cargarClientes">
           <option disabled value="">Seleccione aseguradora</option>
-          <option v-for="aseguradora in aseguradoras" :key="aseguradora._id" :value="aseguradora._id">
+          <option v-for="aseguradora in aseguradoras" :key="aseguradora._id" :value="aseguradora.url">
             {{ aseguradora.nombre }}
           </option>
         </select>
@@ -19,7 +20,7 @@
         <label class="form-label">Buscar por DPI</label>
         <div class="input-group">
           <input v-model="dpiBusqueda" class="form-control" placeholder="Ingrese DPI del cliente" />
-          <button @click.prevent="buscarPorDPI" class="btn btn-secondary">Buscar y Verificar Poliza</button>
+          <button @click.prevent="buscarPorDPI" class="btn btn-secondary">Buscar y Verificar Póliza</button>
         </div>
       </div>
 
@@ -55,25 +56,23 @@
     </form>
 
     <!-- Mensaje -->
-    <div v-if="mensaje" class="alert alert-info mt-3">
-      {{ mensaje }}
-    </div>
+    <div v-if="mensaje" class="alert alert-info mt-3">{{ mensaje }}</div>
 
     <!-- Detalles del cliente -->
     <div v-if="datosCliente" class="card mt-4 p-3 bg-light border">
-      <h5> Detalles del Cliente</h5>
+      <h5>Detalles del Cliente</h5>
       <p><strong>Nombre:</strong> {{ datosCliente.nombre }} {{ datosCliente.apellido }}</p>
       <p><strong>Número de Afiliación:</strong> {{ datosCliente.numeroAfiliacion }}</p>
       <p><strong>Póliza:</strong> {{ datosCliente.polizaNombre }}</p>
       <p>
         <strong>Estado de Pago:</strong>
         <span :class="datosCliente.estadoPago ? 'text-success' : 'text-danger'">
-          {{ datosCliente.estadoPago ? 'Al día ' : 'Pendiente ' }}
+          {{ datosCliente.estadoPago ? 'Al día' : 'Pendiente' }}
         </span>
       </p>
 
       <div v-if="autorizacionId" class="mt-3">
-        <strong> ID de Autorización:</strong> {{ autorizacionId }}
+        <strong>ID de Autorización:</strong> {{ autorizacionId }}
       </div>
     </div>
   </div>
@@ -81,107 +80,140 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { enviarSolicitudHospital } from '../services/solicitudesService'
+
+// ✅ Aquí declaramos todos los backends aseguradoras (original, dos, tres...)
+const EXPRESS_URLS = [
+  "http://localhost:5001",
+  "http://localhost:5022",
+  "http://localhost:5033"
+];
 
 const form = ref({
   afiliado: '',
   servicio: '',
   monto: 0,
-  aseguradoraId: ''
-})
+  aseguradoraUrl: ''
+});
 
-const aseguradoras = ref([])
-const clientes = ref([])
-const servicios = ref([])
-const mensaje = ref('')
-const dpiBusqueda = ref('')
-const datosCliente = ref(null)
-const autorizacionId = ref(null)
-const hospitalId = localStorage.getItem("hospitalId") || "67f88b2f87f154c62d78d4e2"
+const aseguradoras = ref([]);
+const clientes = ref([]);
+const servicios = ref([]);
+const mensaje = ref('');
+const dpiBusqueda = ref('');
+const datosCliente = ref(null);
+const autorizacionId = ref(null);
+const hospitalId = localStorage.getItem("hospitalId") || "67f88b2f87f154c62d78d4e2";
 
+// ✅ Cargar aseguradoras desde TODAS las aseguradoras
 const cargarAseguradoras = async () => {
-  try {
-    const res = await fetch("http://localhost:5001/api/seguros")
-    if (res.ok) {
-      aseguradoras.value = await res.json()
+  aseguradoras.value = [];
+  for (const url of EXPRESS_URLS) {
+    try {
+      const res = await fetch(`${url}/api/seguros`);
+      if (res.ok) {
+        const data = await res.json();
+        data.forEach(seguro => seguro.url = url);
+        aseguradoras.value.push(...data);
+      }
+    } catch (err) {
+      console.error(`Error cargando aseguradoras desde ${url}`, err);
     }
-  } catch (err) {
-    console.error(" Error cargando aseguradoras:", err)
   }
-}
+};
 
 const cargarClientes = async () => {
-  if (!form.value.aseguradoraId) return
+  if (!form.value.aseguradoraUrl) return;
   try {
-    const res = await fetch(`http://localhost:5001/api/clientes/hospital/${hospitalId}/aseguradora/${form.value.aseguradoraId}`)
+    const res = await fetch(`${form.value.aseguradoraUrl}/api/clientes/hospital/${hospitalId}/aseguradora`);
     if (res.ok) {
-      clientes.value = await res.json()
+      clientes.value = await res.json();
     }
   } catch (err) {
-    console.error("Error cargando clientes:", err)
+    console.error("Error cargando clientes:", err);
   }
-}
+};
 
 const buscarPorDPI = async () => {
-  if (!dpiBusqueda.value) {
-    mensaje.value = " Ingresa DPI del cliente"
-    return
+  if (!dpiBusqueda.value || !form.value.aseguradoraUrl) {
+    mensaje.value = "Selecciona aseguradora y escribe DPI";
+    return;
   }
 
   try {
-    const res = await fetch(`http://localhost:5001/api/clientes/buscar-por-documento/${dpiBusqueda.value}`)
-    if (!res.ok) throw new Error("No encontrado")
+    const res = await fetch(`${form.value.aseguradoraUrl}/api/clientes/buscar-por-documento/${dpiBusqueda.value}`);
+    if (!res.ok) throw new Error("No encontrado");
 
-    const cliente = await res.json()
-    form.value.afiliado = cliente._id
-    clientes.value = [cliente]
-    datosCliente.value = cliente
-    mensaje.value = " Cliente encontrado."
-    autorizacionId.value = null  // Limpiar anterior
+    const cliente = await res.json();
+    form.value.afiliado = cliente._id;
+    clientes.value = [cliente];
+    datosCliente.value = cliente;
+    mensaje.value = "Cliente encontrado.";
+    autorizacionId.value = null;
   } catch (err) {
-    mensaje.value = "Cliente no encontrado."
-    clientes.value = []
-    datosCliente.value = null
-    autorizacionId.value = null
+    mensaje.value = "Cliente no encontrado.";
+    clientes.value = [];
+    datosCliente.value = null;
+    autorizacionId.value = null;
   }
-}
+};
 
 const cargarServicios = async () => {
-  try {
-    const res = await fetch(`http://localhost:5001/api/servicios/hospital/${hospitalId}`)
-    if (res.ok) {
-      servicios.value = await res.json()
+  servicios.value = [];
+
+  for (const url of EXPRESS_URLS) {
+    try {
+      const res = await fetch(`${url}/api/servicios/hospital/${hospitalId}`);
+      if (res.ok) {
+        const data = await res.json();
+        servicios.value.push(...data);
+      }
+    } catch (err) {
+      console.error(`Error cargando servicios desde ${url}`, err);
     }
-  } catch (err) {
-    console.error(" Error cargando servicios:", err)
   }
-}
+};
 
 const registrarAtencion = async () => {
+  if (!form.value.aseguradoraUrl) {
+    mensaje.value = "Selecciona una aseguradora para enviar.";
+    return;
+  }
+
   try {
-    const response = await enviarSolicitudHospital({
+    const payload = {
       afiliado: form.value.afiliado,
       servicio: form.value.servicio,
       monto: form.value.monto,
       hospital: hospitalId,
-      aseguradoraId: form.value.aseguradoraId
-    });
-    mensaje.value = response.message || "Solicitud enviada correctamente.";
-    autorizacionId.value = response.numeroAutorizacion; // apturar aquí
+      aseguradora: form.value.aseguradoraUrl
+    };
 
-    form.value.servicio = '';
-    form.value.monto = 0;
+    const res = await fetch(`${form.value.aseguradoraUrl}/api/solicitudes-atencion`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      mensaje.value = data.message || "Solicitud enviada correctamente.";
+      autorizacionId.value = data.numeroAutorizacion;
+      form.value.servicio = '';
+      form.value.monto = 0;
+    } else {
+      mensaje.value = "Error al enviar la solicitud.";
+      autorizacionId.value = null;
+    }
+
   } catch (err) {
-    mensaje.value = " Error al enviar la solicitud.";
-    autorizacionId.value = null;
     console.error(err);
+    mensaje.value = "Error de conexión.";
+    autorizacionId.value = null;
   }
 };
 
-
-
 onMounted(() => {
-  cargarAseguradoras()
-  cargarServicios()
-})
+  cargarAseguradoras();
+  cargarServicios();
+});
 </script>

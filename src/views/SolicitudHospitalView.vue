@@ -19,7 +19,7 @@
       </div>
 
       <div class="mb-3">
-        <label>Aseguradora</label>
+        <label>Aseguradora (Seguro)</label>
         <select v-model="form.aseguradora" class="form-select" required>
           <option disabled value="">Seleccione un seguro</option>
           <option v-for="seguro in seguros" :key="seguro._id" :value="seguro.nombre">
@@ -76,7 +76,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import API_URL from "@/config"; // Backend de Quarkus
-const EXPRESS_URL = "http://localhost:5001"; // Backend de Express
+
+// ✅ ESTA ES LA FORMA CORRECTA: Array de URLs
+const EXPRESS_URLS = [
+  "http://localhost:5001",
+  "http://localhost:5022"
+];
 
 const form = ref({
   nombre: "",
@@ -90,33 +95,51 @@ const estadoSolicitud = ref<any>(null);
 const seguros = ref<any[]>([]);
 const historialSolicitudes = ref<any[]>([]);
 
-//  Cargar seguros desde backend Express
+// ✅ Cargar seguros desde TODAS las aseguradoras
 const cargarSeguros = async () => {
-  try {
-    const res = await fetch(`${EXPRESS_URL}/api/seguros`);
-    if (res.ok) {
-      seguros.value = await res.json();
+  seguros.value = []; // Limpiar antes
+  const resultados = [];
+
+  for (const url of EXPRESS_URLS) {
+    try {
+      const res = await fetch(`${url}/api/seguros`);
+      if (res.ok) {
+        const data = await res.json();
+        resultados.push(...data);
+      }
+    } catch (err) {
+      console.error(`Error cargando seguros de ${url}`, err);
     }
-  } catch (err) {
-    console.error(" Error cargando seguros:", err);
   }
+
+  seguros.value = resultados;
 };
 
-// 🛠 Cargar historial desde backend Express (MongoDB)
+// ✅ Cargar historial desde TODAS las aseguradoras
 const cargarHistorial = async () => {
-  try {
-    const res = await fetch(`${EXPRESS_URL}/api/solicitudes`);
-    if (res.ok) {
-      historialSolicitudes.value = await res.json();
+  historialSolicitudes.value = []; // Limpiar antes
+  const resultados = [];
+
+  for (const url of EXPRESS_URLS) {
+    try {
+      const res = await fetch(`${url}/api/solicitudes`);
+      if (res.ok) {
+        const data = await res.json();
+        resultados.push(...data);
+      }
+    } catch (err) {
+      console.error(`Error cargando historial de ${url}`, err);
     }
-  } catch (err) {
-    console.error(" Error al cargar historial:", err);
   }
+
+  historialSolicitudes.value = resultados;
 };
 
 // Enviar solicitud al backend Quarkus
 const enviar = async () => {
-  const yaAprobada = historialSolicitudes.value.some((s) => s.estado === "aprobado");
+  const yaAprobada = historialSolicitudes.value.some((s) =>
+  s.estado === "aprobado" && s.aseguradora === form.value.aseguradora
+);
   if (yaAprobada) {
     mensaje.value = "Ya existe una solicitud aprobada. No se puede enviar otra.";
     return;
@@ -131,20 +154,20 @@ const enviar = async () => {
 
     if (res.ok) {
       const data = await res.json();
-      mensaje.value = " Solicitud enviada a la aseguradora.";
+      mensaje.value = "Solicitud enviada a la aseguradora.";
       estadoSolicitud.value = data;
       form.value = { nombre: "", direccion: "", telefono: "", aseguradora: "" };
-      cargarHistorial(); // Refrescar después de enviar
+      cargarHistorial(); // Refrescar
     } else {
       mensaje.value = "Error al enviar solicitud.";
     }
   } catch (err) {
     console.error(err);
-    mensaje.value = " Error de conexión.";
+    mensaje.value = "Error de conexión.";
   }
 };
 
-//  Inicialización
+// Inicialización
 onMounted(() => {
   cargarSeguros();
   cargarHistorial();

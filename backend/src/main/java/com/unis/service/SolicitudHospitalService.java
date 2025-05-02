@@ -65,49 +65,46 @@ public class SolicitudHospitalService {
      */
     private void enviarSolicitudAMongo(SolicitudHospital solicitud) {
         try {
-            URL url = new URL("http://localhost:5000/api/solicitudes/hospital");
+            String urlDestino = "";
+    
+            if ("Aseguradora Uno".equalsIgnoreCase(solicitud.aseguradora)) {
+                urlDestino = "http://localhost:5001/api/solicitudes/hospital";
+            } else if ("Aseguradora DOS".equalsIgnoreCase(solicitud.aseguradora)) {
+                urlDestino = "http://localhost:5022/api/solicitudes/hospital";
+            } else {
+                System.err.println("No se encontró aseguradora válida para enviar");
+                return;
+            }
+    
+            URL url = new URL(urlDestino);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setDoOutput(true);
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json");
-
+    
             String input = String.format(
                 "{\"nombre\":\"%s\",\"direccion\":\"%s\",\"telefono\":\"%s\",\"aseguradora\":\"%s\",\"estado\":\"%s\",\"origen\":\"%s\"}",
                 solicitud.nombre, solicitud.direccion, solicitud.telefono, solicitud.aseguradora, solicitud.estado, solicitud.origen
             );
-
-            System.out.println("Enviando solicitud a MongoDB con datos: " + input);
-
+    
+            System.out.println("Enviando solicitud a " + urlDestino + " con datos: " + input);
+    
             try (OutputStream os = conn.getOutputStream()) {
                 os.write(input.getBytes());
                 os.flush();
             }
-
+    
             if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                System.err.println("Error al enviar solicitud a MongoDB: " + conn.getResponseMessage());
+                System.err.println("Error al enviar solicitud: " + conn.getResponseMessage());
             } else {
-                System.out.println("Solicitud enviada correctamente a MongoDB.");
+                System.out.println("Solicitud enviada correctamente a la aseguradora.");
             }
-
+    
             conn.disconnect();
         } catch (Exception e) {
-            System.err.println("Error al enviar solicitud a MongoDB: " + e.getMessage());
+            System.err.println("Error al enviar solicitud: " + e.getMessage());
             e.printStackTrace();
         }
     }
-
-    /**
-     * Actualiza el estado de una solicitud de hospital.
-     *
-     * @param nombreHospital El nombre del hospital.
-     * @param estado         El nuevo estado de la solicitud.
-     */
-    @Transactional
-    public void actualizarEstado(String nombreHospital, String estado) {
-        SolicitudHospital solicitud = SolicitudHospital.find("nombre", nombreHospital).firstResult();
-        if (solicitud != null) {
-            solicitud.estado = estado;
-            solicitud.persist();
-        }
-    }
+    
 }
