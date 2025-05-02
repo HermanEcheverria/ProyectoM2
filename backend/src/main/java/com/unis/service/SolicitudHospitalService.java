@@ -107,4 +107,47 @@ public class SolicitudHospitalService {
         }
     }
     
+    @Transactional
+public void actualizarEstado(String id, String nuevoEstado) {
+    try {
+        String urlDestino = "";
+
+        // Elegir a qué aseguradora enviar según la aseguradora del hospital (puedes personalizar)
+        if ("Aseguradora Uno".equalsIgnoreCase(nuevoEstado)) {
+            urlDestino = "http://localhost:5001/api/solicitudes/hospital/" + id + "/estado";
+        } else if ("Aseguradora DOS".equalsIgnoreCase(nuevoEstado)) {
+            urlDestino = "http://localhost:5022/api/solicitudes/hospital/" + id + "/estado";
+        } else {
+            // Si el estado no es el nombre de la aseguradora, solo enviar a la original (ejemplo básico)
+            urlDestino = "http://localhost:5001/api/solicitudes/hospital/" + id + "/estado";
+        }
+
+        URL url = new URL(urlDestino);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setDoOutput(true);
+        conn.setRequestMethod("PUT");
+        conn.setRequestProperty("Content-Type", "application/json");
+
+        String input = String.format("{\"estado\":\"%s\"}", nuevoEstado);
+
+        System.out.println("Actualizando estado en " + urlDestino + " con datos: " + input);
+
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write(input.getBytes());
+            os.flush();
+        }
+
+        if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
+            System.err.println("Error al actualizar estado: " + conn.getResponseMessage());
+        } else {
+            System.out.println("Estado actualizado correctamente en aseguradora.");
+        }
+
+        conn.disconnect();
+    } catch (Exception e) {
+        System.err.println(" Error al actualizar estado: " + e.getMessage());
+        e.printStackTrace();
+    }
+}
+
 }
