@@ -2,16 +2,14 @@
   <div class="container mt-4 text-white-custom">
     <h2>Consultar Historial del Paciente</h2>
 
-    <!-- Campo para ingresar el DPI -->
     <div class="mb-3">
       <label>DPI del paciente:</label>
       <input v-model="dpi" class="form-control" placeholder="Ingrese DPI" />
     </div>
 
-    <!-- Seleccionar aseguradora -->
     <div class="mb-3">
       <label>Aseguradora:</label>
-      <select v-model="aseguradoraId" class="form-select">
+      <select v-model="aseguradoraSeleccionadaId" class="form-select">
         <option disabled value="">Seleccione aseguradora</option>
         <option v-for="aseg in aseguradoras" :key="aseg._id" :value="aseg._id">
           {{ aseg.nombre }}
@@ -19,10 +17,8 @@
       </select>
     </div>
 
-    <!-- Botón de búsqueda -->
     <button @click="buscarHistorial" class="btn">Buscar</button>
 
-    <!-- Mostrar resultados si se encuentra el cliente -->
     <div v-if="cliente" class="mt-4">
       <h5>Cliente encontrado: {{ cliente.nombre }} {{ cliente.apellido }}</h5>
       <p><strong>Afiliación:</strong> {{ cliente.numeroAfiliacion }}</p>
@@ -58,7 +54,6 @@
       </table>
     </div>
 
-    <!-- Si ya se buscó y no se encontró cliente -->
     <div v-else-if="buscado">
       <p class="text-danger">Cliente no encontrado.</p>
     </div>
@@ -66,25 +61,37 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
-import { buscarClientePorDpiYAseguradora } from "../services/clientesHospitalService";
+import { ref, onMounted, computed } from "vue";
 
 const dpi = ref("");
-const aseguradoraId = ref("");
+const aseguradoraSeleccionadaId = ref("");
 const aseguradoras = ref([]);
 const cliente = ref(null);
 const historial = ref([]);
 const buscado = ref(false);
+
+const EXPRESS_URLS = [
+  "http://localhost:5001",
+  "http://localhost:5022",
+];
+
+const aseguradoraSeleccionadaUrl = computed(() => {
+  const aseg = aseguradoras.value.find(a => a._id === aseguradoraSeleccionadaId.value);
+  return aseg ? aseg.url : "";
+});
 
 const buscarHistorial = async () => {
   cliente.value = null;
   historial.value = [];
   buscado.value = false;
 
-  if (!dpi.value || !aseguradoraId.value) return;
+  if (!dpi.value || !aseguradoraSeleccionadaUrl.value) return;
 
   try {
-    const fetchedCliente = await buscarClientePorDpiYAseguradora(dpi.value, aseguradoraId.value);
+    const res = await fetch(`${aseguradoraSeleccionadaUrl.value}/api/clientes/buscar-por-documento/${dpi.value}`);
+    if (!res.ok) throw new Error("No encontrado");
+
+    const fetchedCliente = await res.json();
     cliente.value = fetchedCliente;
     historial.value = fetchedCliente.historialServicios;
     buscado.value = true;
@@ -97,11 +104,18 @@ const buscarHistorial = async () => {
 };
 
 const cargarAseguradoras = async () => {
-  try {
-    const res = await fetch("http://localhost:5001/api/seguros");
-    aseguradoras.value = await res.json();
-  } catch (err) {
-    console.error("Error al cargar aseguradoras", err);
+  aseguradoras.value = [];
+  for (const url of EXPRESS_URLS) {
+    try {
+      const res = await fetch(`${url}/api/seguros`);
+      if (res.ok) {
+        const data = await res.json();
+        data.forEach(seguro => seguro.url = url);
+        aseguradoras.value.push(...data);
+      }
+    } catch (err) {
+      console.error("Error cargando aseguradoras desde", url, err);
+    }
   }
 };
 
@@ -114,42 +128,34 @@ onMounted(() => {
 .text-white-custom {
   color: white;
 }
-
 .table,
 .tabla-historial {
   width: 100%;
   border-collapse: collapse;
 }
-
 .tabla-historial th,
 .tabla-historial td {
   padding: 8px;
   border: 1px solid #ccc;
   color: white;
 }
-
 .tabla-historial thead {
   background-color: #444;
 }
-
 .tabla-historial tbody tr:nth-child(even) {
   background-color: #222;
 }
-
 .tabla-historial tbody tr:nth-child(odd) {
   background-color: #111;
 }
-
 .estado-pagado {
   color: #4caf50;
   font-weight: bold;
 }
-
 .estado-pendiente {
   color: #f44336;
   font-weight: bold;
 }
-
 .btn {
   padding: 8px 16px;
   background-color: #007bff;
