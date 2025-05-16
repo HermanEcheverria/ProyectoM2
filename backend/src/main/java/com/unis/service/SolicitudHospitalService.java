@@ -114,12 +114,12 @@ public void actualizarEstado(String id, String nuevoEstado) {
 
         // Elegir a qué aseguradora enviar según la aseguradora del hospital (puedes personalizar)
         if ("Aseguradora Uno".equalsIgnoreCase(nuevoEstado)) {
-            urlDestino = "http://localhost:5001/api/solicitudes/hospital/" + id + "/estado";
-        } else if ("Aseguradora DOS".equalsIgnoreCase(nuevoEstado)) {
-            urlDestino = "http://localhost:5022/api/solicitudes/hospital/" + id + "/estado";
+            urlDestino = "http://localhost:5033/api/solicitudes/hospital/" + id + "/estado";
+        } else if ("Aseguradora TRES".equalsIgnoreCase(nuevoEstado)) {
+            urlDestino = "http://localhost:5033/api/solicitudes/hospital/" + id + "/estado";
         } else {
             // Si el estado no es el nombre de la aseguradora, solo enviar a la original (ejemplo básico)
-            urlDestino = "http://localhost:5001/api/solicitudes/hospital/" + id + "/estado";
+            urlDestino = "http://localhost:5033/api/solicitudes/hospital/" + id + "/estado";
         }
 
         URL url = new URL(urlDestino);

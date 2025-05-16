@@ -22,8 +22,8 @@
         <label>Aseguradora (Seguro)</label>
         <select v-model="form.aseguradora" class="form-select" required>
           <option disabled value="">Seleccione un seguro</option>
-          <option v-for="seguro in seguros" :key="seguro._id" :value="seguro.nombre">
-            {{ seguro.nombre }}
+          <option v-for="aseg in seguros" :key="aseg.nombre" :value="aseg">
+            {{ aseg.nombre }}
           </option>
         </select>
       </div>
@@ -37,8 +37,7 @@
       <h5>Estado de la solicitud enviada</h5>
       <p><strong>Aseguradora:</strong> {{ estadoSolicitud.aseguradora }}</p>
       <p><strong>Estado:</strong>
-        <span :class="estadoSolicitud.estado === 'aprobado' ? 'text-success' :
-                      estadoSolicitud.estado === 'rechazado' ? 'text-danger' : 'text-warning'">
+        <span :class="estadoSolicitud.estado === 'aprobado' ? 'text-success' : estadoSolicitud.estado === 'rechazado' ? 'text-danger' : 'text-warning'">
           {{ estadoSolicitud.estado }}
         </span>
       </p>
@@ -55,7 +54,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(solicitud, index) in historialSolicitudes" :key="solicitud._id">
+        <tr v-for="(solicitud, index) in historialSolicitudes" :key="solicitud._id || index">
           <td>{{ index + 1 }}</td>
           <td>{{ solicitud.aseguradora }}</td>
           <td>
@@ -70,95 +69,152 @@
         </tr>
       </tbody>
     </table>
+
+    <hr class="my-5" />
+    <h4>Registrar nueva Aseguradora</h4>
+    <form @submit.prevent="registrarAseguradora">
+      <div class="mb-3">
+        <label>Nombre de la Aseguradora</label>
+        <input v-model="nuevaAseguradora.nombre" class="form-control" required />
+      </div>
+
+      <div class="mb-3">
+        <label>URL base de conexión</label>
+        <input v-model="nuevaAseguradora.url" class="form-control" required />
+      </div>
+
+      <button class="btn btn-success">Registrar Aseguradora</button>
+    </form>
+
+    <div v-if="mensajeRegistro" class="alert alert-info mt-3">{{ mensajeRegistro }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import API_URL from "@/config"; // Backend de Quarkus
-
-// ✅ ESTA ES LA FORMA CORRECTA: Array de URLs
-const EXPRESS_URLS = [
-  "http://localhost:5001",
-  "http://localhost:5022",
-  "http://localhost:5033"
-];
+import API_URL from "@/config";
 
 const form = ref({
   nombre: "",
   direccion: "",
   telefono: "",
-  aseguradora: ""
+  aseguradora: null // Aquí guardamos el objeto { nombre, urlBase }
 });
 
 const mensaje = ref("");
 const estadoSolicitud = ref<any>(null);
 const seguros = ref<any[]>([]);
 const historialSolicitudes = ref<any[]>([]);
+const nuevaAseguradora = ref({ nombre: "", url: "" });
+const mensajeRegistro = ref("");
 
-// ✅ Cargar seguros desde TODAS las aseguradoras
+const registrarAseguradora = async () => {
+  try {
+    const res = await fetch(`${API_URL}/api/conexiones-aseguradoras/registrar`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(nuevaAseguradora.value)
+    });
+    if (res.ok) {
+      mensajeRegistro.value = "Aseguradora registrada con éxito.";
+      nuevaAseguradora.value = { nombre: "", url: "" };
+      await cargarSeguros();
+      await cargarHistorial();
+    } else if (res.status === 409) {
+      mensajeRegistro.value = "La aseguradora ya existe.";
+    } else {
+      mensajeRegistro.value = "Error al registrar aseguradora.";
+    }
+  } catch (err) {
+    console.error(err);
+    mensajeRegistro.value = "Error de conexión.";
+  }
+};
+
 const cargarSeguros = async () => {
-  seguros.value = []; // Limpiar antes
-  const resultados = [];
+  seguros.value = [];
 
-  for (const url of EXPRESS_URLS) {
-    try {
-      const res = await fetch(`${url}/api/seguros`);
-      if (res.ok) {
-        const data = await res.json();
-        resultados.push(...data);
-      }
-    } catch (err) {
-      console.error(`Error cargando seguros de ${url}`, err);
+  try {
+    const res = await fetch(`${API_URL}/api/conexiones-aseguradoras`);
+    if (!res.ok) {
+      console.error("No se pudo obtener la lista de aseguradoras");
+      return;
     }
-  }
 
-  seguros.value = resultados;
+    const aseguradoras = await res.json();
+
+    seguros.value = aseguradoras.map((a: any) => ({
+      nombre: a.nombre,
+      url: a.urlBase  // <-- incluir esto
+    }));
+  } catch (err) {
+    console.error("Error al cargar aseguradoras registradas:", err);
+  }
 };
 
-// ✅ Cargar historial desde TODAS las aseguradoras
+
 const cargarHistorial = async () => {
-  historialSolicitudes.value = []; // Limpiar antes
-  const resultados = [];
-
-  for (const url of EXPRESS_URLS) {
-    try {
-      const res = await fetch(`${url}/api/solicitudes`);
-      if (res.ok) {
-        const data = await res.json();
-        resultados.push(...data);
+  historialSolicitudes.value = [];
+  try {
+    const res = await fetch(`${API_URL}/api/conexiones-aseguradoras`);
+    const aseguradoras = await res.json();
+    const resultados: any[] = [];
+    for (const a of aseguradoras) {
+      try {
+        const resHist = await fetch(`${a.urlBase}/solicitudes-atencion`);
+        if (resHist.ok) {
+          const data = await resHist.json();
+          resultados.push(...data);
+        }
+      } catch (e) {
+        console.error("Error cargando historial desde:", a.urlBase);
       }
-    } catch (err) {
-      console.error(`Error cargando historial de ${url}`, err);
     }
+    historialSolicitudes.value = resultados;
+  } catch (err) {
+    console.error("Error al cargar historial:", err);
   }
-
-  historialSolicitudes.value = resultados;
 };
 
-// Enviar solicitud al backend Quarkus
 const enviar = async () => {
+  const aseguradoraSeleccionada = form.value.aseguradora;
+
+  if (!aseguradoraSeleccionada || !aseguradoraSeleccionada.url) {
+    mensaje.value = "No se encontró la URL de la aseguradora seleccionada.";
+    return;
+  }
+
   const yaAprobada = historialSolicitudes.value.some((s) =>
-  s.estado === "aprobado" && s.aseguradora === form.value.aseguradora
-);
+    s.estado === "aprobado" && s.aseguradora === aseguradoraSeleccionada.nombre
+  );
+
   if (yaAprobada) {
     mensaje.value = "Ya existe una solicitud aprobada. No se puede enviar otra.";
     return;
   }
 
+  const urlDestino = `${aseguradoraSeleccionada.url}/solicitudes/hospital`;
+
   try {
-    const res = await fetch(`${API_URL}/hospital/solicitudes`, {
+    const res = await fetch(urlDestino, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form.value)
+      body: JSON.stringify({
+        nombre: form.value.nombre,
+        direccion: form.value.direccion,
+        telefono: form.value.telefono,
+        aseguradora: aseguradoraSeleccionada.nombre,
+        estado: "pendiente",
+        origen: "hospital"
+      })
     });
 
     if (res.ok) {
       const data = await res.json();
       mensaje.value = "Solicitud enviada a la aseguradora.";
       estadoSolicitud.value = data;
-      form.value = { nombre: "", direccion: "", telefono: "", aseguradora: "" };
-      cargarHistorial(); // Refrescar
+      form.value = { nombre: "", direccion: "", telefono: "", aseguradora: null };
+      await cargarHistorial();
     } else {
       mensaje.value = "Error al enviar solicitud.";
     }
@@ -168,7 +224,8 @@ const enviar = async () => {
   }
 };
 
-// Inicialización
+
+
 onMounted(() => {
   cargarSeguros();
   cargarHistorial();
