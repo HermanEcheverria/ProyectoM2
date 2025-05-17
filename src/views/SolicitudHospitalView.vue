@@ -20,12 +20,22 @@
 
       <div class="mb-3">
         <label>Aseguradora (Seguro)</label>
-        <select v-model="form.aseguradora" class="form-select" required>
+        <select v-model="form.aseguradora" class="form-select" required @change="cargarClientesDesdeAseguradora">
           <option disabled value="">Seleccione un seguro</option>
           <option v-for="aseg in seguros" :key="aseg.nombre" :value="aseg">
             {{ aseg.nombre }}
           </option>
         </select>
+      </div>
+
+      <!-- Lista de clientes de la aseguradora seleccionada -->
+      <div v-if="clientes.length" class="mt-4">
+        <h5>Clientes de esta Aseguradora</h5>
+        <ul class="list-group">
+          <li v-for="cliente in clientes" :key="cliente._id" class="list-group-item">
+            {{ cliente.nombre }} {{ cliente.apellido }} - {{ cliente.numeroAfiliacion }}
+          </li>
+        </ul>
       </div>
 
       <button class="btn btn-primary" type="submit">Enviar Solicitud</button>
@@ -98,7 +108,7 @@ const form = ref({
   nombre: "",
   direccion: "",
   telefono: "",
-  aseguradora: null // Aquí guardamos el objeto { nombre, urlBase }
+  aseguradora: null
 });
 
 const mensaje = ref("");
@@ -107,6 +117,7 @@ const seguros = ref<any[]>([]);
 const historialSolicitudes = ref<any[]>([]);
 const nuevaAseguradora = ref({ nombre: "", url: "" });
 const mensajeRegistro = ref("");
+const clientes = ref([]);
 
 const registrarAseguradora = async () => {
   try {
@@ -133,25 +144,39 @@ const registrarAseguradora = async () => {
 
 const cargarSeguros = async () => {
   seguros.value = [];
-
   try {
     const res = await fetch(`${API_URL}/api/conexiones-aseguradoras`);
     if (!res.ok) {
       console.error("No se pudo obtener la lista de aseguradoras");
       return;
     }
-
     const aseguradoras = await res.json();
-
     seguros.value = aseguradoras.map((a: any) => ({
       nombre: a.nombre,
-      url: a.urlBase  // <-- incluir esto
+      url: a.urlBase
     }));
   } catch (err) {
     console.error("Error al cargar aseguradoras registradas:", err);
   }
 };
 
+const cargarClientesDesdeAseguradora = async () => {
+  clientes.value = [];
+  if (!form.value.aseguradora?.url) return;
+
+  const hospitalId = localStorage.getItem("hospitalId") || "67f88b2f87f154c62d78d4e2";
+
+  try {
+    const res = await fetch(`${form.value.aseguradora.url}/api/clientes/hospital/${hospitalId}/aseguradora`);
+    if (res.ok) {
+      clientes.value = await res.json();
+    } else {
+      console.warn("No se pudieron cargar los clientes desde la aseguradora.");
+    }
+  } catch (err) {
+    console.error("Error al conectar con aseguradora:", err);
+  }
+};
 
 const cargarHistorial = async () => {
   historialSolicitudes.value = [];
@@ -223,8 +248,6 @@ const enviar = async () => {
     mensaje.value = "Error de conexión.";
   }
 };
-
-
 
 onMounted(() => {
   cargarSeguros();

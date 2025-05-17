@@ -1,20 +1,18 @@
+// src/services/solicitudesService.js
 import axios from "axios";
-import API_URL from "../config"; // Importa tu API dinámico centralizado
 
-// Función para enviar solicitud hospitalaria a la aseguradora
-export const enviarSolicitudHospital = async ({ afiliado, servicio, monto, hospital, aseguradoraId }) => {
+// Función para enviar solicitud hospitalaria a la aseguradora (URL dinámica)
+export const enviarSolicitudHospital = async ({ afiliado, servicio, monto, hospital, aseguradoraUrl }) => {
   try {
     const payload = {
       afiliado,
       servicio,
       hospital,
       monto,
-      aseguradora: aseguradoraId
+      aseguradora: aseguradoraUrl
     };
 
-    //  Se usa axios, no fetch
-    const response = await axios.post(`${API_URL}/solicitudes-atencion`, payload);
-
+    const response = await axios.post(`${aseguradoraUrl}/solicitudes-atencion`, payload);
     return response.data;
 
   } catch (error) {

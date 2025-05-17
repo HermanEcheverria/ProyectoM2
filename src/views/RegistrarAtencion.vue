@@ -39,7 +39,7 @@
         <label class="form-label">Servicio</label>
         <select v-model="form.servicio" class="form-select" required @change="autoCompletarMonto">
           <option disabled value="">Seleccione servicio</option>
-          <option v-for="serv in serviciosFiltrados" :key="serv._id" :value="serv._id">
+          <option v-for="serv in servicios" :key="serv._id" :value="serv._id">
             {{ serv.nombre }} - Q{{ serv.precioAseguradora }}
           </option>
         </select>
@@ -54,7 +54,6 @@
       <button type="submit" class="btn btn-primary">Enviar Solicitud</button>
     </form>
 
-    <!-- Mensaje -->
     <div v-if="mensaje" class="alert alert-info mt-3">{{ mensaje }}</div>
 
     <!-- Detalles del cliente -->
@@ -77,7 +76,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
+import { enviarSolicitudHospital } from '@/services/solicitudesService'
 import API_URL from '@/config'
 
 const form = ref({
@@ -89,14 +89,14 @@ const form = ref({
 
 const aseguradoras = ref([])
 const clientes = ref([])
-const serviciosAgrupados = ref([])
+const servicios = ref([]) //  Reemplaza serviciosAgrupados
 const mensaje = ref('')
 const dpiBusqueda = ref('')
 const datosCliente = ref(null)
 const autorizacionId = ref(null)
-const hospitalId = localStorage.getItem("hospitalId") || "67f88b2f87f154c62d78d4e2"
+const hospitalId = "68279c1fc606536d77751b62"
 
-// Cargar aseguradoras desde tu backend
+// 🔹 Cargar aseguradoras disponibles
 const cargarAseguradoras = async () => {
   try {
     const res = await fetch(`${API_URL}/api/conexiones-aseguradoras`)
@@ -112,13 +112,13 @@ const cargarAseguradoras = async () => {
   }
 }
 
-// Al seleccionar una aseguradora
+// 🔹 Al cambiar aseguradora, carga clientes y servicios asociados
 const handleAseguradoraChange = async () => {
   await cargarClientes()
   await cargarServicios()
 }
 
-// Cargar clientes de la aseguradora
+// 🔹 Cargar clientes por hospital desde la aseguradora seleccionada
 const cargarClientes = async () => {
   if (!form.value.aseguradoraUrl) return
   try {
@@ -131,7 +131,7 @@ const cargarClientes = async () => {
   }
 }
 
-// Buscar cliente por DPI
+// 🔹 Buscar cliente por DPI
 const buscarPorDPI = async () => {
   if (!dpiBusqueda.value || !form.value.aseguradoraUrl) {
     mensaje.value = "Selecciona aseguradora y escribe DPI"
@@ -140,7 +140,6 @@ const buscarPorDPI = async () => {
   try {
     const res = await fetch(`${form.value.aseguradoraUrl}/clientes/buscar-por-documento/${dpiBusqueda.value}`)
     if (!res.ok) throw new Error("No encontrado")
-
     const cliente = await res.json()
     form.value.afiliado = cliente._id
     clientes.value = [cliente]
@@ -155,80 +154,54 @@ const buscarPorDPI = async () => {
   }
 }
 
-// Cargar servicios de la aseguradora seleccionada
+// 🔹 Cargar servicios desde la aseguradora seleccionada
 const cargarServicios = async () => {
-  serviciosAgrupados.value = []
-  const aseguradoraSeleccionada = aseguradoras.value.find(a => a.url === form.value.aseguradoraUrl)
-  if (!aseguradoraSeleccionada) return
-
+  servicios.value = []
   try {
-    const res = await fetch(`${aseguradoraSeleccionada.url}/servicios/hospital/${hospitalId}`)
+    const res = await fetch(`${form.value.aseguradoraUrl}/servicios/hospital/${hospitalId}`)
     if (res.ok) {
-      const data = await res.json()
-      serviciosAgrupados.value.push({
-        aseguradora: aseguradoraSeleccionada.nombre,
-        url: aseguradoraSeleccionada.url,
-        servicios: data
-      })
+      servicios.value = await res.json()
     }
   } catch (err) {
     console.error("Error cargando servicios:", err)
   }
 }
 
-// Computed para mostrar solo servicios de la aseguradora seleccionada
-const serviciosFiltrados = computed(() => {
-  return serviciosAgrupados.value.find(g => g.url === form.value.aseguradoraUrl)?.servicios || []
-})
-
-// Autocompletar monto al seleccionar servicio
+// 🔹 Autocompletar monto desde el servicio seleccionado
 const autoCompletarMonto = () => {
-  const seleccionado = serviciosFiltrados.value.find(s => s._id === form.value.servicio)
-  if (seleccionado) {
-    form.value.monto = seleccionado.precioAseguradora
+  const serv = servicios.value.find(s => s._id === form.value.servicio)
+  if (serv) {
+    form.value.monto = serv.precioAseguradora
   }
 }
 
-// Enviar solicitud de atención
+// 🔹 Enviar la solicitud de atención
 const registrarAtencion = async () => {
   if (!form.value.aseguradoraUrl) {
     mensaje.value = "Selecciona una aseguradora para enviar."
     return
   }
 
-  const payload = {
-    afiliado: form.value.afiliado,
-    servicio: form.value.servicio,
-    monto: form.value.monto,
-    hospital: hospitalId,
-    aseguradora: form.value.aseguradoraUrl
-  }
-
   try {
-    const res = await fetch(`${form.value.aseguradoraUrl}/solicitudes-atencion`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+    const data = await enviarSolicitudHospital({
+      afiliado: form.value.afiliado,
+      servicio: form.value.servicio,
+      monto: form.value.monto,
+      hospital: hospitalId,
+      aseguradoraUrl: form.value.aseguradoraUrl
     })
 
-    if (res.ok) {
-      const data = await res.json()
-      mensaje.value = data.message || "Solicitud enviada correctamente."
-      autorizacionId.value = data.numeroAutorizacion
-      form.value.servicio = ''
-      form.value.monto = 0
-    } else {
-      mensaje.value = "Error al enviar la solicitud."
-      autorizacionId.value = null
-    }
+    mensaje.value = data.message || "Solicitud enviada correctamente."
+    autorizacionId.value = data.numeroAutorizacion
+    form.value.servicio = ''
+    form.value.monto = 0
+
   } catch (err) {
-    console.error(err)
-    mensaje.value = "Error de conexión."
+    mensaje.value = "Error al enviar solicitud."
     autorizacionId.value = null
   }
 }
 
-// Al montar el componente
 onMounted(() => {
   cargarAseguradoras()
 })

@@ -3,21 +3,21 @@
     <h2>Consultar Historial del Paciente</h2>
 
     <div class="mb-3">
-      <label>DPI del paciente:</label>
+      <label>Buscar por DPI del paciente:</label>
       <input v-model="dpi" class="form-control" placeholder="Ingrese DPI" />
     </div>
 
     <div class="mb-3">
       <label>Aseguradora:</label>
-      <select v-model="aseguradoraSeleccionadaId" class="form-select">
+      <select v-model="aseguradoraSeleccionadaUrl" class="form-select">
         <option disabled value="">Seleccione aseguradora</option>
-        <option v-for="aseg in aseguradoras" :key="aseg._id" :value="aseg._id">
+        <option v-for="aseg in aseguradoras" :key="aseg.urlBase" :value="aseg.urlBase">
           {{ aseg.nombre }}
         </option>
       </select>
     </div>
 
-    <button @click="buscarHistorial" class="btn">Buscar</button>
+    <button @click="buscarHistorial" class="btn">Buscar Cliente</button>
 
     <div v-if="cliente" class="mt-4">
       <h5>Cliente encontrado: {{ cliente.nombre }} {{ cliente.apellido }}</h5>
@@ -61,24 +61,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted } from "vue";
+import API_URL from "@/config";
 
 const dpi = ref("");
-const aseguradoraSeleccionadaId = ref("");
 const aseguradoras = ref([]);
+const aseguradoraSeleccionadaUrl = ref("");
 const cliente = ref(null);
 const historial = ref([]);
 const buscado = ref(false);
-
-const EXPRESS_URLS = [
-  "http://localhost:5001",
-  "http://localhost:5022",
-];
-
-const aseguradoraSeleccionadaUrl = computed(() => {
-  const aseg = aseguradoras.value.find(a => a._id === aseguradoraSeleccionadaId.value);
-  return aseg ? aseg.url : "";
-});
 
 const buscarHistorial = async () => {
   cliente.value = null;
@@ -88,12 +79,12 @@ const buscarHistorial = async () => {
   if (!dpi.value || !aseguradoraSeleccionadaUrl.value) return;
 
   try {
-    const res = await fetch(`${aseguradoraSeleccionadaUrl.value}/api/clientes/buscar-por-documento/${dpi.value}`);
+    const res = await fetch(`${aseguradoraSeleccionadaUrl.value}/clientes/buscar-por-documento/${dpi.value}`);
     if (!res.ok) throw new Error("No encontrado");
 
     const fetchedCliente = await res.json();
     cliente.value = fetchedCliente;
-    historial.value = fetchedCliente.historialServicios;
+    historial.value = fetchedCliente.historialServicios || [];
     buscado.value = true;
   } catch (error) {
     console.error("Error en la búsqueda:", error.message);
@@ -104,18 +95,17 @@ const buscarHistorial = async () => {
 };
 
 const cargarAseguradoras = async () => {
-  aseguradoras.value = [];
-  for (const url of EXPRESS_URLS) {
-    try {
-      const res = await fetch(`${url}/api/seguros`);
-      if (res.ok) {
-        const data = await res.json();
-        data.forEach(seguro => seguro.url = url);
-        aseguradoras.value.push(...data);
-      }
-    } catch (err) {
-      console.error("Error cargando aseguradoras desde", url, err);
+  try {
+    const res = await fetch(`${API_URL}/api/conexiones-aseguradoras`);
+    if (res.ok) {
+      const data = await res.json();
+      aseguradoras.value = data.map(a => ({
+        nombre: a.nombre,
+        urlBase: a.urlBase
+      }));
     }
+  } catch (err) {
+    console.error("Error al cargar aseguradoras:", err);
   }
 };
 
