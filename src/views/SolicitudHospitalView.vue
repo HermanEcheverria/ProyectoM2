@@ -20,22 +20,12 @@
 
       <div class="mb-3">
         <label>Aseguradora (Seguro)</label>
-        <select v-model="form.aseguradora" class="form-select" required @change="cargarClientesDesdeAseguradora">
+        <select v-model="form.aseguradora" class="form-select" required>
           <option disabled value="">Seleccione un seguro</option>
           <option v-for="aseg in seguros" :key="aseg.nombre" :value="aseg">
             {{ aseg.nombre }}
           </option>
         </select>
-      </div>
-
-      <!-- Lista de clientes de la aseguradora seleccionada -->
-      <div v-if="clientes.length" class="mt-4">
-        <h5>Clientes de esta Aseguradora</h5>
-        <ul class="list-group">
-          <li v-for="cliente in clientes" :key="cliente._id" class="list-group-item">
-            {{ cliente.nombre }} {{ cliente.apellido }} - {{ cliente.numeroAfiliacion }}
-          </li>
-        </ul>
       </div>
 
       <button class="btn btn-primary" type="submit">Enviar Solicitud</button>
@@ -97,6 +87,30 @@
     </form>
 
     <div v-if="mensajeRegistro" class="alert alert-info mt-3">{{ mensajeRegistro }}</div>
+
+    <hr class="my-5" />
+    <h4>Administrar Aseguradoras Registradas</h4>
+    <table class="table table-striped mt-3">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Nombre</th>
+          <th>URL Base</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(aseg, index) in seguros" :key="index">
+          <td>{{ index + 1 }}</td>
+          <td><input v-model="aseg.nombre" class="form-control" /></td>
+          <td><input v-model="aseg.url" class="form-control" /></td>
+          <td>
+            <button class="btn btn-sm btn-primary me-2" @click="editarAseguradora(index)">Guardar</button>
+            <button class="btn btn-sm btn-danger" @click="eliminarAseguradora(index)">Eliminar</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </template>
 
@@ -104,20 +118,46 @@
 import { ref, onMounted } from "vue";
 import API_URL from "@/config";
 
-const form = ref({
-  nombre: "",
-  direccion: "",
-  telefono: "",
-  aseguradora: null
-});
-
+const form = ref({ nombre: "", direccion: "", telefono: "", aseguradora: null });
 const mensaje = ref("");
 const estadoSolicitud = ref<any>(null);
 const seguros = ref<any[]>([]);
 const historialSolicitudes = ref<any[]>([]);
 const nuevaAseguradora = ref({ nombre: "", url: "" });
 const mensajeRegistro = ref("");
-const clientes = ref([]);
+
+const editarAseguradora = async (index: number) => {
+  const aseg = seguros.value[index];
+  try {
+    const res = await fetch(`${API_URL}/api/conexiones-aseguradoras/${aseg.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nombre: aseg.nombre, url: aseg.url })
+    });
+    mensajeRegistro.value = res.ok ? "Aseguradora actualizada correctamente." : "Error al actualizar aseguradora.";
+  } catch (err) {
+    console.error(err);
+    mensajeRegistro.value = "Error de conexión al actualizar.";
+  }
+};
+
+const eliminarAseguradora = async (index: number) => {
+  const aseg = seguros.value[index];
+  try {
+    const res = await fetch(`${API_URL}/api/conexiones-aseguradoras/${aseg.id}`, {
+      method: "DELETE"
+    });
+    if (res.ok) {
+      seguros.value.splice(index, 1);
+      mensajeRegistro.value = "Aseguradora eliminada.";
+    } else {
+      mensajeRegistro.value = "Error al eliminar aseguradora.";
+    }
+  } catch (err) {
+    console.error(err);
+    mensajeRegistro.value = "Error de conexión al eliminar.";
+  }
+};
 
 const registrarAseguradora = async () => {
   try {
@@ -146,35 +186,11 @@ const cargarSeguros = async () => {
   seguros.value = [];
   try {
     const res = await fetch(`${API_URL}/api/conexiones-aseguradoras`);
-    if (!res.ok) {
-      console.error("No se pudo obtener la lista de aseguradoras");
-      return;
-    }
+    if (!res.ok) throw new Error("Fallo al obtener aseguradoras");
     const aseguradoras = await res.json();
-    seguros.value = aseguradoras.map((a: any) => ({
-      nombre: a.nombre,
-      url: a.urlBase
-    }));
+    seguros.value = aseguradoras.map((a: any) => ({ id: a.id, nombre: a.nombre, url: a.urlBase }));
   } catch (err) {
-    console.error("Error al cargar aseguradoras registradas:", err);
-  }
-};
-
-const cargarClientesDesdeAseguradora = async () => {
-  clientes.value = [];
-  if (!form.value.aseguradora?.url) return;
-
-  const hospitalId = localStorage.getItem("hospitalId") || "67f88b2f87f154c62d78d4e2";
-
-  try {
-    const res = await fetch(`${form.value.aseguradora.url}/api/clientes/hospital/${hospitalId}/aseguradora`);
-    if (res.ok) {
-      clientes.value = await res.json();
-    } else {
-      console.warn("No se pudieron cargar los clientes desde la aseguradora.");
-    }
-  } catch (err) {
-    console.error("Error al conectar con aseguradora:", err);
+    console.error("Error al cargar aseguradoras:", err);
   }
 };
 
@@ -202,24 +218,17 @@ const cargarHistorial = async () => {
 };
 
 const enviar = async () => {
-  const aseguradoraSeleccionada = form.value.aseguradora;
-
-  if (!aseguradoraSeleccionada || !aseguradoraSeleccionada.url) {
+  const aseg = form.value.aseguradora;
+  if (!aseg || !aseg.url) {
     mensaje.value = "No se encontró la URL de la aseguradora seleccionada.";
     return;
   }
-
-  const yaAprobada = historialSolicitudes.value.some((s) =>
-    s.estado === "aprobado" && s.aseguradora === aseguradoraSeleccionada.nombre
-  );
-
+  const yaAprobada = historialSolicitudes.value.some((s) => s.estado === "aprobado" && s.aseguradora === aseg.nombre);
   if (yaAprobada) {
-    mensaje.value = "Ya existe una solicitud aprobada. No se puede enviar otra.";
+    mensaje.value = "Ya existe una solicitud aprobada.";
     return;
   }
-
-  const urlDestino = `${aseguradoraSeleccionada.url}/solicitudes/hospital`;
-
+  const urlDestino = `${aseg.url}/solicitudes/hospital`;
   try {
     const res = await fetch(urlDestino, {
       method: "POST",
@@ -228,12 +237,11 @@ const enviar = async () => {
         nombre: form.value.nombre,
         direccion: form.value.direccion,
         telefono: form.value.telefono,
-        aseguradora: aseguradoraSeleccionada.nombre,
+        aseguradora: aseg.nombre,
         estado: "pendiente",
         origen: "hospital"
       })
     });
-
     if (res.ok) {
       const data = await res.json();
       mensaje.value = "Solicitud enviada a la aseguradora.";

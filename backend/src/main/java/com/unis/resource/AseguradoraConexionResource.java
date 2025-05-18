@@ -37,6 +37,32 @@ public class AseguradoraConexionResource {
         return Response.ok(Map.of("url", conexion.getUrlBase())).build();
     }
 
+    @PUT
+@Path("/{id}")
+@Transactional
+public Response actualizar(@PathParam("id") Long id, Map<String, String> body) {
+    AseguradoraConexion existente = repository.findById(id);
+    if (existente == null) {
+        return Response.status(Response.Status.NOT_FOUND).build();
+    }
+
+    existente.setNombre(body.getOrDefault("nombre", existente.getNombre()));
+    existente.setUrlBase(body.getOrDefault("url", existente.getUrlBase()));
+    return Response.ok(Map.of("message", "Actualizado correctamente")).build();
+}
+
+@DELETE
+@Path("/{id}")
+@Transactional
+public Response eliminar(@PathParam("id") Long id) {
+    boolean eliminado = repository.deleteById(id);
+    if (!eliminado) {
+        return Response.status(Response.Status.NOT_FOUND).build();
+    }
+    return Response.ok(Map.of("message", "Eliminado correctamente")).build();
+}
+
+
     @POST
     @Path("/registrar")
     @Transactional
