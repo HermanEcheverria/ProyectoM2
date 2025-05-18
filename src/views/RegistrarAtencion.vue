@@ -89,14 +89,14 @@ const form = ref({
 
 const aseguradoras = ref([])
 const clientes = ref([])
-const servicios = ref([]) //  Reemplaza serviciosAgrupados
+const servicios = ref([])
 const mensaje = ref('')
 const dpiBusqueda = ref('')
 const datosCliente = ref(null)
 const autorizacionId = ref(null)
 const hospitalId = "68279c1fc606536d77751b62"
 
-// 🔹 Cargar aseguradoras disponibles
+//  Cargar aseguradoras disponibles
 const cargarAseguradoras = async () => {
   try {
     const res = await fetch(`${API_URL}/api/conexiones-aseguradoras`)
