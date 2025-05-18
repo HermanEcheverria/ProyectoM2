@@ -254,7 +254,7 @@ paciente.setIdUsuario(usuario.getId());
 entityManager.persist(paciente);
 System.out.println(" Usuario y paciente creados automáticamente");
 
-// ⚠️ Necesitamos obtener el paciente como PacienteFT para la ficha técnica
+//  Necesitamos obtener el paciente como PacienteFT para la ficha técnica
 PacienteFT pacienteFT = entityManager
     .createQuery("SELECT p FROM PacienteFT p WHERE p.documento = :doc", PacienteFT.class)
     .setParameter("doc", documento)
