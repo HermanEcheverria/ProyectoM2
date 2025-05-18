@@ -176,7 +176,7 @@ public class CitaService {
                 .add("doctor", cita.getDoctor().getUsuario().getNombreUsuario())
                 .build();
 
-            System.out.println("📤 Enviando resultado: " + json);
+            System.out.println("Enviando resultado: " + json);
 
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
@@ -188,7 +188,7 @@ public class CitaService {
             client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenAccept(response -> System.out.println("✅ Resultado enviado: " + response.statusCode()));
         } catch (Exception e) {
-            System.err.println("❌ Error enviando resultados: " + e.getMessage());
+            System.err.println("Error enviando resultados: " + e.getMessage());
         }
     }
 
@@ -243,8 +243,8 @@ public class CitaService {
     
             entityManager.persist(usuario);
     
-            // ✅ Crear nuevo paciente
-           // ✅ Crear nuevo paciente
+            //  Crear nuevo paciente
+           //  Crear nuevo paciente
 paciente = new Paciente();
 paciente.setDocumento(documento);
 paciente.setApellido(apellido);
@@ -252,15 +252,15 @@ paciente.setUsuario(usuario);
 paciente.setIdUsuario(usuario.getId());
 
 entityManager.persist(paciente);
-System.out.println("✅ Usuario y paciente creados automáticamente");
+System.out.println(" Usuario y paciente creados automáticamente");
 
-// ⚠️ Necesitamos obtener el paciente como PacienteFT para la ficha técnica
+//  Necesitamos obtener el paciente como PacienteFT para la ficha técnica
 PacienteFT pacienteFT = entityManager
     .createQuery("SELECT p FROM PacienteFT p WHERE p.documento = :doc", PacienteFT.class)
     .setParameter("doc", documento)
     .getSingleResult();
 
-// ✅ Crear ficha técnica asociada al nuevo paciente
+//  Crear ficha técnica asociada al nuevo paciente
 FichaTecnica ficha = new FichaTecnica();
 ficha.setPaciente(pacienteFT);
 ficha.setFechaCreacion(LocalDate.now());
@@ -270,7 +270,7 @@ ficha.setCodigoSeguro(codigoSeguro);
 ficha.setCarnetSeguro(carnetSeguro);
 
 entityManager.persist(ficha);
-System.out.println("✅ Ficha técnica creada automáticamente");
+System.out.println("Ficha técnica creada automáticamente");
 
         }
     
@@ -298,7 +298,7 @@ System.out.println("✅ Ficha técnica creada automáticamente");
                 aseguradora = new Aseguradora();
                 aseguradora.setNombre(nombreAseguradora);
                 entityManager.persist(aseguradora);
-                System.out.println("🆕 Aseguradora creada automáticamente");
+                System.out.println("Aseguradora creada automáticamente");
             }
     
             cita.setAseguradora(aseguradora);
