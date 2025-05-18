@@ -1,7 +1,7 @@
-
 package com.unis.model;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
@@ -113,5 +113,20 @@ public class Servicio extends PanacheEntity {
      */
     public Long getIdServicio() {
         return this.id;
+    }
+
+    // equals y hashCode basados en el id
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Servicio)) return false;
+        Servicio that = (Servicio) o;
+        return this.id != null && this.id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
     }
 }
