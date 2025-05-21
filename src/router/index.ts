@@ -63,7 +63,8 @@ const ROLES = {
   Admin:    1,
   Doctor:   2,
   Empleado: 3,
-  Paciente: 4
+  Paciente: 4,
+  UsuarioInter: 5,
 } as const;
 
 // ** Guards **
@@ -108,7 +109,7 @@ const router = createRouter({
       path: "/consultar-historial",
       name: "consultar-historial",
       component: ConsultarHistorial,
-      beforeEnter: requireRole([ROLES.Paciente, ROLES.Admin])
+      beforeEnter: requireRole([ROLES.Paciente, ROLES.Admin, ROLES.UsuarioInter])
     },
     {
       path: "/historial-pagos-pacientes",
@@ -146,7 +147,7 @@ const router = createRouter({
       path: "/registrar-atencion",
       name: "registrar-atencion",
       component: RegistrarAtencion,
-      beforeEnter: requireRole([ROLES.Doctor, ROLES.Admin])
+      beforeEnter: requireRole([ROLES.Doctor, ROLES.Admin, ROLES.UsuarioInter])
     },
     {
       path: "/admin/doctores-recetas",
@@ -303,7 +304,7 @@ const router = createRouter({
     { path: "/solicitud-hospital",
       name: "solicitud-hospital",
       component: SolicitudHospitalView,
-      beforeEnter: requireRole([ROLES.Admin])},
+      beforeEnter: requireRole([ROLES.Admin, ROLES.UsuarioInter])},
     {
       path: "/citas-aseguradora",
       name: "citas-aseguradora",
