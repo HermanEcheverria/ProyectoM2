@@ -118,10 +118,15 @@
 import { ref, onMounted } from "vue";
 import API_URL from "@/config";
 
-const form = ref({ nombre: "", direccion: "", telefono: "", aseguradora: null });
+const form = ref<{ nombre: string; direccion: string; telefono: string; aseguradora: Aseguradora | null }>({ nombre: "", direccion: "", telefono: "", aseguradora: null });
 const mensaje = ref("");
 const estadoSolicitud = ref<any>(null);
-const seguros = ref<any[]>([]);
+interface Aseguradora {
+  id: string;
+  nombre: string;
+  url: string;
+}
+const seguros = ref<Aseguradora[]>([]);
 const historialSolicitudes = ref<any[]>([]);
 const nuevaAseguradora = ref({ nombre: "", url: "" });
 const mensajeRegistro = ref("");

@@ -4,7 +4,7 @@ pipeline {
   environment {
     MAVEN_HOME = tool 'Maven 3'
     SONARQUBE = 'SonarQube'
-    NODEJS_HOME = tool name: 'Node 18', type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation'
+    NODEJS_HOME = tool name: 'Node 20.19.2', type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation'
   }
 
   stages {
