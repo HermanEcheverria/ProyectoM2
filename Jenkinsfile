@@ -43,7 +43,7 @@ pipeline {
             steps {
                 timeout(time: 10, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
-                    echo "✅ Análisis SonarQube terminado correctamente y pasó el Quality Gate"
+                    echo "Análisis SonarQube terminado correctamente y pasó el Quality Gate"
                 }
             }
         }
@@ -51,8 +51,8 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 dir('backend') {
-    sh 'docker build -f Dockerfile.jvm -t hermanecheverria/proyecto-m2:dev .'
-}
+                    sh "docker build -f Dockerfile.jvm -t ${DOCKER_IMAGE} ."
+                }
             }
         }
 
@@ -75,41 +75,41 @@ pipeline {
         }
 
         stage('Deploy') {
-    steps {
-        script {
-            def containerName = "${PROJECT_NAME}-${env.BRANCH_NAME}"
-            def imageName = "${DOCKER_IMAGE}"
+            steps {
+                script {
+                    def containerName = "${PROJECT_NAME}-${env.BRANCH_NAME}"
+                    def imageName = "${DOCKER_IMAGE}"
+                    def port = ""
 
-            // Puerto según rama
-            def port = ""
-            if (env.BRANCH_NAME == "dev") {
-                port = "8082"
-            } else if (env.BRANCH_NAME == "uat") {
-                port = "8083"
-            } else if (env.BRANCH_NAME == "main") {
-                port = "8084"
-            } else {
-                error "Rama no reconocida para despliegue: ${env.BRANCH_NAME}"
+                    // Asignación de puertos por rama
+                    if (env.BRANCH_NAME == "dev") {
+                        port = "8082"
+                    } else if (env.BRANCH_NAME == "uat") {
+                        port = "8083"
+                    } else if (env.BRANCH_NAME == "main") {
+                        port = "8084"
+                    } else {
+                        error " Rama no reconocida para despliegue: ${env.BRANCH_NAME}"
+                    }
+
+                    echo "Desplegando ambiente ${env.BRANCH_NAME} en el contenedor ${containerName} en el puerto ${port}..."
+
+                    // Elimina contenedor anterior si existe
+                    sh "docker rm -f ${containerName} || true"
+
+                    // Ejecuta nuevo contenedor
+                    sh """
+                        docker run -d \
+                            --name ${containerName} \
+                            --restart=unless-stopped \
+                            -p ${port}:8080 \
+                            --network red-proyecto \
+                            ${imageName}
+                    """
+                }
             }
-
-            // Detener y eliminar contenedor previo si existe
-            sh "docker rm -f ${containerName} || true"
-
-            // Levantar nuevo contenedor
-            sh """
-                docker run -d \
-                    --name ${containerName} \
-                    --restart=unless-stopped \
-                    -p ${port}:8080 \
-                    --network red-proyecto \
-                    ${imageName}
-            """
-
-            echo "Desplegado correctamente en ${containerName} accesible por el puerto ${port}"
         }
     }
-}
-
 
     post {
         failure {
