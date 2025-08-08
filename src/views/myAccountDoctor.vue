@@ -149,6 +149,9 @@ const applyImportedData = async () => {
       <label><b>Rol:</b></label>
       <input :value="rolesMap[user.rolId]" disabled class="readonly-field" />
 
+      <label><b>Estado:</b></label>
+      <input :value="estadoMap[user.estado]" disabled class="readonly-field" />
+
       <label><b>Especialidad:</b></label>
       <input v-model="doctor.especialidad" :disabled="!isEditing" required />
 
