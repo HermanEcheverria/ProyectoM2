@@ -3,13 +3,13 @@ pipeline {
 
     environment {
         PROJECT_NAME = 'proyecto-m2'
-        SONARQUBE_ENV = 'SonarQubeServer' // Nombre del servidor Sonar en Jenkins
+        SONARQUBE_ENV = 'SonarQubeServer'
         DOCKER_IMAGE = "hermanecheverria/${PROJECT_NAME}:${env.BRANCH_NAME}"
     }
 
     tools {
-        maven 'Maven'     // Debe coincidir con lo configurado en Jenkins
-        jdk 'java-17'     // También debe coincidir
+        maven 'Maven'
+        jdk 'java-17'
     }
 
     stages {
@@ -28,18 +28,21 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
-    steps {
-        dir('backend') {
-            withSonarQubeEnv("${SONARQUBE_ENV}") {
-                withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
-                    sh 'mvn sonar:sonar -Dsonar.token=$SONAR_TOKEN -Dsonar.branch.name=${BRANCH_NAME}'
+            steps {
+                dir('backend') {
+                    withSonarQubeEnv("${SONARQUBE_ENV}") {
+                        withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
+                            sh '''
+                                mvn sonar:sonar \
+                                    -Dsonar.token=$SONAR_TOKEN \
+                                    -Dsonar.projectKey=${PROJECT_NAME}-${BRANCH_NAME} \
+                                    -Dsonar.projectName=${PROJECT_NAME}-${BRANCH_NAME}
+                            '''
+                        }
+                    }
                 }
             }
         }
-    }
-}
-
-
 
         stage('Quality Gate') {
             steps {
@@ -78,7 +81,6 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "Desplegando ambiente: ${env.BRANCH_NAME}"
-                // Aquí puedes añadir comandos SSH, docker-compose, etc.
             }
         }
     }
