@@ -18,6 +18,12 @@
     <quarkus.platform.version>3.8.6</quarkus.platform.version>
     <skipITs>true</skipITs>
     <surefire-plugin.version>3.2.5</surefire-plugin.version>
+    <sonar.host.url>http://sonarqube:9000</sonar.host.url>
+    <sonar.projectKey>proyecto-m2</sonar.projectKey>
+    <sonar.projectName>ProyectoM2</sonar.projectName>
+    <sonar.sources>src/main/java</sonar.sources>
+    <sonar.tests>src/test/java</sonar.tests>
+
   </properties>
 
   <dependencyManagement>
@@ -226,4 +232,18 @@
       </properties>
     </profile>
   </profiles>
+    <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.sonarsource.scanner.maven</groupId>
+        <artifactId>sonar-maven-plugin</artifactId>
+        <version>4.0.0.4121</version>
+      </plugin>
+    </plugins>
+  </reporting>
+
+
+
+
+
 </project>
