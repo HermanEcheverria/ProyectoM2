@@ -3,13 +3,13 @@ pipeline {
 
     environment {
         PROJECT_NAME = 'proyecto-m2'
-        SONARQUBE_ENV = 'SonarQubeServer' // nombre definido en Jenkins para SonarQube
+        SONARQUBE_ENV = 'SonarQubeServer' // Nombre del servidor Sonar en Jenkins
         DOCKER_IMAGE = "hermanecheverria/${PROJECT_NAME}:${env.BRANCH_NAME}"
     }
 
     tools {
-        maven 'Maven'  
-        jdk 'java-17'  
+        maven 'Maven'     // Debe coincidir con lo configurado en Jenkins
+        jdk 'java-17'     // También debe coincidir
     }
 
     stages {
@@ -21,14 +21,18 @@ pipeline {
 
         stage('Build & Test') {
             steps {
-                sh 'mvn clean verify -DskipTests=false'
+                dir('backend') {
+                    sh 'mvn clean verify -DskipTests=false'
+                }
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv("${SONARQUBE_ENV}") {
-                    sh 'mvn sonar:sonar'
+                dir('backend') {
+                    withSonarQubeEnv("${SONARQUBE_ENV}") {
+                        sh 'mvn sonar:sonar'
+                    }
                 }
             }
         }
@@ -43,7 +47,9 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t ${DOCKER_IMAGE} ."
+                dir('backend') {
+                    sh "docker build -t ${DOCKER_IMAGE} ."
+                }
             }
         }
 
@@ -68,7 +74,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "Desplegando ambiente: ${env.BRANCH_NAME}"
-                // Aquí puedes usar ssh, docker-compose o kubectl
+                // Aquí puedes añadir comandos SSH, docker-compose, etc.
             }
         }
     }
@@ -76,8 +82,8 @@ pipeline {
     post {
         failure {
             mail to: 'magic@productowner.com, herman@unis.edu.gt',
-                 subject: "Falló pipeline en ${env.BRANCH_NAME}",
-                 body: "El pipeline falló en la etapa ${env.STAGE_NAME}. Revisión necesaria."
+                 subject: "Falló pipeline en rama ${env.BRANCH_NAME}",
+                 body: "La ejecución del pipeline falló en la etapa ${env.STAGE_NAME}. Requiere atención inmediata."
         }
     }
 }
