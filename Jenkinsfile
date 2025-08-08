@@ -51,8 +51,8 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 dir('backend') {
-                    sh "docker build -t ${DOCKER_IMAGE} ."
-                }
+    sh 'docker build -f Dockerfile.jvm -t hermanecheverria/proyecto-m2:dev .'
+}
             }
         }
 
