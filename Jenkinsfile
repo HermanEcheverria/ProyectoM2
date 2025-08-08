@@ -32,12 +32,13 @@ pipeline {
         dir('backend') {
             withSonarQubeEnv("${SONARQUBE_ENV}") {
                 withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
-                    sh 'mvn sonar:sonar -Dsonar.token=$SONAR_TOKEN'
+                    sh 'mvn sonar:sonar -Dsonar.token=$SONAR_TOKEN -Dsonar.branch.name=${BRANCH_NAME}'
                 }
             }
         }
     }
 }
+
 
 
         stage('Quality Gate') {
