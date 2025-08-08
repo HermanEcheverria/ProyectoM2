@@ -75,11 +75,41 @@ pipeline {
         }
 
         stage('Deploy') {
-            steps {
-                echo "Desplegando ambiente: ${env.BRANCH_NAME}"
+    steps {
+        script {
+            def containerName = "${PROJECT_NAME}-${env.BRANCH_NAME}"
+            def imageName = "${DOCKER_IMAGE}"
+
+            // Puerto según rama
+            def port = ""
+            if (env.BRANCH_NAME == "dev") {
+                port = "8082"
+            } else if (env.BRANCH_NAME == "uat") {
+                port = "8083"
+            } else if (env.BRANCH_NAME == "main") {
+                port = "8084"
+            } else {
+                error "Rama no reconocida para despliegue: ${env.BRANCH_NAME}"
             }
+
+            // Detener y eliminar contenedor previo si existe
+            sh "docker rm -f ${containerName} || true"
+
+            // Levantar nuevo contenedor
+            sh """
+                docker run -d \
+                    --name ${containerName} \
+                    --restart=unless-stopped \
+                    -p ${port}:8080 \
+                    --network red-proyecto \
+                    ${imageName}
+            """
+
+            echo "Desplegado correctamente en ${containerName} accesible por el puerto ${port}"
         }
     }
+}
+
 
     post {
         failure {
