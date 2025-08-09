@@ -33,40 +33,47 @@ pipeline {
         }
 
         stage('SonarQube Analysis (Repo completo)') {
-            steps {
-                withSonarQubeEnv("${SONARQUBE_ENV}") {
-                    withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
-                        // Instala sonar-scanner CLI si no existe (descarga oficial)
-                        sh '''
-                          set -e
-                          if [ ! -x /opt/sonar-scanner/bin/sonar-scanner ]; then
-                            echo "🔧 Instalando sonar-scanner CLI..."
-                            apt-get update -y >/dev/null 2>&1 || true
-                            apt-get install -y curl unzip >/dev/null 2>&1 || true
-                            curl -sSL -o /opt/sonar-scanner.zip \
-                              https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-5.0.1.3006-linux.zip
-                            cd /opt && unzip -q sonar-scanner.zip && rm sonar-scanner.zip
-                            mv /opt/sonar-scanner-5.0.1.3006-linux /opt/sonar-scanner
-                            ln -sf /opt/sonar-scanner/bin/sonar-scanner /usr/local/bin/sonar-scanner
-                          fi
-                          export PATH=/opt/sonar-scanner/bin:$PATH
-                          
-                          # Emulación multirama en Community: cambiamos el projectKey por rama
-                          PK="${PROJECT_NAME}-${BRANCH_NAME}"
+  steps {
+    withSonarQubeEnv("${SONARQUBE_ENV}") {
+      withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
+        sh '''
+          set -e
+          SCANNER_DIR="${WORKSPACE}/.sonar/sonar-scanner"
+          SCANNER_BIN="${SCANNER_DIR}/bin/sonar-scanner"
 
-                          sonar-scanner \
-                            -Dsonar.projectKey="${PK}" \
-                            -Dsonar.projectName="Proyecto M2 (${BRANCH_NAME})" \
-                            -Dsonar.sources=backend,. \
-                            -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,backend/target/** \
-                            -Dsonar.java.binaries=backend/target/classes \
-                            -Dsonar.coverage.jacoco.xmlReportPaths=backend/target/site/jacoco/jacoco.xml \
-                            -Dsonar.token="$SONAR_TOKEN"
-                        '''
-                    }
-                }
-            }
-        }
+          # Descarga y prepara sonar-scanner en el WORKSPACE si no existe
+          if [ ! -x "$SCANNER_BIN" ]; then
+            echo "🔧 Preparando sonar-scanner en $SCANNER_DIR ..."
+            mkdir -p "$SCANNER_DIR"
+            curl -sSL -o "${WORKSPACE}/.sonar/sonar-scanner.zip" \
+              https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-5.0.1.3006-linux.zip
+
+            cd "${WORKSPACE}/.sonar"
+            # Usamos 'jar xf' (Java) para descomprimir el ZIP sin necesidad de unzip/apt
+            jar xf sonar-scanner.zip
+            rm sonar-scanner.zip
+            mv sonar-scanner-5.0.1.3006-linux sonar-scanner
+          fi
+
+          export PATH="${SCANNER_DIR}/bin:$PATH"
+
+          # Emulación multirama en Community: projectKey por rama
+          PK="${PROJECT_NAME}-${BRANCH_NAME}"
+
+          "${SCANNER_BIN}" \
+            -Dsonar.projectKey="${PK}" \
+            -Dsonar.projectName="Proyecto M2 (${BRANCH_NAME})" \
+            -Dsonar.sources=backend,. \
+            -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,backend/target/** \
+            -Dsonar.java.binaries=backend/target/classes \
+            -Dsonar.coverage.jacoco.xmlReportPaths=backend/target/site/jacoco/jacoco.xml \
+            -Dsonar.token="$SONAR_TOKEN"
+        '''
+      }
+    }
+  }
+}
+
 
         stage('Quality Gate') {
             steps {
