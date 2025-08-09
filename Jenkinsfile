@@ -27,16 +27,15 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
-            steps {
-                dir('backend') {
-                    withSonarQubeEnv("${SONARQUBE_ENV}") {
-                        withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
-                            sh 'mvn sonar:sonar -Dsonar.token=$SONAR_TOKEN'
-                        }
-                    }
-                }
+    steps {
+        withSonarQubeEnv("${SONARQUBE_ENV}") {
+            withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
+                sh "sonar-scanner -Dsonar.token=$SONAR_TOKEN"
             }
         }
+    }
+}
+
 
         stage('Quality Gate') {
             steps {

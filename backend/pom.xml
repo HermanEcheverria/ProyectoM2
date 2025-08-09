@@ -19,7 +19,7 @@
     <skipITs>true</skipITs>
     <surefire-plugin.version>3.2.5</surefire-plugin.version>
     <sonar.host.url>http://sonarqube:9000</sonar.host.url>
-    <sonar.projectKey>proyecto-m2</sonar.projectKey>
+    <!-- <sonar.projectKey>proyecto-m2</sonar.projectKey> -->
     <sonar.projectName>ProyectoM2</sonar.projectName>
     <sonar.sources>src/main/java</sonar.sources>
     <sonar.tests>src/test/java</sonar.tests>
