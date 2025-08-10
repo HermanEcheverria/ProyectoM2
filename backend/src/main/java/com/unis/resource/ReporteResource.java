@@ -209,6 +209,7 @@ public class ReporteResource {
             }
         } else {
             Row nr = sheet.createRow(rownum);
+            rownum++;
             nr.createCell(0).setCellValue("No se encontraron datos para los parámetros seleccionados.");
         }
 
