@@ -55,22 +55,26 @@ pipeline {
       }
     }
 
-    stage('SonarQube Analysis (repo completo)') {
-      steps {
-        script {
-          def scannerHome = tool 'SonarScanner'  
-          withSonarQubeEnv("${SONARQUBE_ENV}") {
-            withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
-            
-              sh '''
-                export PATH="''' + scannerHome + '''/bin:$PATH"
-                sonar-scanner -Dsonar.token=$SONAR_TOKEN
-              '''
-            }
+    stage('SonarQube Analysis - Backend (con cobertura)') {
+  steps {
+    script {
+      def scannerHome = tool 'SonarScanner'
+      withSonarQubeEnv("${SONARQUBE_ENV}") {
+        withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
+          dir('backend') {
+            sh """
+              export PATH="${scannerHome}/bin:\\$PATH"
+              sonar-scanner \
+                -Dsonar.token=\\$SONAR_TOKEN \
+                -Dsonar.branch.name=${env.BRANCH_NAME}
+            """
           }
         }
       }
     }
+  }
+}
+
 
     stage('Quality Gate') {
       steps {
@@ -81,6 +85,37 @@ pipeline {
       }
     }
   }
+
+  stage('SonarQube Analysis - Frontend (sin cobertura)') {
+  when { expression { fileExists('sonar-project.properties') && fileExists('package.json') } }
+  steps {
+    script {
+      def scannerHome = tool 'SonarScanner'
+      withSonarQubeEnv("${SONARQUBE_ENV}") {
+        withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
+          sh """
+            export PATH="${scannerHome}/bin:\\$PATH"
+            sonar-scanner \
+              -Dsonar.token=\\$SONAR_TOKEN \
+              -Dsonar.branch.name=${env.BRANCH_NAME}
+          """
+        }
+      }
+    }
+  }
+}
+stage('Quality Gate - Frontend') {
+  when { expression { fileExists('sonar-project.properties') && fileExists('package.json') } }
+  steps {
+    timeout(time: 10, unit: 'MINUTES') {
+      waitForQualityGate abortPipeline: true
+      echo "Quality Gate FRONTEND OK para ${env.BRANCH_NAME}"
+    }
+  }
+}
+
+
+
 
   post {
   failure {
