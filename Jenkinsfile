@@ -18,7 +18,9 @@ pipeline {
 
    
     stage('Install Frontend deps (root)') {
-      steps {
+  steps {
+    script {
+      nodejs('Node 20') { 
         sh '''
           if [ -f package.json ]; then
             echo "Instalando dependencias del front en la raíz..."
@@ -29,6 +31,9 @@ pipeline {
         '''
       }
     }
+  }
+}
+
 
     stage('Build & Unit Tests (Backend)') {
       steps {
