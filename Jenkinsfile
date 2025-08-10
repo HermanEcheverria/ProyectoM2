@@ -84,7 +84,7 @@ pipeline {
 
   post {
     failure {
-      mail to: 'magic@productowner.com, herman@unis.edu.gt',
+      mail to: 'magic@productowner.com, hecheverria@unis.edu.gt',
            subject: " Falló pipeline en rama ${env.BRANCH_NAME}",
            body: "El pipeline falló en la etapa ${env.STAGE_NAME}. Revisar Jenkins."
     }
