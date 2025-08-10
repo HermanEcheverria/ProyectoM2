@@ -19,16 +19,16 @@ pipeline {
         stage('Build & Unit Tests (Backend)') {
             steps {
                 dir('backend') {
-                    sh 'mvn clean verify -DskipTests=false'
-                    // Sanity check: asegurarnos que JaCoCo generó el XML
-                    sh '''
-                      ls -lah target/site/jacoco || true
-                      test -f target/site/jacoco/jacoco.xml || { 
-                        echo "❌ No se encontró backend/target/site/jacoco/jacoco.xml. Revisa JaCoCo en el POM.";
-                        exit 1;
-                      }
-                    '''
-                }
+                sh 'mvn clean verify -DskipTests=false'
+                sh 'mvn jacoco:report'
+                sh '''
+                  ls -lah target/site/jacoco || true
+                  test -f target/site/jacoco/jacoco.xml || { 
+                    echo "No se encontró backend/target/site/jacoco/jacoco.xml. Revisa JaCoCo en el POM.";
+                    exit 1;
+                  }
+                '''
+              }
             }
         }
 
