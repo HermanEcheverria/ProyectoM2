@@ -208,8 +208,8 @@ public class ReporteResource {
                 sheet.autoSizeColumn(i);
             }
         } else {
-            Row nr = sheet.createRow(rownum++);
-            rownum++;
+            Row nr = sheet.createRow(rownum);
+            
             nr.createCell(0).setCellValue("No se encontraron datos para los parámetros seleccionados.");
         }
 
