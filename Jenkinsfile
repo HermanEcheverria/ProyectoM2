@@ -83,10 +83,15 @@ pipeline {
   }
 
   post {
-    failure {
-      mail to: 'hecheverria@unis.edu.gt',
-           subject: " Falló pipeline en rama ${env.BRANCH_NAME}",
-           body: "El pipeline falló en la etapa ${env.STAGE_NAME}. Revisar Jenkins."
-    }
+  failure {
+    mail to: 'hecheverria@unis.edu.gt',
+         subject: "Falló pipeline en rama ${env.BRANCH_NAME}",
+         body: "El pipeline falló en la etapa ${env.STAGE_NAME}. Revisar Jenkins."
+  }
+  unstable {
+    mail to: 'hecheverria@unis.edu.gt',
+         subject: "Pipeline UNSTABLE en ${env.BRANCH_NAME}",
+         body: "El pipeline quedó UNSTABLE en la etapa ${env.STAGE_NAME}. Revisar Jenkins."
   }
 }
+
