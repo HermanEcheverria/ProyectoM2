@@ -69,4 +69,4 @@ mvn quarkus:dev
 mvn quarkus:dev "-Dquarkus.http.host=0.0.0.0"
 
 
-npm run dev -- --host 
+npm run dev -- --host # prueba protections Sun Aug 10 12:11:51 AM CST 2025
