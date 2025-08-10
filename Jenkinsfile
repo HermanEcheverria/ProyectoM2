@@ -119,3 +119,4 @@ stage('Quality Gate - Frontend') {
     }
   }
 }
+}
