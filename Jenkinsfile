@@ -55,9 +55,16 @@ pipeline {
           withSonarQubeEnv("${SONARQUBE_ENV}") {
             withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
               withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
+                // evita ambigüedad de report-task.txt
                 sh 'rm -rf .scannerwork backend/.scannerwork || true'
                 dir('backend') {
-                  sh 'sonar-scanner -Dsonar.token=$SONAR_TOKEN'
+                  def branchSafe = (env.BRANCH_NAME ?: 'local').replaceAll('[^A-Za-z0-9_\\-\\.:]', '-')
+                  def key   = "${PROJECT_NAME}-backend-${branchSafe}"
+                  def pname = "${PROJECT_NAME} :: Backend [${env.BRANCH_NAME}]"
+                  withEnv(["SONAR_PROJECT_KEY=${key}", "SONAR_PROJECT_NAME=${pname}"]) {
+                    // sin interpolación Groovy; expansión de variables la hace el shell
+                    sh 'sonar-scanner -Dsonar.token=$SONAR_TOKEN -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.projectName="$SONAR_PROJECT_NAME"'
+                  }
                 }
               }
             }
@@ -86,7 +93,12 @@ pipeline {
             withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
               withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
                 sh 'rm -rf .scannerwork backend/.scannerwork || true'
-                sh 'sonar-scanner -Dsonar.token=$SONAR_TOKEN'
+                def branchSafe = (env.BRANCH_NAME ?: 'local').replaceAll('[^A-Za-z0-9_\\-\\.:]', '-')
+                def key   = "${PROJECT_NAME}-frontend-${branchSafe}"
+                def pname = "${PROJECT_NAME} :: Frontend [${env.BRANCH_NAME}]"
+                withEnv(["SONAR_PROJECT_KEY=${key}", "SONAR_PROJECT_NAME=${pname}"]) {
+                  sh 'sonar-scanner -Dsonar.token=$SONAR_TOKEN -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.projectName="$SONAR_PROJECT_NAME"'
+                }
               }
             }
           }
@@ -104,7 +116,7 @@ pipeline {
       }
     }
   }
-  
+
   post {
     failure {
       mail to: 'hecheverria@unis.edu.gt',
