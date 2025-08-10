@@ -94,4 +94,5 @@ pipeline {
          body: "El pipeline quedó UNSTABLE en la etapa ${env.STAGE_NAME}. Revisar Jenkins."
   }
 }
+}
 
