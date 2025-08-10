@@ -48,19 +48,18 @@ pipeline {
       }
     }
 
+    // --- SONAR BACKEND (con cobertura; sin branch.name en Community) ---
     stage('SonarQube Analysis - Backend (con cobertura)') {
       steps {
         script {
           def scannerHome = tool 'SonarScanner'
           withSonarQubeEnv("${SONARQUBE_ENV}") {
             withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
-              dir('backend') {
-                sh """
-                  export PATH="${scannerHome}/bin:\\$PATH"
-                  sonar-scanner \
-                    -Dsonar.token=\\$SONAR_TOKEN \
-                    -Dsonar.branch.name=${env.BRANCH_NAME}
-                """
+              // añade el bin del scanner al PATH sin interpolar secretos en el 'sh'
+              withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
+                dir('backend') {
+                  sh 'sonar-scanner -Dsonar.token=$SONAR_TOKEN'
+                }
               }
             }
           }
@@ -72,11 +71,12 @@ pipeline {
       steps {
         timeout(time: 10, unit: 'MINUTES') {
           waitForQualityGate abortPipeline: true
-          echo "Quality Gate BACKEND OK para ${env.BRANCH_NAME}"
+          echo "Quality Gate BACKEND OK"
         }
       }
     }
 
+    // --- SONAR FRONTEND (sin cobertura; sin branch.name en Community) ---
     stage('SonarQube Analysis - Frontend (sin cobertura)') {
       when { expression { fileExists('sonar-project.properties') && fileExists('package.json') } }
       steps {
@@ -84,12 +84,9 @@ pipeline {
           def scannerHome = tool 'SonarScanner'
           withSonarQubeEnv("${SONARQUBE_ENV}") {
             withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
-              sh """
-                export PATH="${scannerHome}/bin:\\$PATH"
-                sonar-scanner \
-                  -Dsonar.token=\\$SONAR_TOKEN \
-                  -Dsonar.branch.name=${env.BRANCH_NAME}
-              """
+              withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
+                sh 'sonar-scanner -Dsonar.token=$SONAR_TOKEN'
+              }
             }
           }
         }
@@ -101,7 +98,7 @@ pipeline {
       steps {
         timeout(time: 10, unit: 'MINUTES') {
           waitForQualityGate abortPipeline: true
-          echo "Quality Gate FRONTEND OK para ${env.BRANCH_NAME}"
+          echo "Quality Gate FRONTEND OK"
         }
       }
     }
