@@ -3,7 +3,7 @@ package com.unis.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "ASEGURADORA_CONEXION", schema = "C##PROYECTO")
+@Table(name = "ASEGURADORA_CONEXION")
 public class AseguradoraConexion {
 
     @Id
