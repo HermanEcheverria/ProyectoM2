@@ -232,7 +232,7 @@ pipeline {
     failure {
       script {
         try {
-          mail to: 'hecheverria@unis.edu.gt',
+          mail to: 'hecheverria@unis.edu.gt,jflores@unis.edu.gt',
                subject: "Falló pipeline en rama ${env.BRANCH_NAME}",
                body: "El pipeline falló en la etapa ${env.STAGE_NAME}. Revisar Jenkins."
         } catch (e) { echo "No se pudo enviar correo: ${e}" }
@@ -241,7 +241,7 @@ pipeline {
     unstable {
       script {
         try {
-          mail to: 'hecheverria@unis.edu.gt',
+          mail to: 'hecheverria@unis.edu.gt,jflores@unis.edu.gt',
                subject: "Pipeline UNSTABLE en ${env.BRANCH_NAME}",
                body: "El pipeline quedó UNSTABLE en la etapa ${env.STAGE_NAME}. Revisar Jenkins."
         } catch (e) { echo "No se pudo enviar correo: ${e}" }
