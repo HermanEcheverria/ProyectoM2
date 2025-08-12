@@ -173,4 +173,44 @@ pipeline {
       }
     }
   }
+stage('Deploy DEV') {
+  when { branch 'dev' }
+  steps {
+    sh '''
+      set -euxo pipefail
+      cd "$WORKSPACE/deploy"
+      docker network inspect m2-dev-net >/dev/null 2>&1 || docker network create m2-dev-net
+      docker compose -p m2dev -f docker-compose.dev.yml up -d --build --remove-orphans
+    '''
+  }
+}
+
+stage('Deploy UAT') {
+  when { branch 'uat' }
+  steps {
+    sh '''
+      set -euxo pipefail
+      cd "$WORKSPACE/deploy"
+      docker network inspect m2-uat-net >/dev/null 2>&1 || docker network create m2-uat-net
+      docker compose -p m2uat -f docker-compose.uat.yml up -d --build --remove-orphans
+    '''
+  }
+}
+
+stage('Deploy PROD') {
+  when { anyOf { branch 'prod';} } 
+  steps {
+    sh '''
+      set -euxo pipefail
+      cd "$WORKSPACE/deploy"
+      docker network inspect m2-prod-net >/dev/null 2>&1 || docker network create m2-prod-net
+      docker compose -p m2prod -f docker-compose.prod.yml up -d --build --remove-orphans
+    '''
+  }
+}
+
+
+
+
+
 }
