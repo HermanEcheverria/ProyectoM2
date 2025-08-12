@@ -49,38 +49,32 @@ pipeline {
     }
 
     stage('SonarQube Analysis - Backend (con cobertura)') {
+      when {
+        expression { ['dev','uat','prod','main','master'].contains(env.BRANCH_NAME ?: 'prod') }
+      }
       steps {
         script {
           def scannerHome = tool 'SonarScanner'
           withSonarQubeEnv("${SONARQUBE_ENV}") {
             withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
               withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
-                // evita ambigüedad de report-task.txt
                 sh 'rm -rf .scannerwork backend/.scannerwork || true'
                 dir('backend') {
-                  def branchSafe = (env.BRANCH_NAME ?: 'local').replaceAll('[^A-Za-z0-9_\\-\\.:]', '-')
-                  def key   = "${PROJECT_NAME}-backend-${branchSafe}"
-                  def pname = "${PROJECT_NAME} :: Backend [${env.BRANCH_NAME}]"
-                  withEnv(["SONAR_PROJECT_KEY=${key}", "SONAR_PROJECT_NAME=${pname}"]) {
-                    // análisis
-                    sh 'sonar-scanner -Dsonar.token=$SONAR_TOKEN -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.projectName="$SONAR_PROJECT_NAME"'
+                  def raw = env.BRANCH_NAME ?: 'prod'
+                  def targetEnv = (raw in ['main','master']) ? 'prod' : raw   // mapear main/master → prod
+                  def key   = "${PROJECT_NAME}-backend-${targetEnv}"
+                  def pname = "${PROJECT_NAME} :: Backend [${targetEnv}]"
 
-                    // --- CE: renombrar rama principal a dev/uat/main para que la UI muestre la rama correcta ---
+                  withEnv(["SONAR_PROJECT_KEY=${key}", "SONAR_PROJECT_NAME=${pname}", "TARGET_ENV=${targetEnv}"]) {
                     sh '''
-                      TARGET="${BRANCH_NAME:-main}"
-                      case "$TARGET" in
-                        dev|uat|main) ;;
-                        *) TARGET="main" ;;
-                      esac
-                      if [ "$TARGET" != "main" ]; then
-                        echo "Renombrando rama principal de Sonar a: $TARGET ..."
-                        code=$(curl -s -o /tmp/rename_backend.json -w "%{http_code}" -u $SONAR_TOKEN: \
-                          -X POST "$SONAR_HOST_URL/api/project_branches/rename" \
-                          --data-urlencode "project=$SONAR_PROJECT_KEY" \
-                          --data-urlencode "name=$TARGET")
-                        echo "HTTP $code"
-                        [ "$code" -lt 400 ] || (echo "WARN: rename branch falló (backend)"; cat /tmp/rename_backend.json || true)
+                      EXTRA=""
+                      if [ "$TARGET_ENV" = "prod" ]; then
+                        VER=$(git describe --tags --always 2>/dev/null || echo "$BUILD_NUMBER")
+                        EXTRA="-Dsonar.projectVersion=$VER"
                       fi
+                      sonar-scanner -Dsonar.token=$SONAR_TOKEN \
+                                    -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+                                    -Dsonar.projectName="$SONAR_PROJECT_NAME" $EXTRA
                     '''
                   }
                 }
@@ -92,6 +86,9 @@ pipeline {
     }
 
     stage('Quality Gate - Backend') {
+      when {
+        expression { ['dev','uat','prod','main','master'].contains(env.BRANCH_NAME ?: 'prod') }
+      }
       steps {
         dir('backend') {
           timeout(time: 10, unit: 'MINUTES') {
@@ -103,7 +100,12 @@ pipeline {
     }
 
     stage('SonarQube Analysis - Frontend (sin cobertura)') {
-      when { expression { fileExists('sonar-project.properties') && fileExists('package.json') } }
+      when {
+        allOf {
+          expression { fileExists('sonar-project.properties') && fileExists('package.json') }
+          expression { ['dev','uat','prod','main','master'].contains(env.BRANCH_NAME ?: 'prod') }
+        }
+      }
       steps {
         script {
           def scannerHome = tool 'SonarScanner'
@@ -111,29 +113,21 @@ pipeline {
             withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
               withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
                 sh 'rm -rf .scannerwork backend/.scannerwork || true'
-                def branchSafe = (env.BRANCH_NAME ?: 'local').replaceAll('[^A-Za-z0-9_\\-\\.:]', '-')
-                def key   = "${PROJECT_NAME}-frontend-${branchSafe}"
-                def pname = "${PROJECT_NAME} :: Frontend [${env.BRANCH_NAME}]"
-                withEnv(["SONAR_PROJECT_KEY=${key}", "SONAR_PROJECT_NAME=${pname}"]) {
-                  // análisis
-                  sh 'sonar-scanner -Dsonar.token=$SONAR_TOKEN -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.projectName="$SONAR_PROJECT_NAME"'
+                def raw = env.BRANCH_NAME ?: 'prod'
+                def targetEnv = (raw in ['main','master']) ? 'prod' : raw
+                def key   = "${PROJECT_NAME}-frontend-${targetEnv}"
+                def pname = "${PROJECT_NAME} :: Frontend [${targetEnv}]"
 
-                  // --- CE: renombrar rama principal a dev/uat/main ---
+                withEnv(["SONAR_PROJECT_KEY=${key}", "SONAR_PROJECT_NAME=${pname}", "TARGET_ENV=${targetEnv}"]) {
                   sh '''
-                    TARGET="${BRANCH_NAME:-main}"
-                    case "$TARGET" in
-                      dev|uat|main) ;;
-                      *) TARGET="main" ;;
-                    esac
-                    if [ "$TARGET" != "main" ]; then
-                      echo "Renombrando rama principal de Sonar a: $TARGET ..."
-                      code=$(curl -s -o /tmp/rename_frontend.json -w "%{http_code}" -u $SONAR_TOKEN: \
-                        -X POST "$SONAR_HOST_URL/api/project_branches/rename" \
-                        --data-urlencode "project=$SONAR_PROJECT_KEY" \
-                        --data-urlencode "name=$TARGET")
-                      echo "HTTP $code"
-                      [ "$code" -lt 400 ] || (echo "WARN: rename branch falló (frontend)"; cat /tmp/rename_frontend.json || true)
+                    EXTRA=""
+                    if [ "$TARGET_ENV" = "prod" ]; then
+                      VER=$(git describe --tags --always 2>/dev/null || echo "$BUILD_NUMBER")
+                      EXTRA="-Dsonar.projectVersion=$VER"
                     fi
+                    sonar-scanner -Dsonar.token=$SONAR_TOKEN \
+                                  -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+                                  -Dsonar.projectName="$SONAR_PROJECT_NAME" $EXTRA
                   '''
                 }
               }
@@ -144,7 +138,12 @@ pipeline {
     }
 
     stage('Quality Gate - Frontend') {
-      when { expression { fileExists('sonar-project.properties') && fileExists('package.json') } }
+      when {
+        allOf {
+          expression { fileExists('sonar-project.properties') && fileExists('package.json') }
+          expression { ['dev','uat','prod','main','master'].contains(env.BRANCH_NAME ?: 'prod') }
+        }
+      }
       steps {
         timeout(time: 10, unit: 'MINUTES') {
           waitForQualityGate abortPipeline: true
@@ -161,9 +160,7 @@ pipeline {
           mail to: 'hecheverria@unis.edu.gt',
                subject: "Falló pipeline en rama ${env.BRANCH_NAME}",
                body: "El pipeline falló en la etapa ${env.STAGE_NAME}. Revisar Jenkins."
-        } catch (e) {
-          echo "No se pudo enviar correo: ${e}"
-        }
+        } catch (e) { echo "No se pudo enviar correo: ${e}" }
       }
     }
     unstable {
@@ -172,9 +169,7 @@ pipeline {
           mail to: 'hecheverria@unis.edu.gt',
                subject: "Pipeline UNSTABLE en ${env.BRANCH_NAME}",
                body: "El pipeline quedó UNSTABLE en la etapa ${env.STAGE_NAME}. Revisar Jenkins."
-        } catch (e) {
-          echo "No se pudo enviar correo: ${e}"
-        }
+        } catch (e) { echo "No se pudo enviar correo: ${e}" }
       }
     }
   }
