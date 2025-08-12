@@ -1,2 +1,2 @@
-const API_URL = `${window.location.protocol}//${window.location.hostname}:8080`;
+const API_URL = `${window.location.origin}/api`;
 export default API_URL;

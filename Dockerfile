@@ -1,30 +1,11 @@
-# Etapa 1: Build
-FROM node:20 AS builder
-
+FROM node:20-alpine AS build
 WORKDIR /app
-
-# Copiamos archivos necesarios para instalar y construir
 COPY package*.json ./
-COPY tsconfig*.json ./
-COPY vite.config.* ./
-
-# Copiamos el código fuente
-COPY src ./src
-COPY public ./public
-COPY index.html ./
-
-# Instalamos dependencias y construimos
-RUN npm install
+RUN npm ci
+COPY . .
 RUN npm run build
 
-# Etapa 2: Producción con Nginx
 FROM nginx:alpine
-
-# Copiamos archivos de producción desde la etapa de build
-COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Exponemos el puerto que usará Nginx
+COPY deploy/nginx.default.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
-
-# Comando por defecto
-CMD ["nginx", "-g", "daemon off;"]
