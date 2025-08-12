@@ -1,6 +1,12 @@
 pipeline {
   agent any
 
+  options {
+    timestamps()
+    ansiColor('xterm')
+    disableConcurrentBuilds()
+  }
+
   environment {
     PROJECT_NAME  = 'proyecto-m2'
     SONARQUBE_ENV = 'SonarQubeServer'
@@ -66,11 +72,15 @@ pipeline {
                   def pname = "${PROJECT_NAME} :: Backend [${targetEnv}]"
                   withEnv(["SONAR_PROJECT_KEY=${key}", "SONAR_PROJECT_NAME=${pname}", "TARGET_ENV=${targetEnv}"]) {
                     sh '''
+                      # asegurar tags para versionado en prod
+                      git fetch --tags --force || true
+
                       EXTRA=""
                       if [ "$TARGET_ENV" = "prod" ]; then
                         VER=$(git describe --tags --always 2>/dev/null || echo "$BUILD_NUMBER")
                         EXTRA="-Dsonar.projectVersion=$VER"
                       fi
+
                       sonar-scanner -Dsonar.token=$SONAR_TOKEN \
                                     -Dsonar.projectKey=$SONAR_PROJECT_KEY \
                                     -Dsonar.projectName="$SONAR_PROJECT_NAME" $EXTRA
@@ -118,11 +128,14 @@ pipeline {
                 def pname = "${PROJECT_NAME} :: Frontend [${targetEnv}]"
                 withEnv(["SONAR_PROJECT_KEY=${key}", "SONAR_PROJECT_NAME=${pname}", "TARGET_ENV=${targetEnv}"]) {
                   sh '''
+                    git fetch --tags --force || true
+
                     EXTRA=""
                     if [ "$TARGET_ENV" = "prod" ]; then
                       VER=$(git describe --tags --always 2>/dev/null || echo "$BUILD_NUMBER")
                       EXTRA="-Dsonar.projectVersion=$VER"
                     fi
+
                     sonar-scanner -Dsonar.token=$SONAR_TOKEN \
                                   -Dsonar.projectKey=$SONAR_PROJECT_KEY \
                                   -Dsonar.projectName="$SONAR_PROJECT_NAME" $EXTRA
@@ -150,83 +163,70 @@ pipeline {
       }
     }
 
-
     stage('Deploy DEV') {
-  when { branch 'dev' }
-  steps {
-    sh '''
-      set -euxo pipefail
-      cd "$WORKSPACE/deploy"
+      when { branch 'dev' }
+      steps {
+        sh '''
+          set -euxo pipefail
+          cd "$WORKSPACE/deploy"
 
-      # Detecta compose v2/v1
-      if docker compose version >/dev/null 2>&1; then CMD="docker compose"; else CMD="docker-compose"; fi
+          # Detecta compose v2/v1
+          if docker compose version >/dev/null 2>&1; then CMD="docker compose"; else CMD="docker-compose"; fi
 
-      docker network inspect m2-dev-net >/dev/null 2>&1 || docker network create m2-dev-net
+          docker network inspect m2-dev-net >/dev/null 2>&1 || docker network create m2-dev-net
 
-      # --- SOLO si en tu YAML tienes container_name: ---
-      docker rm -f m2-backend-dev 2>/dev/null || true
-      docker rm -f m2-frontend-dev 2>/dev/null || true
+          # Tira el stack previo y limpia huérfanos (sin borrar volúmenes)
+          $CMD -p m2dev -f docker-compose.dev.yml down --remove-orphans || true
 
-      # Tira el stack previo y limpia huérfanos (NO borra volúmenes)
-      $CMD -p m2dev -f docker-compose.dev.yml down --remove-orphans || true
+          # Construye y recrea contenedores
+          $CMD -p m2dev -f docker-compose.dev.yml build --pull
+          $CMD -p m2dev -f docker-compose.dev.yml up -d --force-recreate
 
-      # Construye y recrea contenedores
-      $CMD -p m2dev -f docker-compose.dev.yml build --pull
-      $CMD -p m2dev -f docker-compose.dev.yml up -d --force-recreate
+          $CMD -p m2dev ps
+        '''
+      }
+    }
 
-      $CMD -p m2dev ps
-    '''
+    stage('Deploy UAT') {
+      when { branch 'uat' }
+      steps {
+        sh '''
+          set -euxo pipefail
+          cd "$WORKSPACE/deploy"
+
+          if docker compose version >/dev/null 2>&1; then CMD="docker compose"; else CMD="docker-compose"; fi
+
+          docker network inspect m2-uat-net >/dev/null 2>&1 || docker network create m2-uat-net
+
+          $CMD -p m2uat -f docker-compose.uat.yml down --remove-orphans || true
+          $CMD -p m2uat -f docker-compose.uat.yml build --pull
+          $CMD -p m2uat -f docker-compose.uat.yml up -d --force-recreate
+
+          $CMD -p m2uat ps
+        '''
+      }
+    }
+
+    stage('Deploy PROD') {
+      when { anyOf { branch 'prod'; branch 'main'; branch 'master' } }
+      steps {
+        sh '''
+          set -euxo pipefail
+          cd "$WORKSPACE/deploy"
+
+          if docker compose version >/dev/null 2>&1; then CMD="docker compose"; else CMD="docker-compose"; fi
+
+          docker network inspect m2-prod-net >/dev/null 2>&1 || docker network create m2-prod-net
+
+          $CMD -p m2prod -f docker-compose.prod.yml down --remove-orphans || true
+          $CMD -p m2prod -f docker-compose.prod.yml build --pull
+          $CMD -p m2prod -f docker-compose.prod.yml up -d --force-recreate
+
+          $CMD -p m2prod ps
+        '''
+      }
+    }
   }
-}
-
-stage('Deploy UAT') {
-  when { branch 'uat' }
-  steps {
-    sh '''
-      set -euxo pipefail
-      cd "$WORKSPACE/deploy"
-
-      if docker compose version >/dev/null 2.>&1; then CMD="docker compose"; else CMD="docker-compose"; fi
-
-      docker network inspect m2-uat-net >/dev/null 2>&1 || docker network create m2-uat-net
-
-      # --- SOLO si en tu YAML tienes container_name: ---
-      docker rm -f m2-backend-uat 2>/dev/null || true
-      docker rm -f m2-frontend-uat 2>/dev/null || true
-
-      $CMD -p m2uat -f docker-compose.uat.yml down --remove-orphans || true
-      $CMD -p m2uat -f docker-compose.uat.yml build --pull
-      $CMD -p m2uat -f docker-compose.uat.yml up -d --force-recreate
-
-      $CMD -p m2uat ps
-    '''
-  }
-}
-
-stage('Deploy PROD') {
-  when { anyOf { branch 'prod'; branch 'main'; branch 'master' } }
-  steps {
-    sh '''
-      set -euxo pipefail
-      cd "$WORKSPACE/deploy"
-
-      if docker compose version >/dev/null 2>&1; then CMD="docker compose"; else CMD="docker-compose"; fi
-
-      docker network inspect m2-prod-net >/dev/null 2>&1 || docker network create m2-prod-net
-
-      # --- SOLO si en tu YAML tienes container_name: ---
-      docker rm -f m2-backend-prod 2>/dev/null || true
-      docker rm -f m2-frontend-prod 2>/dev/null || true
-
-      $CMD -p m2prod -f docker-compose.prod.yml down --remove-orphans || true
-      $CMD -p m2prod -f docker-compose.prod.yml build --pull
-      $CMD -p m2prod -f docker-compose.prod.yml up -d --force-recreate
-
-      $CMD -p m2prod ps
-    '''
-  }
-}
-
 
   post {
     failure {
