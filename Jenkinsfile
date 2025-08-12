@@ -61,10 +61,9 @@ pipeline {
                 sh 'rm -rf .scannerwork backend/.scannerwork || true'
                 dir('backend') {
                   def raw = env.BRANCH_NAME ?: 'prod'
-                  def targetEnv = (raw in ['main','master']) ? 'prod' : raw   // mapear main/master → prod
+                  def targetEnv = (raw in ['main','master']) ? 'prod' : raw
                   def key   = "${PROJECT_NAME}-backend-${targetEnv}"
                   def pname = "${PROJECT_NAME} :: Backend [${targetEnv}]"
-
                   withEnv(["SONAR_PROJECT_KEY=${key}", "SONAR_PROJECT_NAME=${pname}", "TARGET_ENV=${targetEnv}"]) {
                     sh '''
                       EXTRA=""
@@ -117,7 +116,6 @@ pipeline {
                 def targetEnv = (raw in ['main','master']) ? 'prod' : raw
                 def key   = "${PROJECT_NAME}-frontend-${targetEnv}"
                 def pname = "${PROJECT_NAME} :: Frontend [${targetEnv}]"
-
                 withEnv(["SONAR_PROJECT_KEY=${key}", "SONAR_PROJECT_NAME=${pname}", "TARGET_ENV=${targetEnv}"]) {
                   sh '''
                     EXTRA=""
@@ -151,7 +149,48 @@ pipeline {
         }
       }
     }
-  }
+
+
+    stage('Deploy DEV') {
+      when { branch 'dev' }
+      steps {
+        sh '''
+          set -euxo pipefail
+          cd "$WORKSPACE/deploy"
+          docker network inspect m2-dev-net >/dev/null 2>&1 || docker network create m2-dev-net
+          # compatibilidad compose v1/v2
+          if docker compose version >/dev/null 2>&1; then CMD="docker compose"; else CMD="docker-compose"; fi
+          $CMD -p m2dev -f docker-compose.dev.yml up -d --build --remove-orphans
+        '''
+      }
+    }
+
+    stage('Deploy UAT') {
+      when { branch 'uat' }
+      steps {
+        sh '''
+          set -euxo pipefail
+          cd "$WORKSPACE/deploy"
+          docker network inspect m2-uat-net >/dev/null 2>&1 || docker network create m2-uat-net
+          if docker compose version >/dev/null 2>&1; then CMD="docker compose"; else CMD="docker-compose"; fi
+          $CMD -p m2uat -f docker-compose.uat.yml up -d --build --remove-orphans
+        '''
+      }
+    }
+
+    stage('Deploy PROD') {
+      when { anyOf { branch 'prod'; branch 'main'; branch 'master' } }
+      steps {
+        sh '''
+          set -euxo pipefail
+          cd "$WORKSPACE/deploy"
+          docker network inspect m2-prod-net >/dev/null 2>&1 || docker network create m2-prod-net
+          if docker compose version >/dev/null 2>&1; then CMD="docker compose"; else CMD="docker-compose"; fi
+          $CMD -p m2prod -f docker-compose.prod.yml up -d --build --remove-orphans
+        '''
+      }
+    }
+  } 
 
   post {
     failure {
@@ -173,44 +212,4 @@ pipeline {
       }
     }
   }
-stage('Deploy DEV') {
-  when { branch 'dev' }
-  steps {
-    sh '''
-      set -euxo pipefail
-      cd "$WORKSPACE/deploy"
-      docker network inspect m2-dev-net >/dev/null 2>&1 || docker network create m2-dev-net
-      docker compose -p m2dev -f docker-compose.dev.yml up -d --build --remove-orphans
-    '''
-  }
-}
-
-stage('Deploy UAT') {
-  when { branch 'uat' }
-  steps {
-    sh '''
-      set -euxo pipefail
-      cd "$WORKSPACE/deploy"
-      docker network inspect m2-uat-net >/dev/null 2>&1 || docker network create m2-uat-net
-      docker compose -p m2uat -f docker-compose.uat.yml up -d --build --remove-orphans
-    '''
-  }
-}
-
-stage('Deploy PROD') {
-  when { anyOf { branch 'prod';} } 
-  steps {
-    sh '''
-      set -euxo pipefail
-      cd "$WORKSPACE/deploy"
-      docker network inspect m2-prod-net >/dev/null 2>&1 || docker network create m2-prod-net
-      docker compose -p m2prod -f docker-compose.prod.yml up -d --build --remove-orphans
-    '''
-  }
-}
-
-
-
-
-
 }
