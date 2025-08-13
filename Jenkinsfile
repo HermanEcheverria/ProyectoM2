@@ -229,23 +229,112 @@ pipeline {
   }
 
   post {
-    failure {
-      script {
-        try {
-          mail to: 'hecheverria@unis.edu.gt,jflores@unis.edu.gt',
-               subject: "Falló pipeline en rama ${env.BRANCH_NAME}",
-               body: "El pipeline falló en la etapa ${env.STAGE_NAME}. Revisar Jenkins."
-        } catch (e) { echo "No se pudo enviar correo: ${e}" }
-      }
-    }
-    unstable {
-      script {
-        try {
-          mail to: 'hecheverria@unis.edu.gt,jflores@unis.edu.gt',
-               subject: "Pipeline UNSTABLE en ${env.BRANCH_NAME}",
-               body: "El pipeline quedó UNSTABLE en la etapa ${env.STAGE_NAME}. Revisar Jenkins."
-        } catch (e) { echo "No se pudo enviar correo: ${e}" }
+  failure {
+    script {
+      try {
+        // Hora local (Guatemala)
+        def tz  = TimeZone.getTimeZone('America/Guatemala')
+        def now = new Date().format("yyyy-MM-dd HH:mm:ss z", tz)
+
+        // Rama -> entorno (main/master se mapean a prod)
+        def raw       = env.BRANCH_NAME ?: 'prod'
+        def targetEnv = (['main','master'].contains(raw)) ? 'prod' : raw
+
+        // Datos de build
+        def jobName  = env.JOB_NAME
+        def buildNum = env.BUILD_NUMBER
+        def buildURL = (env.RUN_DISPLAY_URL ?: env.BUILD_URL ?: '')  // BlueOcean o clásico
+        def duration = (currentBuild.durationString ?: '').replace(' and counting','')
+
+        // Datos Git (no rompas si falla)
+        def commit   = sh(script: 'git rev-parse --short HEAD || true', returnStdout: true).trim()
+        def author   = sh(script: "git --no-pager show -s --format='%an <%ae>' HEAD || true", returnStdout: true).trim()
+        def message  = sh(script: "git --no-pager show -s --format='%s' HEAD || true", returnStdout: true).trim()
+
+        // PR info (si viene de PR)
+        def prURL = env.CHANGE_URL ?: '-'
+        def prID  = env.CHANGE_ID  ?: '-'
+
+        def subject = "❌ Falló pipeline | ${jobName} #${buildNum} | rama ${raw} (${targetEnv}) | etapa ${env.STAGE_NAME}"
+        def body = """\
+Fecha/Hora:  ${now}
+Resultado:   FAILURE
+Job:         ${jobName}
+Build:       #${buildNum}
+Rama:        ${raw}   (entorno: ${targetEnv})
+Etapa:       ${env.STAGE_NAME}
+Duración:    ${duration}
+Nodo:        ${env.NODE_NAME}
+
+Commit:      ${commit}
+Autor:       ${author}
+Mensaje:     ${message}
+
+Pull Request: ${prURL} (ID: ${prID})
+Consola:     ${buildURL}console
+Artefactos:  ${buildURL}artifact/
+
+-- Jenkins auto-notificación
+"""
+        mail to: 'hecheverria@unis.edu.gt,jflores@unis.edu.gt',
+             subject: subject,
+             body: body
+      } catch (e) {
+        echo "No se pudo enviar correo (failure): ${e}"
       }
     }
   }
+
+  unstable {
+    script {
+      try {
+        def tz  = TimeZone.getTimeZone('America/Guatemala')
+        def now = new Date().format("yyyy-MM-dd HH:mm:ss z", tz)
+
+        def raw       = env.BRANCH_NAME ?: 'prod'
+        def targetEnv = (['main','master'].contains(raw)) ? 'prod' : raw
+
+        def jobName  = env.JOB_NAME
+        def buildNum = env.BUILD_NUMBER
+        def buildURL = (env.RUN_DISPLAY_URL ?: env.BUILD_URL ?: '')
+        def duration = (currentBuild.durationString ?: '').replace(' and counting','')
+
+        def commit   = sh(script: 'git rev-parse --short HEAD || true', returnStdout: true).trim()
+        def author   = sh(script: "git --no-pager show -s --format='%an <%ae>' HEAD || true", returnStdout: true).trim()
+        def message  = sh(script: "git --no-pager show -s --format='%s' HEAD || true", returnStdout: true).trim()
+
+        def prURL = env.CHANGE_URL ?: '-'
+        def prID  = env.CHANGE_ID  ?: '-'
+
+        def subject = "⚠️ Pipeline UNSTABLE | ${jobName} #${buildNum} | rama ${raw} (${targetEnv}) | etapa ${env.STAGE_NAME}"
+        def body = """\
+Fecha/Hora:  ${now}
+Resultado:   UNSTABLE
+Job:         ${jobName}
+Build:       #${buildNum}
+Rama:        ${raw}   (entorno: ${targetEnv})
+Etapa:       ${env.STAGE_NAME}
+Duración:    ${duration}
+Nodo:        ${env.NODE_NAME}
+
+Commit:      ${commit}
+Autor:       ${author}
+Mensaje:     ${message}
+
+Pull Request: ${prURL} (ID: ${prID})
+Consola:     ${buildURL}console
+Artefactos:  ${buildURL}artifact/
+
+-- Jenkins auto-notificación
+"""
+        mail to: 'hecheverria@unis.edu.gt,jflores@unis.edu.gt',
+             subject: subject,
+             body: body
+      } catch (e) {
+        echo "No se pudo enviar correo (unstable): ${e}"
+      }
+    }
+  }
+}
+
 }
