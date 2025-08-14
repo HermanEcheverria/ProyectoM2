@@ -166,11 +166,14 @@ public class ReporteResource {
         int rownum = 0;
 
         // Encabezados en Excel
-        Row r1 = sheet.createRow(rownum++);
+        Row r1 = sheet.createRow(rownum);
+        rownum++;
         r1.createCell(0).setCellValue("Reporte generado el: " + LocalDateTime.now());
-        Row r2 = sheet.createRow(rownum++);
+        Row r2 = sheet.createRow(rownum);
+        rownum++;
         r2.createCell(0).setCellValue("Usuario: " + usuario);
-        Row r3 = sheet.createRow(rownum++);
+        Row r3 = sheet.createRow(rownum);
+        rownum++;
         r3.createCell(0).setCellValue("Parámetros: " + doctorTxt +
                 ", Fecha Inicio = " + fechaInicio +
                 ", Fecha Fin = " + fechaFin +
@@ -181,14 +184,16 @@ public class ReporteResource {
             Object primer = reporte.get(0);
             java.lang.reflect.Field[] fields = primer.getClass().getDeclaredFields();
 
-            Row hdr = sheet.createRow(rownum++);
+            Row hdr = sheet.createRow(rownum);
+            rownum++;
             for (int i = 0; i < fields.length; i++) {
                 fields[i].setAccessible(true);
                 hdr.createCell(i).setCellValue(fields[i].getName());
             }
 
             for (Object obj : reporte) {
-                Row row = sheet.createRow(rownum++);
+                Row row = sheet.createRow(rownum);
+                rownum++;
                 for (int i = 0; i < fields.length; i++) {
                     Object val;
                     try {
@@ -203,7 +208,8 @@ public class ReporteResource {
                 sheet.autoSizeColumn(i);
             }
         } else {
-            Row nr = sheet.createRow(rownum++);
+            Row nr = sheet.createRow(rownum);
+            
             nr.createCell(0).setCellValue("No se encontraron datos para los parámetros seleccionados.");
         }
 
