@@ -252,7 +252,7 @@ pipeline {
         if (buildRoot && !buildRoot.endsWith("/")) { buildRoot += "/" }
         def displayURL = (env.RUN_DISPLAY_URL ?: buildRoot) 
         def consoleURL = buildRoot + "consoleFull"
-        def artifactURL= buildRoot + "artifact/"
+        
 
         
         def commit  = sh(script: 'git rev-parse --short HEAD || true', returnStdout: true).trim()
@@ -281,7 +281,6 @@ pipeline {
                         Pull Request: ${prURL} (ID: ${prID})
                         Build UI:     ${displayURL}
                         Consola:      ${consoleURL}
-                        Artefactos:   ${artifactURL}
 
                         -- Jenkins auto-notificación
                         """
@@ -311,7 +310,7 @@ pipeline {
         if (buildRoot && !buildRoot.endsWith("/")) { buildRoot += "/" }
         def displayURL = (env.RUN_DISPLAY_URL ?: buildRoot)
         def consoleURL = buildRoot + "consoleFull"
-        def artifactURL= buildRoot + "artifact/"
+        
 
         def commit  = sh(script: 'git rev-parse --short HEAD || true', returnStdout: true).trim()
         def author  = sh(script: "git --no-pager show -s --format='%an <%ae>' HEAD || true", returnStdout: true).trim()
@@ -338,7 +337,7 @@ pipeline {
                         Pull Request: ${prURL} (ID: ${prID})
                         Build UI:     ${displayURL}
                         Consola:      ${consoleURL}
-                        Artefactos:   ${artifactURL}
+                        
 
                         -- Jenkins auto-notificación
                         """
