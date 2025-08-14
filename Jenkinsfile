@@ -228,57 +228,64 @@ pipeline {
     }
   }
 
-  post {
+ post {
   failure {
     script {
       try {
-        // Hora local (Guatemala)
+        
         def tz  = TimeZone.getTimeZone('America/Guatemala')
         def now = new Date().format("yyyy-MM-dd HH:mm:ss z", tz)
 
-        // Rama -> entorno (main/master se mapean a prod)
+        
         def raw       = env.BRANCH_NAME ?: 'prod'
-        def targetEnv = (['main','master'].contains(raw)) ? 'prod' : raw
+        def targetEnv = (['main'].contains(raw)) ? 'prod' : raw
+        def stageName = (env.STAGE_NAME ?: 'N/A')
 
-        // Datos de build
+      
         def jobName  = env.JOB_NAME
         def buildNum = env.BUILD_NUMBER
-        def buildURL = (env.RUN_DISPLAY_URL ?: env.BUILD_URL ?: '')  // BlueOcean o clásico
         def duration = (currentBuild.durationString ?: '').replace(' and counting','')
+        def nodeName = (env.NODE_NAME ?: 'N/A')
 
-        // Datos Git (no rompas si falla)
-        def commit   = sh(script: 'git rev-parse --short HEAD || true', returnStdout: true).trim()
-        def author   = sh(script: "git --no-pager show -s --format='%an <%ae>' HEAD || true", returnStdout: true).trim()
-        def message  = sh(script: "git --no-pager show -s --format='%s' HEAD || true", returnStdout: true).trim()
+        
+        def buildRoot  = (env.BUILD_URL ?: "").trim()      
+        if (buildRoot && !buildRoot.endsWith("/")) { buildRoot += "/" }
+        def displayURL = (env.RUN_DISPLAY_URL ?: buildRoot) 
+        def consoleURL = buildRoot + "consoleFull"
+        def artifactURL= buildRoot + "artifact/"
 
-        // PR info (si viene de PR)
+        
+        def commit  = sh(script: 'git rev-parse --short HEAD || true', returnStdout: true).trim()
+        def author  = sh(script: "git --no-pager show -s --format='%an <%ae>' HEAD || true", returnStdout: true).trim()
+        def message = sh(script: "git --no-pager show -s --format='%s' HEAD || true", returnStdout: true).trim()
+
+        
         def prURL = env.CHANGE_URL ?: '-'
         def prID  = env.CHANGE_ID  ?: '-'
 
-        def subject = "❌ Falló pipeline | ${jobName} #${buildNum} | rama ${raw} (${targetEnv}) | etapa ${env.STAGE_NAME}"
+        def subject = "Falló pipeline | ${jobName} #${buildNum} | rama ${raw} (${targetEnv}) | etapa ${stageName}"
         def body = """\
-Fecha/Hora:  ${now}
-Resultado:   FAILURE
-Job:         ${jobName}
-Build:       #${buildNum}
-Rama:        ${raw}   (entorno: ${targetEnv})
-Etapa:       ${env.STAGE_NAME}
-Duración:    ${duration}
-Nodo:        ${env.NODE_NAME}
+                        Fecha/Hora:   ${now}
+                        Resultado:    FAILURE
+                        Job:          ${jobName}
+                        Build:        #${buildNum}
+                        Rama:         ${raw}   (entorno: ${targetEnv})
+                        Etapa:        ${stageName}
+                        Duración:     ${duration}
+                        Nodo:         ${nodeName}
 
-Commit:      ${commit}
-Autor:       ${author}
-Mensaje:     ${message}
+                        Commit:       ${commit}
+                        Autor:        ${author}
+                        Mensaje:      ${message}
 
-Pull Request: ${prURL} (ID: ${prID})
-Consola:     ${buildURL}console
-Artefactos:  ${buildURL}artifact/
+                        Pull Request: ${prURL} (ID: ${prID})
+                        Build UI:     ${displayURL}
+                        Consola:      ${consoleURL}
+                        Artefactos:   ${artifactURL}
 
--- Jenkins auto-notificación
-"""
-        mail to: 'hecheverria@unis.edu.gt,jflores@unis.edu.gt',
-             subject: subject,
-             body: body
+                        -- Jenkins auto-notificación
+                        """
+        mail to: 'hecheverria@unis.edu.gt,jflores@unis.edu.gt', subject: subject, body: body
       } catch (e) {
         echo "No se pudo enviar correo (failure): ${e}"
       }
@@ -293,48 +300,53 @@ Artefactos:  ${buildURL}artifact/
 
         def raw       = env.BRANCH_NAME ?: 'prod'
         def targetEnv = (['main','master'].contains(raw)) ? 'prod' : raw
+        def stageName = (env.STAGE_NAME ?: 'N/A')
 
         def jobName  = env.JOB_NAME
         def buildNum = env.BUILD_NUMBER
-        def buildURL = (env.RUN_DISPLAY_URL ?: env.BUILD_URL ?: '')
         def duration = (currentBuild.durationString ?: '').replace(' and counting','')
+        def nodeName = (env.NODE_NAME ?: 'N/A')
 
-        def commit   = sh(script: 'git rev-parse --short HEAD || true', returnStdout: true).trim()
-        def author   = sh(script: "git --no-pager show -s --format='%an <%ae>' HEAD || true", returnStdout: true).trim()
-        def message  = sh(script: "git --no-pager show -s --format='%s' HEAD || true", returnStdout: true).trim()
+        def buildRoot  = (env.BUILD_URL ?: "").trim()
+        if (buildRoot && !buildRoot.endsWith("/")) { buildRoot += "/" }
+        def displayURL = (env.RUN_DISPLAY_URL ?: buildRoot)
+        def consoleURL = buildRoot + "consoleFull"
+        def artifactURL= buildRoot + "artifact/"
+
+        def commit  = sh(script: 'git rev-parse --short HEAD || true', returnStdout: true).trim()
+        def author  = sh(script: "git --no-pager show -s --format='%an <%ae>' HEAD || true", returnStdout: true).trim()
+        def message = sh(script: "git --no-pager show -s --format='%s' HEAD || true", returnStdout: true).trim()
 
         def prURL = env.CHANGE_URL ?: '-'
         def prID  = env.CHANGE_ID  ?: '-'
 
-        def subject = "⚠️ Pipeline UNSTABLE | ${jobName} #${buildNum} | rama ${raw} (${targetEnv}) | etapa ${env.STAGE_NAME}"
+        def subject = "Pipeline UNSTABLE | ${jobName} #${buildNum} | rama ${raw} (${targetEnv}) | etapa ${stageName}"
         def body = """\
-Fecha/Hora:  ${now}
-Resultado:   UNSTABLE
-Job:         ${jobName}
-Build:       #${buildNum}
-Rama:        ${raw}   (entorno: ${targetEnv})
-Etapa:       ${env.STAGE_NAME}
-Duración:    ${duration}
-Nodo:        ${env.NODE_NAME}
+                        Fecha/Hora:   ${now}
+                        Resultado:    UNSTABLE
+                        Job:          ${jobName}
+                        Build:        #${buildNum}
+                        Rama:         ${raw}   (entorno: ${targetEnv})
+                        Etapa:        ${stageName}
+                        Duración:     ${duration}
+                        Nodo:         ${nodeName}
 
-Commit:      ${commit}
-Autor:       ${author}
-Mensaje:     ${message}
+                        Commit:       ${commit}
+                        Autor:        ${author}
+                        Mensaje:      ${message}
 
-Pull Request: ${prURL} (ID: ${prID})
-Consola:     ${buildURL}console
-Artefactos:  ${buildURL}artifact/
+                        Pull Request: ${prURL} (ID: ${prID})
+                        Build UI:     ${displayURL}
+                        Consola:      ${consoleURL}
+                        Artefactos:   ${artifactURL}
 
--- Jenkins auto-notificación
-"""
-        mail to: 'hecheverria@unis.edu.gt,jflores@unis.edu.gt',
-             subject: subject,
-             body: body
+                        -- Jenkins auto-notificación
+                        """
+        mail to: 'hecheverria@unis.edu.gt,jflores@unis.edu.gt', subject: subject, body: body
       } catch (e) {
         echo "No se pudo enviar correo (unstable): ${e}"
       }
     }
   }
 }
-
 }
