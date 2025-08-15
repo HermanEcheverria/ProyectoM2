@@ -21,6 +21,39 @@ pipeline {
     stage('Checkout') {
       steps { checkout scm }
     }
+
+    stage('Install Frontend deps (root)') {
+      steps {
+        script {
+          nodejs('Node 20') {
+            sh '''
+              if [ -f package.json ]; then
+                echo "Instalando dependencias del front en la raíz..."
+                npm ci --no-audit --no-fund
+              else
+                echo "No hay package.json en la raíz."
+              fi
+            '''
+          }
+        }
+      }
+    }
+
+    stage('Build & Unit Tests (Backend)') {
+      steps {
+        dir('backend') {
+          sh 'mvn -q clean verify -DskipTests=false'
+          sh 'mvn -q jacoco:report'
+          sh '''
+            test -f target/site/jacoco/jacoco.xml || {
+              echo "No se encontró backend/target/site/jacoco/jacoco.xml";
+              exit 1;
+            }
+          '''
+        }
+      }
+    }
+
     stage('SonarQube Analysis - Backend (con cobertura)') {
       when {
         expression { ['dev','uat','prod','main','master'].contains(env.BRANCH_NAME ?: 'prod') }
@@ -130,40 +163,6 @@ pipeline {
       }
     }
 
-
-    stage('Install Frontend deps (root)') {
-      steps {
-        script {
-          nodejs('Node 20') {
-            sh '''
-              if [ -f package.json ]; then
-                echo "Instalando dependencias del front en la raíz..."
-                npm ci --no-audit --no-fund
-              else
-                echo "No hay package.json en la raíz."
-              fi
-            '''
-          }
-        }
-      }
-    }
-
-    stage('Build & Unit Tests (Backend)') {
-      steps {
-        dir('backend') {
-          sh 'mvn -q clean verify -DskipTests=false'
-          sh 'mvn -q jacoco:report'
-          sh '''
-            test -f target/site/jacoco/jacoco.xml || {
-              echo "No se encontró backend/target/site/jacoco/jacoco.xml";
-              exit 1;
-            }
-          '''
-        }
-      }
-    }
-
-    
     stage('Deploy DEV') {
       when { branch 'dev' }
       steps {
