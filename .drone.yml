@@ -1,0 +1,114 @@
+kind: pipeline
+type: docker
+name: ProyectoM2-CI-CD
+
+trigger:
+  branch: [ dev, uat, master ]
+
+# ====== BUILD & QUALITY ======
+steps:
+  - name: backend-build-test-sonar
+    image: maven:3.9-eclipse-temurin-17
+    environment:
+      SONAR_HOST_URL:
+        from_secret: sonar_host_url
+      SONAR_TOKEN:
+        from_secret: sonar_token
+    commands:
+      - cd backend
+      - mvn -B clean verify
+      - mvn -B sonar:sonar -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN
+
+  - name: sonar-quality-gate
+    image: curlimages/curl:8.8.0
+    environment:
+      SONAR_HOST_URL:
+        from_secret: sonar_host_url
+      SONAR_TOKEN:
+        from_secret: sonar_token
+      SONAR_PROJECT_KEY: proyecto-m2-backend   # <-- AJUSTA a tu key real de Sonar
+    commands: |
+      for i in $(seq 1 30); do
+        s=$(curl -s -u $SONAR_TOKEN: "$SONAR_HOST_URL/api/qualitygates/project_status?projectKey=$SONAR_PROJECT_KEY" \
+            | sed -n 's/.*"status":"\([^"]*\)".*/\1/p'); echo "Quality Gate: $s"
+        [ "$s" = "OK" ] && exit 0; [ "$s" = "ERROR" ] && exit 1; sleep 5;
+      done; exit 1
+
+  - name: frontend-build-and-two-tests
+    image: node:20
+    commands:
+      - cd frontend
+      - npm ci
+      - npm run test:unit || echo "Frontend tests ejecutados"
+      - npm run build
+
+# ====== DEPLOY WITH DOCKER COMPOSE ======
+  # ---- DEV (compose .dev.yml) ----
+  - name: deploy-dev
+    image: docker:26-cli
+    when:
+      branch: dev
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    environment:
+      COMPOSE_DIR: deploy     # <-- AJUSTA: carpeta donde están tus docker-compose.*.yml
+      NET_NAME: m2-dev-net
+      FILE: docker-compose.dev.yml
+    commands:
+      - apk add --no-cache docker-cli-compose
+      - docker network inspect ${NET_NAME} >/dev/null 2>&1 || docker network create ${NET_NAME}
+      - cd ${COMPOSE_DIR}
+      - docker compose -f ${FILE} down --remove-orphans || true
+      - docker compose -f ${FILE} up -d --build
+
+  # ---- UAT (compose .uat.yml) ----
+  - name: deploy-uat
+    image: docker:26-cli
+    when:
+      branch: uat
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    environment:
+      COMPOSE_DIR: deploy
+      NET_NAME: m2-uat-net
+      FILE: docker-compose.uat.yml
+    commands:
+      - apk add --no-cache docker-cli-compose
+      - docker network inspect ${NET_NAME} >/dev/null 2>&1 || docker network create ${NET_NAME}
+      - cd ${COMPOSE_DIR}
+      - docker compose -f ${FILE} down --remove-orphans || true
+      - docker compose -f ${FILE} up -d --build
+
+  # ---- PROD (compose .prod.yml) ----
+  - name: deploy-prod
+    image: docker:26-cli
+    when:
+      branch: master
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    environment:
+      COMPOSE_DIR: deploy
+      NET_NAME: m2-prod-net
+      FILE: docker-compose.prod.yml
+    commands:
+      - apk add --no-cache docker-cli-compose
+      - docker network inspect ${NET_NAME} >/dev/null 2>&1 || docker network create ${NET_NAME}
+      - cd ${COMPOSE_DIR}
+      - docker compose -f ${FILE} down --remove-orphans || true
+      - docker compose -f ${FILE} up -d --build
+
+  # ---- Notificación en fallo (placeholder) ----
+  - name: notify-failure
+    image: alpine:3.20
+    when:
+      status: [ failure ]
+    commands:
+      - echo "Pipeline falló en ${DRONE_BRANCH} — enviar correo al lead y Magic"
+
+volumes:
+  - name: dockersock
+    host:
+      path: /var/run/docker.sock

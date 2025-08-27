@@ -1,192 +1,274 @@
 package com.unis.resource;
 
-import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectMock;
-import io.restassured.http.ContentType;
+import com.unis.dto.ReporteAgregadoDTO;
+import com.unis.dto.ReporteDetalladoDTO;
+import com.unis.dto.ReporteRequest;
+import com.unis.dto.ReporteResponse;
+import com.unis.model.Doctor;
+import com.unis.service.DoctorService;
+import com.unis.service.ReporteService;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
-import jakarta.ws.rs.core.HttpHeaders;
-
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
-
+import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-import com.unis.dto.ReporteAgregadoDTO;
-import com.unis.dto.ReporteDetalladoDTO;
-import com.unis.dto.ReporteRequest;
-import com.unis.model.Doctor;
-import com.unis.service.DoctorService;
-import com.unis.service.ReporteService;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-@QuarkusTest
-class ReporteResourceTest {
+public class ReporteResourceTest {
 
-  @InjectMock ReporteService reporteService;
-  @InjectMock DoctorService  doctorService;
+  @Mock
+  ReporteService reporteService;
 
-  // ============ POST /api/reportes/consultas ============
+  @Mock
+  DoctorService doctorService;
+
+  @InjectMocks
+  ReporteResource resource;
+
+  @BeforeEach
+  void setUp() {
+    MockitoAnnotations.openMocks(this);
+  }
+
+  // ---------- POST /api/reportes/consultas ----------
 
   @Test
-  void generarReporte_debeRetornar400_porParametrosInvalidos() {
-    // idDoctor null + fechas invertidas => 400
-    var req = new ReporteRequest();
-    req.setUsuario(null);
+  void generarReporte_retorna400_siParametrosInvalidos() {
+    ReporteRequest req = new ReporteRequest();
     req.setIdDoctor(null);
     req.setFechaInicio(LocalDate.of(2025, 1, 31));
     req.setFechaFin(LocalDate.of(2025, 1, 1));
     req.setTipoReporte("AGRUPADO");
 
-    given()
-      .contentType(ContentType.JSON)
-      .body(req)
-    .when()
-      .post("/api/reportes/consultas")
-    .then()
-      .statusCode(400)
-      .body(containsString("Parámetros inválidos"));
+    Response resp = resource.generarReporte(req);
+
+    assertEquals(400, resp.getStatus());
+    assertEquals("Parámetros inválidos", resp.getEntity());
+  }
+
+  @Test
+  void generarReporte_retorna400_siFechaInicioNull() {
+    ReporteRequest req = new ReporteRequest();
+    req.setIdDoctor(1L);
+    req.setFechaInicio(null); // rama faltante
+    req.setFechaFin(LocalDate.of(2025, 1, 31));
+    req.setTipoReporte("AGRUPADO");
+
+    Response resp = resource.generarReporte(req);
+
+    assertEquals(400, resp.getStatus());
+    assertEquals("Parámetros inválidos", resp.getEntity());
+  }
+
+  @Test
+  void generarReporte_retorna400_siFechaFinNull() {
+    ReporteRequest req = new ReporteRequest();
+    req.setIdDoctor(1L);
+    req.setFechaInicio(LocalDate.of(2025, 1, 1));
+    req.setFechaFin(null); // rama faltante
+    req.setTipoReporte("AGRUPADO");
+
+    Response resp = resource.generarReporte(req);
+
+    assertEquals(400, resp.getStatus());
+    assertEquals("Parámetros inválidos", resp.getEntity());
+  }
+
+  @Test
+  void generarReporte_retorna400_siFechasInvertidas_sinShortCircuit() {
+    ReporteRequest req = new ReporteRequest();
+    req.setIdDoctor(1L); // evita short-circuit por id null
+    req.setFechaInicio(LocalDate.of(2025, 2, 2));
+    req.setFechaFin(LocalDate.of(2025, 2, 1)); // invertidas
+    req.setTipoReporte("DETALLADO");
+
+    Response resp = resource.generarReporte(req);
+
+    assertEquals(400, resp.getStatus());
+    assertEquals("Parámetros inválidos", resp.getEntity());
+  }
+
+  @Test
+  void generarReporte_ok_conDoctorNoEncontrado() {
+    ReporteRequest req = new ReporteRequest();
+    req.setUsuario("x");
+    req.setIdDoctor(42L);
+    req.setFechaInicio(LocalDate.of(2025, 1, 1));
+    req.setFechaFin(LocalDate.of(2025, 1, 2));
+    req.setTipoReporte("AGRUPADO");
+
+    when(doctorService.getDoctorById(42L)).thenReturn(Optional.empty()); // rama optDoc.isEmpty
+    when(reporteService.obtenerReporteAgregado(42L, req.getFechaInicio(), req.getFechaFin()))
+        .thenReturn(List.of());
+
+    Response resp = resource.generarReporte(req);
+    assertEquals(200, resp.getStatus());
+
+    @SuppressWarnings("unchecked")
+    ReporteResponse<?> body = (ReporteResponse<?>) resp.getEntity();
+    assertNotNull(body);
+    assertTrue(body.getEncabezado().contains("Parámetros: Doctor ID = 42"));
+    assertEquals(0, body.getDatos().size());
   }
 
   @Test
   void generarReporte_agrupado_ok_conDoctorPorUsuario() {
-    // Doctor con usuario.nombreUsuario → debe armar "Doctor: <nombreUsuario>"
-    var req = new ReporteRequest();
+    ReporteRequest req = new ReporteRequest();
     req.setUsuario("admin");
     req.setIdDoctor(1L);
     req.setFechaInicio(LocalDate.of(2025, 1, 1));
     req.setFechaFin(LocalDate.of(2025, 1, 31));
     req.setTipoReporte("AGRUPADO");
 
-    // Mock doctor con nombre de usuario
-    var mockUsuario = Mockito.mock(com.unis.model.Usuario.class);
-    Mockito.when(mockUsuario.getNombreUsuario()).thenReturn("dr.house");
+    var mockUsuario = mock(com.unis.model.Usuario.class);
+    when(mockUsuario.getNombreUsuario()).thenReturn("dr.house");
 
-    var mockDoctor = Mockito.mock(Doctor.class);
-    Mockito.when(mockDoctor.getUsuario()).thenReturn(mockUsuario);
-    Mockito.when(mockDoctor.getApellido()).thenReturn(null);
+    Doctor mockDoctor = mock(Doctor.class);
+    when(mockDoctor.getUsuario()).thenReturn(mockUsuario);
+    when(mockDoctor.getApellido()).thenReturn(null);
+    when(doctorService.getDoctorById(1L)).thenReturn(Optional.of(mockDoctor));
 
-    Mockito.when(doctorService.getDoctorById(1L)).thenReturn(Optional.of(mockDoctor));
+    when(reporteService.obtenerReporteAgregado(1L, req.getFechaInicio(), req.getFechaFin()))
+        .thenReturn(List.of());
 
-    // Para JSON podemos regresar lista vacía (no afecta serialización)
-    Mockito.when(reporteService.obtenerReporteAgregado(1L, req.getFechaInicio(), req.getFechaFin()))
-           .thenReturn(List.of());
+    Response resp = resource.generarReporte(req);
+    assertEquals(200, resp.getStatus());
 
-    given()
-      .contentType(ContentType.JSON)
-      .body(req)
-    .when()
-      .post("/api/reportes/consultas")
-    .then()
-      .statusCode(200)
-      .body("encabezado", allOf(containsString("Usuario: admin"),
-                                containsString("Doctor: dr.house"),
-                                containsString("Tipo Reporte = AGRUPADO")))
-      .body("datos.size()", equalTo(0));
+    @SuppressWarnings("unchecked")
+    ReporteResponse<?> body = (ReporteResponse<?>) resp.getEntity();
+    assertNotNull(body);
+    assertTrue(body.getEncabezado().contains("Usuario: admin"));
+    assertTrue(body.getEncabezado().contains("Doctor: dr.house"));
+    assertTrue(body.getEncabezado().contains("Tipo Reporte = AGRUPADO"));
+    assertEquals(0, body.getDatos().size());
   }
 
   @Test
   void generarReporte_detallado_ok_conDoctorPorApellido() {
-    var req = new ReporteRequest();
-    req.setUsuario(null); // debe caer en "[Anónimo]"
+    ReporteRequest req = new ReporteRequest();
+    req.setUsuario(null); // -> [Anónimo]
     req.setIdDoctor(7L);
     req.setFechaInicio(LocalDate.of(2025, 2, 1));
     req.setFechaFin(LocalDate.of(2025, 2, 28));
     req.setTipoReporte("DETALLADO");
 
-    // Doctor sin usuario pero con apellido
-    var mockDoctor = Mockito.mock(Doctor.class);
-    Mockito.when(mockDoctor.getUsuario()).thenReturn(null);
-    Mockito.when(mockDoctor.getApellido()).thenReturn("García");
-    Mockito.when(doctorService.getDoctorById(7L)).thenReturn(Optional.of(mockDoctor));
+    Doctor mockDoctor = mock(Doctor.class);
+    when(mockDoctor.getUsuario()).thenReturn(null);
+    when(mockDoctor.getApellido()).thenReturn("García");
+    when(doctorService.getDoctorById(7L)).thenReturn(Optional.of(mockDoctor));
 
-    Mockito.when(reporteService.obtenerReporteDetallado(7L, req.getFechaInicio(), req.getFechaFin()))
-           .thenReturn(List.of());
+    when(reporteService.obtenerReporteDetallado(7L, req.getFechaInicio(), req.getFechaFin()))
+        .thenReturn(List.of());
 
-    given()
-      .contentType(ContentType.JSON)
-      .body(req)
-    .when()
-      .post("/api/reportes/consultas")
-    .then()
-      .statusCode(200)
-      .body("encabezado", allOf(containsString("Usuario: [Anónimo]"),
-                                containsString("Doctor: García"),
-                                containsString("Tipo Reporte = DETALLADO")))
-      .body("datos.size()", equalTo(0));
+    Response resp = resource.generarReporte(req);
+    assertEquals(200, resp.getStatus());
+
+    @SuppressWarnings("unchecked")
+    ReporteResponse<?> body = (ReporteResponse<?>) resp.getEntity();
+    assertNotNull(body);
+    assertTrue(body.getEncabezado().contains("Usuario: [Anónimo]"));
+    assertTrue(body.getEncabezado().contains("Doctor: García"));
+    assertTrue(body.getEncabezado().contains("Tipo Reporte = DETALLADO"));
+    assertEquals(0, body.getDatos().size());
   }
 
-  // ============ GET /api/reportes/consultas/excel ============
+  // ---------- GET /api/reportes/consultas/excel ----------
 
   @Test
-  void descargarReporteExcel_agrupado_ok_conContenidoYHeaders() {
+  void descargarReporteExcel_agrupado_ok_conContenidoYHeaders() throws Exception {
     Long idDoctor = 3L;
     String fi = "2025-03-01";
     String ff = "2025-03-31";
     String tipo = "AGRUPADO";
     String usuario = "ops";
 
-    // Doctor no encontrado → "Doctor ID = <id>"
-    Mockito.when(doctorService.getDoctorById(idDoctor)).thenReturn(Optional.empty());
+    when(doctorService.getDoctorById(idDoctor)).thenReturn(Optional.empty());
 
-    // Devolvemos una lista NO vacía para activar la rama que crea encabezados y filas
-    // Usamos un mock de DTO para evitar depender de constructores reales
-    var dtoMock = Mockito.mock(ReporteAgregadoDTO.class);
-    Mockito.when(reporteService.obtenerReporteAgregado(idDoctor, LocalDate.parse(fi), LocalDate.parse(ff)))
-           .thenReturn(List.of(dtoMock));
+    // objeto cualquiera; la resource usa reflexión para headings/filas
+    ReporteAgregadoDTO dto = mock(ReporteAgregadoDTO.class);
+    when(reporteService.obtenerReporteAgregado(idDoctor, LocalDate.parse(fi), LocalDate.parse(ff)))
+        .thenReturn(List.of(dto));
 
-    byte[] bytes =
-      given()
-      .when()
-        .get("/api/reportes/consultas/excel?idDoctor={id}&fechaInicio={fi}&fechaFin={ff}&tipoReporte={t}&usuario={u}",
-              idDoctor, fi, ff, tipo, usuario)
-      .then()
-        .statusCode(200)
-        .header(HttpHeaders.CONTENT_TYPE,
-                startsWith("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-        .header(HttpHeaders.CONTENT_DISPOSITION, containsString("attachment"))
-        .extract().asByteArray();
+    Response resp = resource.descargarReporteExcel(idDoctor, fi, ff, tipo, usuario);
 
-    // XLSX es un ZIP -> debe iniciar con 'PK'
-    org.junit.jupiter.api.Assertions.assertTrue(bytes.length >= 2);
-    org.junit.jupiter.api.Assertions.assertEquals('P', bytes[0]);
-    org.junit.jupiter.api.Assertions.assertEquals('K', bytes[1]);
+    assertEquals(200, resp.getStatus());
+    assertTrue(String.valueOf(resp.getHeaders().getFirst("Content-Disposition")).contains("attachment"));
+
+    StreamingOutput so = (StreamingOutput) resp.getEntity();
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    so.write(baos);
+    byte[] bytes = baos.toByteArray();
+
+    // XLSX (ZIP) comienza con 'PK'
+    assertTrue(bytes.length >= 2);
+    assertEquals('P', bytes[0]);
+    assertEquals('K', bytes[1]);
   }
 
   @Test
-  void descargarReporteExcel_detallado_ok_listaVacia_mensajeSinDatos() {
+  void descargarReporteExcel_detallado_ok_listaVacia_mensajeSinDatos() throws Exception {
     Long idDoctor = 9L;
     String fi = "2025-04-01";
     String ff = "2025-04-30";
     String tipo = "DETALLADO";
-    String usuario = null; // debe caer en "[Anónimo]"
+    String usuario = null; // -> [Anónimo]
 
-    // Doctor con usuario null y apellido null → "[Desconocido]"
-    var mockDoctor = Mockito.mock(Doctor.class);
-    Mockito.when(mockDoctor.getUsuario()).thenReturn(null);
-    Mockito.when(mockDoctor.getApellido()).thenReturn(null);
-    Mockito.when(doctorService.getDoctorById(idDoctor)).thenReturn(Optional.of(mockDoctor));
+    Doctor mockDoctor = mock(Doctor.class);
+    when(mockDoctor.getUsuario()).thenReturn(null);
+    when(mockDoctor.getApellido()).thenReturn(null);
+    when(doctorService.getDoctorById(idDoctor)).thenReturn(Optional.of(mockDoctor));
 
-    // Lista vacía para activar la rama "No se encontraron datos..."
-    Mockito.when(reporteService.obtenerReporteDetallado(idDoctor, LocalDate.parse(fi), LocalDate.parse(ff)))
-           .thenReturn(List.of());
+    when(reporteService.obtenerReporteDetallado(idDoctor, LocalDate.parse(fi), LocalDate.parse(ff)))
+        .thenReturn(List.of()); // vacío -> rama “No se encontraron datos...”
 
-    byte[] bytes =
-      given()
-      .when()
-        .get("/api/reportes/consultas/excel?idDoctor={id}&fechaInicio={fi}&fechaFin={ff}&tipoReporte={t}",
-              idDoctor, fi, ff, tipo)
-      .then()
-        .statusCode(200)
-        .header(HttpHeaders.CONTENT_TYPE,
-                startsWith("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-        .extract().asByteArray();
+    Response resp = resource.descargarReporteExcel(idDoctor, fi, ff, tipo, usuario);
+    assertEquals(200, resp.getStatus());
 
-    // También debería ser XLSX válido
-    org.junit.jupiter.api.Assertions.assertTrue(bytes.length >= 2);
-    org.junit.jupiter.api.Assertions.assertEquals('P', bytes[0]);
-    org.junit.jupiter.api.Assertions.assertEquals('K', bytes[1]);
+    StreamingOutput so = (StreamingOutput) resp.getEntity();
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    so.write(baos);
+    byte[] bytes = baos.toByteArray();
+
+    assertTrue(bytes.length >= 2);
+    assertEquals('P', bytes[0]);
+    assertEquals('K', bytes[1]);
+  }
+
+  @Test
+  void descargarReporteExcel_agrupado_ok_conDoctorPorUsuario() throws Exception {
+    Long idDoctor = 5L;
+    String fi = "2025-05-01";
+    String ff = "2025-05-31";
+    String tipo = "AGRUPADO";
+    String usuarioQ = "build";
+
+    var mockUsuario = mock(com.unis.model.Usuario.class);
+    when(mockUsuario.getNombreUsuario()).thenReturn("dr.strange");
+    Doctor mockDoctor = mock(Doctor.class);
+    when(mockDoctor.getUsuario()).thenReturn(mockUsuario);
+    when(mockDoctor.getApellido()).thenReturn(null);
+    when(doctorService.getDoctorById(idDoctor)).thenReturn(Optional.of(mockDoctor));
+
+    ReporteAgregadoDTO dto = mock(ReporteAgregadoDTO.class);
+    when(reporteService.obtenerReporteAgregado(idDoctor, LocalDate.parse(fi), LocalDate.parse(ff)))
+        .thenReturn(List.of(dto));
+
+    Response resp = resource.descargarReporteExcel(idDoctor, fi, ff, tipo, usuarioQ);
+    assertEquals(200, resp.getStatus());
+
+    StreamingOutput so = (StreamingOutput) resp.getEntity();
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    so.write(baos);
+    byte[] bytes = baos.toByteArray();
+    assertTrue(bytes.length >= 2 && bytes[0] == 'P' && bytes[1] == 'K');
   }
 }
