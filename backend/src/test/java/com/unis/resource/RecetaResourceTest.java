@@ -1,9 +1,9 @@
 package com.unis.resource;
 
 import com.unis.dto.RecetaDTO;
+import com.unis.model.Paciente;
 import com.unis.model.Receta;
 import com.unis.model.RecetaMedicamento;
-import com.unis.model.Paciente;
 import com.unis.service.RecetaService;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,159 +18,166 @@ import static org.mockito.Mockito.*;
 
 class RecetaResourceTest {
 
-  @Mock
-  RecetaService recetaService;
+    @Mock
+    RecetaService recetaService;
 
-  @InjectMocks
-  RecetaResource resource;
+    @InjectMocks
+    RecetaResource resource;
 
-  @BeforeEach
-  void init() {
-    MockitoAnnotations.openMocks(this);
-  }
+    AutoCloseable mocks;
 
-  // ---------- POST /recetas (crearReceta) ----------
+    @BeforeEach
+    void init() {
+        mocks = MockitoAnnotations.openMocks(this);
+    }
 
-  @Test
-  void crearReceta_ok_200_conEntidad() {
-    Receta entrada = new Receta();
-    Receta creada = new Receta();
-    when(recetaService.crearReceta(entrada)).thenReturn(creada);
+    // ---------- POST /recetas (crearReceta) ----------
 
-    Response r = resource.crearReceta(entrada);
+    @Test
+    void crearReceta_ok_200_conEntidad() {
+        Receta entrada = new Receta();
+        Receta creada = new Receta();
+        when(recetaService.crearReceta(entrada)).thenReturn(creada);
 
-    assertEquals(200, r.getStatus());
-    assertSame(creada, r.getEntity());
-    verify(recetaService).crearReceta(entrada);
-  }
+        Response r = resource.crearReceta(entrada);
 
-  @Test
-  void crearReceta_error_500_conMensaje() {
-    Receta entrada = new Receta();
-    when(recetaService.crearReceta(any())).thenThrow(new RuntimeException("boom"));
+        assertEquals(200, r.getStatus());
+        assertSame(creada, r.getEntity());
+        verify(recetaService).crearReceta(entrada);
+    }
 
-    Response r = resource.crearReceta(entrada);
+    @Test
+    void crearReceta_error_500_conMensaje() {
+        Receta entrada = new Receta();
+        when(recetaService.crearReceta(any())).thenThrow(new RuntimeException("boom"));
 
-    assertEquals(500, r.getStatus());
-    assertTrue(String.valueOf(r.getEntity()).contains("Error al crear la receta"));
-    verify(recetaService).crearReceta(entrada);
-  }
+        Response r = resource.crearReceta(entrada);
 
-  // ---------- GET /recetas/cita/{idCita} ----------
+        assertEquals(500, r.getStatus());
+        assertTrue(String.valueOf(r.getEntity()).contains("Error al crear la receta"));
+        verify(recetaService).crearReceta(entrada);
+    }
 
-  @Test
-  void obtenerRecetaPorIdCita_encontrada_200() {
-    Receta rec = new Receta();
-    when(recetaService.buscarPorIdCita(7)).thenReturn(rec);
+    // ---------- GET /recetas/cita/{idCita} ----------
 
-    Response r = resource.obtenerRecetaPorIdCita(7);
+    @Test
+    void obtenerRecetaPorIdCita_encontrada_200() {
+        Receta rec = new Receta();
+        when(recetaService.buscarPorIdCita(7)).thenReturn(rec);
 
-    assertEquals(200, r.getStatus());
-    assertSame(rec, r.getEntity());
-    verify(recetaService).buscarPorIdCita(7);
-  }
+        Response r = resource.obtenerRecetaPorIdCita(7);
 
-  @Test
-  void obtenerRecetaPorIdCita_noEncontrada_404() {
-    when(recetaService.buscarPorIdCita(99)).thenReturn(null);
+        assertEquals(200, r.getStatus());
+        assertSame(rec, r.getEntity());
+        verify(recetaService).buscarPorIdCita(7);
+    }
 
-    Response r = resource.obtenerRecetaPorIdCita(99);
+    @Test
+    void obtenerRecetaPorIdCita_noEncontrada_404() {
+        when(recetaService.buscarPorIdCita(99)).thenReturn(null);
 
-    assertEquals(404, r.getStatus());
-    assertTrue(String.valueOf(r.getEntity()).contains("Receta no encontrada"));
-    verify(recetaService).buscarPorIdCita(99);
-  }
+        Response r = resource.obtenerRecetaPorIdCita(99);
 
-  // ---------- PUT /recetas/{idReceta} (actualizarReceta) ----------
+        assertEquals(404, r.getStatus());
+        assertTrue(String.valueOf(r.getEntity()).contains("Receta no encontrada"));
+        verify(recetaService).buscarPorIdCita(99);
+    }
 
-  @Test
-  void actualizarReceta_ok_200_conEntidad() {
-    Receta upd = new Receta();
-    Receta salida = new Receta();
-    when(recetaService.actualizarReceta(5L, upd)).thenReturn(salida);
+    // ---------- PUT /recetas/{idReceta} (actualizarReceta) ----------
 
-    Response r = resource.actualizarReceta(5L, upd);
+    @Test
+    void actualizarReceta_ok_200_conEntidad() {
+        Receta upd = new Receta();
+        Receta salida = new Receta();
+        when(recetaService.actualizarReceta(5L, upd)).thenReturn(salida);
 
-    assertEquals(200, r.getStatus());
-    assertSame(salida, r.getEntity());
-    verify(recetaService).actualizarReceta(5L, upd);
-  }
+        Response r = resource.actualizarReceta(5L, upd);
 
-  @Test
-  void actualizarReceta_error_500_conMensaje() {
-    when(recetaService.actualizarReceta(eq(8L), any(Receta.class)))
-        .thenThrow(new RuntimeException("falló"));
+        assertEquals(200, r.getStatus());
+        assertSame(salida, r.getEntity());
+        verify(recetaService).actualizarReceta(5L, upd);
+    }
 
-    Response r = resource.actualizarReceta(8L, new Receta());
+    @Test
+    void actualizarReceta_error_500_conMensaje() {
+        when(recetaService.actualizarReceta(eq(8L), any(Receta.class)))
+                .thenThrow(new RuntimeException("falló"));
 
-    assertEquals(500, r.getStatus());
-    assertTrue(String.valueOf(r.getEntity()).contains("Error al actualizar la receta"));
-    verify(recetaService).actualizarReceta(eq(8L), any(Receta.class));
-  }
+        Response r = resource.actualizarReceta(8L, new Receta());
 
-  // ---------- POST /recetas/medicamentos (agregarMedicamento) ----------
+        assertEquals(500, r.getStatus());
+        assertTrue(String.valueOf(r.getEntity()).contains("Error al actualizar la receta"));
+        verify(recetaService).actualizarReceta(eq(8L), any(Receta.class));
+    }
 
-  @Test
-  void agregarMedicamento_ok_200_conEntidad() {
-    RecetaMedicamento in = new RecetaMedicamento();
-    RecetaMedicamento out = new RecetaMedicamento();
-    when(recetaService.agregarMedicamento(in)).thenReturn(out);
+    // ---------- POST /recetas/medicamentos (agregarMedicamento) ----------
 
-    Response r = resource.agregarMedicamento(in);
+    @Test
+    void agregarMedicamento_ok_200_conEntidad() {
+        RecetaMedicamento in = new RecetaMedicamento();
+        RecetaMedicamento out = new RecetaMedicamento();
+        when(recetaService.agregarMedicamento(in)).thenReturn(out);
 
-    assertEquals(200, r.getStatus());
-    assertSame(out, r.getEntity());
-    verify(recetaService).agregarMedicamento(in);
-  }
+        Response r = resource.agregarMedicamento(in);
 
-  @Test
-  void agregarMedicamento_error_500_conMensaje() {
-    when(recetaService.agregarMedicamento(any())).thenThrow(new RuntimeException("x"));
+        assertEquals(200, r.getStatus());
+        assertSame(out, r.getEntity());
+        verify(recetaService).agregarMedicamento(in);
+    }
 
-    Response r = resource.agregarMedicamento(new RecetaMedicamento());
+    @Test
+    void agregarMedicamento_error_500_conMensaje() {
+        when(recetaService.agregarMedicamento(any())).thenThrow(new RuntimeException("x"));
 
-    assertEquals(500, r.getStatus());
-    assertTrue(String.valueOf(r.getEntity()).contains("Error al agregar medicamento"));
-    verify(recetaService).agregarMedicamento(any());
-  }
+        Response r = resource.agregarMedicamento(new RecetaMedicamento());
 
-  // ---------- GET /recetas/{codigoReceta} (obtenerRecetaPorCodigo) ----------
+        assertEquals(500, r.getStatus());
+        assertTrue(String.valueOf(r.getEntity()).contains("Error al agregar medicamento"));
+        verify(recetaService).agregarMedicamento(any());
+    }
 
-  @Test
-  void obtenerRecetaPorCodigo_encontrada_200_devuelveDTO_conNombrePaciente() {
-    // Mock de Receta con Paciente y nombre
-    Receta receta = mock(Receta.class);
-    Paciente paciente = mock(Paciente.class);
-    when(paciente.getNombre()).thenReturn("Juan Perez");
-    when(receta.getPaciente()).thenReturn(paciente);
-    when(recetaService.buscarPorCodigo("ABC123")).thenReturn(receta);
+    // ---------- GET /recetas/{codigoReceta} (obtenerRecetaPorCodigo) ----------
 
-    Response r = resource.obtenerRecetaPorCodigo("ABC123");
+    @Test
+    void obtenerRecetaPorCodigo_encontrada_200_devuelveDTO_conNombrePaciente() {
+        // Arrange: Receta con Paciente(nombre) para que el recurso construya el DTO
+        Receta receta = mock(Receta.class);
+        Paciente paciente = mock(Paciente.class);
+        when(paciente.getNombre()).thenReturn("Juan Perez");
+        when(receta.getPaciente()).thenReturn(paciente);
+        when(recetaService.buscarPorCodigo("ABC123")).thenReturn(receta);
 
-    assertEquals(200, r.getStatus());
-    Object body = r.getEntity();
-    assertNotNull(body);
-    assertTrue(body instanceof RecetaDTO);
-    RecetaDTO dto = (RecetaDTO) body;
+        // Act
+        Response r = resource.obtenerRecetaPorCodigo("ABC123");
 
-    verify(recetaService).buscarPorCodigo("ABC123");
-  }
+        // Assert
+        assertEquals(200, r.getStatus());
+        Object body = r.getEntity();
+        assertNotNull(body);
+        assertTrue(body instanceof RecetaDTO);
 
-  @Test
-  void obtenerRecetaPorCodigo_noEncontrada_404() {
-    when(recetaService.buscarPorCodigo("ZZZ")).thenReturn(null);
+        RecetaDTO dto = (RecetaDTO) body;               // ← ahora SÍ usamos dto
+        assertEquals("Juan Perez", dto.getNombrePaciente());
 
-    Response r = resource.obtenerRecetaPorCodigo("ZZZ");
+        verify(recetaService).buscarPorCodigo("ABC123");
+    }
 
-    assertEquals(404, r.getStatus());
-    assertTrue(String.valueOf(r.getEntity()).contains("Receta no encontrada"));
-    verify(recetaService).buscarPorCodigo("ZZZ");
-  }
+    @Test
+    void obtenerRecetaPorCodigo_noEncontrada_404() {
+        when(recetaService.buscarPorCodigo("ZZZ")).thenReturn(null);
 
-  // ---------- cubrir validarSeguro() ----------
+        Response r = resource.obtenerRecetaPorCodigo("ZZZ");
 
-  @Test
-  void validarSeguro_simple_call_cubreLinea() {
-    resource.validarSeguro("OK");
-  }
+        assertEquals(404, r.getStatus());
+        assertTrue(String.valueOf(r.getEntity()).contains("Receta no encontrada"));
+        verify(recetaService).buscarPorCodigo("ZZZ");
+    }
+
+    // ---------- cubrir validarSeguro() ----------
+
+    @Test
+    void validarSeguro_simple_call_cubreLinea() {
+        resource.validarSeguro("OK");
+        // No hay aserciones: solo cobertura de línea / no debe lanzar excepción
+    }
 }
