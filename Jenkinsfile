@@ -86,13 +86,14 @@ pipeline {
     }
 
     /********************
-     * SONAR - BACKEND (usa backend/sonar-project.properties)
+     * SONAR - BACKEND (Community-compatible)
+     * Usa backend/sonar-project.properties + overrides de KEY/NAME/Version
      ********************/
     stage('SonarQube Analysis - Backend (con cobertura)') {
       when {
         anyOf {
           changeRequest() // PR
-          expression { ['dev','uat','prod','main','master'].contains(env.BRANCH_NAME ?: 'prod') } // ramas reales
+          expression { ['dev','uat','prod','main','master'].contains(env.BRANCH_NAME ?: 'prod') } // ramas
         }
       }
       steps {
@@ -106,20 +107,26 @@ pipeline {
                   sh '''
                     EXTS=""
                     if [ -n "${CHANGE_ID}" ]; then
-                      # Modo PR
-                      EXTS="$EXTS -Dsonar.pullrequest.key=${CHANGE_ID} -Dsonar.pullrequest.branch=${CHANGE_BRANCH} -Dsonar.pullrequest.base=${CHANGE_TARGET}"
-                      [ -n "${GIT_COMMIT}" ] && EXTS="$EXTS -Dsonar.scm.revision=${GIT_COMMIT}"
+                      # Proyecto separado por PR
+                      KEY="${PROJECT_NAME}-backend-pr-${CHANGE_ID}"
+                      NAME="${PROJECT_NAME} :: Backend [PR #${CHANGE_ID}]"
+                      EXTS="$EXTS -Dsonar.projectKey=${KEY} -Dsonar.projectName=${NAME}"
                     else
-                      # Modo rama
-                      EXTS="$EXTS -Dsonar.branch.name=${BRANCH_NAME}"
-                      if [ "${BRANCH_NAME}" = "main" ] || [ "${BRANCH_NAME}" = "master" ] || [ "${BRANCH_NAME}" = "prod" ]; then
+                      RAW="${BRANCH_NAME:-prod}"
+                      TARGET_ENV="$RAW"
+                      if [ "$RAW" = "main" ] || [ "$RAW" = "master" ]; then TARGET_ENV="prod"; fi
+                      KEY="${PROJECT_NAME}-backend-${TARGET_ENV}"
+                      NAME="${PROJECT_NAME} :: Backend [${TARGET_ENV}]"
+                      EXTS="$EXTS -Dsonar.projectKey=${KEY} -Dsonar.projectName=${NAME}"
+
+                      if [ "$TARGET_ENV" = "prod" ]; then
                         git fetch --tags --force >/dev/null 2>&1 || true
                         VER=$(git describe --tags --always 2>/dev/null || echo "$BUILD_NUMBER")
                         EXTS="$EXTS -Dsonar.projectVersion=${VER}"
                       fi
                     fi
 
-                    # Usa backend/sonar-project.properties por defecto (está en este directorio)
+                    # Usa backend/sonar-project.properties por defecto (en este directorio)
                     sonar-scanner -Dsonar.token=$SONAR_TOKEN $EXTS
                   '''
                 }
@@ -148,7 +155,8 @@ pipeline {
     }
 
     /********************
-     * SONAR - FRONTEND (usa root/sonar-project.properties)
+     * SONAR - FRONTEND (Community-compatible)
+     * Usa root/sonar-project.properties + overrides de KEY/NAME/Version
      ********************/
     stage('SonarQube Analysis - Frontend (sin cobertura)') {
       when {
@@ -170,13 +178,18 @@ pipeline {
                 sh '''
                   EXTS=""
                   if [ -n "${CHANGE_ID}" ]; then
-                    # Modo PR
-                    EXTS="$EXTS -Dsonar.pullrequest.key=${CHANGE_ID} -Dsonar.pullrequest.branch=${CHANGE_BRANCH} -Dsonar.pullrequest.base=${CHANGE_TARGET}"
-                    [ -n "${GIT_COMMIT}" ] && EXTS="$EXTS -Dsonar.scm.revision=${GIT_COMMIT}"
+                    KEY="${PROJECT_NAME}-frontend-pr-${CHANGE_ID}"
+                    NAME="${PROJECT_NAME} :: Frontend [PR #${CHANGE_ID}]"
+                    EXTS="$EXTS -Dsonar.projectKey=${KEY} -Dsonar.projectName=${NAME}"
                   else
-                    # Modo rama
-                    EXTS="$EXTS -Dsonar.branch.name=${BRANCH_NAME}"
-                    if [ "${BRANCH_NAME}" = "main" ] || [ "${BRANCH_NAME}" = "master" ] || [ "${BRANCH_NAME}" = "prod" ]; then
+                    RAW="${BRANCH_NAME:-prod}"
+                    TARGET_ENV="$RAW"
+                    if [ "$RAW" = "main" ] || [ "$RAW" = "master" ]; then TARGET_ENV="prod"; fi
+                    KEY="${PROJECT_NAME}-frontend-${TARGET_ENV}"
+                    NAME="${PROJECT_NAME} :: Frontend [${TARGET_ENV}]"
+                    EXTS="$EXTS -Dsonar.projectKey=${KEY} -Dsonar.projectName=${NAME}"
+
+                    if [ "$TARGET_ENV" = "prod" ]; then
                       git fetch --tags --force >/dev/null 2>&1 || true
                       VER=$(git describe --tags --always 2>/dev/null || echo "$BUILD_NUMBER")
                       EXTS="$EXTS -Dsonar.projectVersion=${VER}"
