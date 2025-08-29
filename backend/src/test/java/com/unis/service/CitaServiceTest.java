@@ -3,6 +3,7 @@ package com.unis.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.awaitility.Awaitility.await;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -11,6 +12,7 @@ import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -39,7 +41,7 @@ import jakarta.json.JsonObject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 
-public class CitaServiceTest {
+class CitaServiceTest {
 
     @Mock CitaRepository citaRepository;
     @Mock EntityManager entityManager;
@@ -83,10 +85,10 @@ public class CitaServiceTest {
         if (mocks != null) mocks.close();
     }
 
-    // ------------------ TUS PRUEBAS BÁSICAS (mantengo equivalentes) ------------------
+    // ------------------ PRUEBAS BÁSICAS ------------------
 
     @Test
-    public void testObtenerCitas() {
+    void testObtenerCitas() {
         Cita c1 = new Cita(); Cita c2 = new Cita();
         List<Cita> esperadas = Arrays.asList(c1, c2);
         when(citaRepository.listAll()).thenReturn(esperadas);
@@ -96,7 +98,7 @@ public class CitaServiceTest {
     }
 
     @Test
-    public void testObtenerCitaPorId() {
+    void testObtenerCitaPorId() {
         Long id = 1L;
         Cita c = new Cita();
         when(citaRepository.findById(id)).thenReturn(c);
@@ -104,7 +106,7 @@ public class CitaServiceTest {
     }
 
     @Test
-    public void testAgendarCitaSuccessful() {
+    void testAgendarCitaSuccessful() {
         Cita cita = new Cita();
         cita.setIdDoctor(10L);
         cita.setIdPaciente(20L);
@@ -123,7 +125,7 @@ public class CitaServiceTest {
     }
 
     @Test
-    public void testAgendarCitaDoctorIdNull() {
+    void testAgendarCitaDoctorIdNull() {
         Cita cita = new Cita();
         cita.setIdDoctor(null);
         cita.setIdPaciente(20L);
@@ -133,7 +135,7 @@ public class CitaServiceTest {
     }
 
     @Test
-    public void testAgendarCitaPacienteIdNull() {
+    void testAgendarCitaPacienteIdNull() {
         Cita cita = new Cita();
         cita.setIdDoctor(10L);
         cita.setIdPaciente(null);
@@ -143,7 +145,7 @@ public class CitaServiceTest {
     }
 
     @Test
-    public void testAgendarCitaDoctorNotFound() {
+    void testAgendarCitaDoctorNotFound() {
         Cita cita = new Cita();
         cita.setIdDoctor(10L);
         cita.setIdPaciente(20L);
@@ -156,7 +158,7 @@ public class CitaServiceTest {
     }
 
     @Test
-    public void testAgendarCitaPacienteNotFound() {
+    void testAgendarCitaPacienteNotFound() {
         Cita cita = new Cita();
         cita.setIdDoctor(10L);
         cita.setIdPaciente(20L);
@@ -169,7 +171,7 @@ public class CitaServiceTest {
     }
 
     @Test
-    public void testCancelarCitaSuccessful() {
+    void testCancelarCitaSuccessful() {
         Long id = 1L;
         Cita cita = new Cita();
         when(citaRepository.findById(id)).thenReturn(cita);
@@ -180,14 +182,14 @@ public class CitaServiceTest {
     }
 
     @Test
-    public void testCancelarCitaNotFound() {
+    void testCancelarCitaNotFound() {
         when(citaRepository.findById(1L)).thenReturn(null);
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> citaService.cancelarCita(1L));
         assertEquals("Cita no encontrada", ex.getMessage());
     }
 
     @Test
-    public void testActualizarCitaSuccessful() {
+    void testActualizarCitaSuccessful() {
         Long id = 1L;
         Cita existente = new Cita();
         existente.setEstado(EstadoCita.PENDIENTE);
@@ -209,32 +211,32 @@ public class CitaServiceTest {
     }
 
     @Test
-    public void testActualizarCitaNotFound() {
+    void testActualizarCitaNotFound() {
         when(citaRepository.findById(1L)).thenReturn(null);
         IllegalArgumentException ex =
             assertThrows(IllegalArgumentException.class, () -> citaService.actualizarCita(1L, new Cita()));
         assertEquals("Cita no encontrada", ex.getMessage());
     }
 
-    // ------------------ NUEVAS PRUEBAS PARA LO QUE FALTABA ------------------
+    // ------------------ NUEVAS PRUEBAS ------------------
 
     // buscarDoctorPorId usa DoctorService.getDoctorById(...)
     @Test
-    public void testBuscarDoctorPorId_found() {
+    void testBuscarDoctorPorId_found() {
         Doctor d = new Doctor();
         when(doctorService.getDoctorById(5L)).thenReturn(Optional.of(d));
         assertSame(d, citaService.buscarDoctorPorId(5L));
     }
 
     @Test
-    public void testBuscarDoctorPorId_notFound() {
+    void testBuscarDoctorPorId_notFound() {
         when(doctorService.getDoctorById(99L)).thenReturn(Optional.empty());
         assertNull(citaService.buscarDoctorPorId(99L));
     }
 
     // procesarCita
     @Test
-    public void testProcesarCita_ok() {
+    void testProcesarCita_ok() {
         Cita c = new Cita();
         when(citaRepository.findById(10L)).thenReturn(c);
         citaService.procesarCita(10L);
@@ -242,7 +244,7 @@ public class CitaServiceTest {
     }
 
     @Test
-    public void testProcesarCita_noExiste() {
+    void testProcesarCita_noExiste() {
         when(citaRepository.findById(10L)).thenReturn(null);
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> citaService.procesarCita(10L));
         assertEquals("Cita no encontrada", ex.getMessage());
@@ -250,7 +252,7 @@ public class CitaServiceTest {
 
     // reasignarDoctor
     @Test
-    public void testReasignarDoctor_ok() {
+    void testReasignarDoctor_ok() {
         Cita c = new Cita();
         Doctor nuevo = new Doctor();
         when(citaRepository.findById(7L)).thenReturn(c);
@@ -261,7 +263,7 @@ public class CitaServiceTest {
     }
 
     @Test
-    public void testReasignarDoctor_invalido() {
+    void testReasignarDoctor_invalido() {
         when(citaRepository.findById(7L)).thenReturn(null);
         IllegalArgumentException ex =
             assertThrows(IllegalArgumentException.class, () -> citaService.reasignarDoctor(7L, new Doctor()));
@@ -270,11 +272,10 @@ public class CitaServiceTest {
 
     // procesarCitaYEnviarResultados  -> cubre la lambda de enviarResultadosAAseguradora
     @Test
-    public void testProcesarCitaYEnviarResultados_ok_conHttpServer() throws Exception {
+    void testProcesarCitaYEnviarResultados_ok_conHttpServer() {
         // Arrange: cita completa con datos necesarios para construir el JSON
         Cita c = new Cita();
-        c.setIdCita(200L);                 // id interno (por si tu entidad lo usa)
-        c.setIdCita(200L);             // el método usa getIdCita() para el JSON
+        c.setIdCita(200L);
         c.setFecha(LocalDate.now());
 
         // Paciente + Usuario
@@ -300,21 +301,22 @@ public class CitaServiceTest {
         // Act: dispara procesamiento (pone FINALIZADA) y envío HTTP async
         citaService.procesarCitaYEnviarResultados(200L, "Dx final", "Resultados finales");
 
-        // Assert básicos sobre la cita
+        // Assert inmediatos sobre la cita
         assertEquals(EstadoCita.FINALIZADA, c.getEstado());
         assertEquals("Dx final", c.getDiagnostico());
         assertEquals("Resultados finales", c.getResultados());
 
-        // La llamada HTTP es async; damos un margen corto para que complete
-        Thread.sleep(200); // 200ms suele bastar en local
+        // Espera sin Thread.sleep: Awaitility con timeout máximo
+        await().atMost(2, TimeUnit.SECONDS)
+               .until(() -> hits.get() > before);
 
-        // Verificamos que el endpoint fue alcanzado al menos una vez
+        // Verificamos que el endpoint fue alcanzado
         assertTrue(hits.get() > before, "El endpoint /api/resultados no recibió la petición");
     }
 
     // crearCitaDesdeJson — caso: no existe paciente; crea usuario, paciente, ficha y (si aplica) aseguradora
     @Test
-    public void testCrearCitaDesdeJson_creaTodoYPersiste() {
+    void testCrearCitaDesdeJson_creaTodoYPersiste() {
         // DTO de entrada
         JsonObject dto = Json.createObjectBuilder()
             .add("documento", "DPI-999")
@@ -379,7 +381,7 @@ public class CitaServiceTest {
 
     // crearCitaDesdeJson — caso: ya existe paciente, no viene aseguradora
     @Test
-    public void testCrearCitaDesdeJson_conPacienteExistente_sinAseguradora() {
+    void testCrearCitaDesdeJson_conPacienteExistente_sinAseguradora() {
         JsonObject dto = Json.createObjectBuilder()
             .add("documento", "DPI-777")
             .add("nombre", "Luis")
@@ -401,7 +403,7 @@ public class CitaServiceTest {
         when(qPac.setParameter(eq("doc"), any())).thenReturn(qPac);
         when(qPac.getResultStream()).thenReturn(Stream.of(existente));
 
-        // No debería consultar PacienteFT ni asegurarora en este camino
+        // No debería consultar PacienteFT ni aseguradora en este camino
         citaService.crearCitaDesdeJson(dto);
 
         verify(citaRepository, times(1)).persist(isA(Cita.class));
@@ -411,7 +413,7 @@ public class CitaServiceTest {
 
     // crearCitaDesdeJson — error por documento faltante
     @Test
-    public void testCrearCitaDesdeJson_faltaDocumento() {
+    void testCrearCitaDesdeJson_faltaDocumento() {
         JsonObject dto = Json.createObjectBuilder()
             .add("nombre", "X")
             .add("fecha", LocalDate.now().toString())
