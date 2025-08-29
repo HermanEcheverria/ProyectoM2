@@ -90,52 +90,51 @@ pipeline {
      * Usa backend/sonar-project.properties + overrides KEY/NAME/Version
      ********************/
     stage('SonarQube Analysis - Backend (con cobertura)') {
-      when {
-        anyOf {
-          changeRequest() // PR
-          expression { ['dev','uat','prod','main','master'].contains(env.BRANCH_NAME ?: 'prod') } // ramas
-        }
-      }
-      steps {
-        script {
-          def scannerHome = tool 'SonarScanner'
-          withSonarQubeEnv("${SONARQUBE_ENV}") {
-            withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
-              withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
-                dir('backend') {
-                  sh 'rm -rf .scannerwork || true'
-                  sh '''
-                    EXTS=""
-                    if [ -n "${CHANGE_ID}" ]; then
-                      # Proyecto separado por PR
-                      KEY="${PROJECT_NAME}-backend-pr-${CHANGE_ID}"
-                      NAME="${PROJECT_NAME} :: Backend [PR #${CHANGE_ID}]"
-                      EXTS="$EXTS -Dsonar.projectKey=${KEY} -Dsonar.projectName=\\"$NAME\\""
-                    else
-                      RAW="${BRANCH_NAME:-prod}"
-                      TARGET_ENV="$RAW"
-                      if [ "$RAW" = "main" ] || [ "$RAW" = "master" ]; then TARGET_ENV="prod"; fi
-                      KEY="${PROJECT_NAME}-backend-${TARGET_ENV}"
-                      NAME="${PROJECT_NAME} :: Backend [${TARGET_ENV}]"
-                      EXTS="$EXTS -Dsonar.projectKey=${KEY} -Dsonar.projectName=\\"$NAME\\""
+  when {
+    anyOf {
+      changeRequest() // PR
+      expression { ['dev','uat','prod','main','master'].contains(env.BRANCH_NAME ?: 'prod') } // ramas
+    }
+  }
+  steps {
+    script {
+      def scannerHome = tool 'SonarScanner'
+      withSonarQubeEnv("${SONARQUBE_ENV}") {
+        withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
+          withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
+            dir('backend') {
+              sh 'rm -rf .scannerwork || true'
+              sh '''
+                EXTS=""
+                if [ -n "${CHANGE_ID}" ]; then
+                  # Proyecto separado por PR
+                  KEY="${PROJECT_NAME}-backend-pr-${CHANGE_ID}"
+                  EXTS="$EXTS -Dsonar.projectKey=${KEY}"
+                else
+                  RAW="${BRANCH_NAME:-prod}"
+                  TARGET_ENV="$RAW"
+                  if [ "$RAW" = "main" ] || [ "$RAW" = "master" ]; then TARGET_ENV="prod"; fi
+                  KEY="${PROJECT_NAME}-backend-${TARGET_ENV}"
+                  EXTS="$EXTS -Dsonar.projectKey=${KEY}"
 
-                      if [ "$TARGET_ENV" = "prod" ]; then
-                        git fetch --tags --force >/dev/null 2>&1 || true
-                        VER=$(git describe --tags --always 2>/dev/null || echo "$BUILD_NUMBER")
-                        EXTS="$EXTS -Dsonar.projectVersion=${VER}"
-                      fi
-                    fi
+                  if [ "$TARGET_ENV" = "prod" ]; then
+                    git fetch --tags --force >/dev/null 2>&1 || true
+                    VER=$(git describe --tags --always 2>/dev/null || echo "$BUILD_NUMBER")
+                    EXTS="$EXTS -Dsonar.projectVersion=${VER}"
+                  fi
+                fi
 
-                    # Usa backend/sonar-project.properties por defecto (en este directorio)
-                    sonar-scanner -Dsonar.token=$SONAR_TOKEN $EXTS
-                  '''
-                }
-              }
+                # Usa backend/sonar-project.properties (ya define sonar.projectName)
+                sonar-scanner -Dsonar.token=$SONAR_TOKEN $EXTS
+              '''
             }
           }
         }
       }
     }
+  }
+}
+
 
     stage('Quality Gate - Backend') {
       when {
@@ -159,52 +158,51 @@ pipeline {
      * Usa root/sonar-project.properties + overrides KEY/NAME/Version
      ********************/
     stage('SonarQube Analysis - Frontend (sin cobertura)') {
-      when {
-        allOf {
-          expression { fileExists('sonar-project.properties') && fileExists('package.json') }
-          anyOf {
-            changeRequest()
-            expression { ['dev','uat','prod','main','master'].contains(env.BRANCH_NAME ?: 'prod') }
-          }
-        }
+  when {
+    allOf {
+      expression { fileExists('sonar-project.properties') && fileExists('package.json') }
+      anyOf {
+        changeRequest()
+        expression { ['dev','uat','prod','main','master'].contains(env.BRANCH_NAME ?: 'prod') }
       }
-      steps {
-        script {
-          def scannerHome = tool 'SonarScanner'
-          withSonarQubeEnv("${SONARQUBE_ENV}") {
-            withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
-              withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
-                sh 'rm -rf .scannerwork || true'
-                sh '''
-                  EXTS=""
-                  if [ -n "${CHANGE_ID}" ]; then
-                    KEY="${PROJECT_NAME}-frontend-pr-${CHANGE_ID}"
-                    NAME="${PROJECT_NAME} :: Frontend [PR #${CHANGE_ID}]"
-                    EXTS="$EXTS -Dsonar.projectKey=${KEY} -Dsonar.projectName=\\"$NAME\\""
-                  else
-                    RAW="${BRANCH_NAME:-prod}"
-                    TARGET_ENV="$RAW"
-                    if [ "$RAW" = "main" ] || [ "$RAW" = "master" ]; then TARGET_ENV="prod"; fi
-                    KEY="${PROJECT_NAME}-frontend-${TARGET_ENV}"
-                    NAME="${PROJECT_NAME} :: Frontend [${TARGET_ENV}]"
-                    EXTS="$EXTS -Dsonar.projectKey=${KEY} -Dsonar.projectName=\\"$NAME\\""
+    }
+  }
+  steps {
+    script {
+      def scannerHome = tool 'SonarScanner'
+      withSonarQubeEnv("${SONARQUBE_ENV}") {
+        withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
+          withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
+            sh 'rm -rf .scannerwork || true'
+            sh '''
+              EXTS=""
+              if [ -n "${CHANGE_ID}" ]; then
+                KEY="${PROJECT_NAME}-frontend-pr-${CHANGE_ID}"
+                EXTS="$EXTS -Dsonar.projectKey=${KEY}"
+              else
+                RAW="${BRANCH_NAME:-prod}"
+                TARGET_ENV="$RAW"
+                if [ "$RAW" = "main" ] || [ "$RAW" = "master" ]; then TARGET_ENV="prod"; fi
+                KEY="${PROJECT_NAME}-frontend-${TARGET_ENV}"
+                EXTS="$EXTS -Dsonar.projectKey=${KEY}"
 
-                    if [ "$TARGET_ENV" = "prod" ]; then
-                      git fetch --tags --force >/dev/null 2>&1 || true
-                      VER=$(git describe --tags --always 2>/dev/null || echo "$BUILD_NUMBER")
-                      EXTS="$EXTS -Dsonar.projectVersion=${VER}"
-                    fi
-                  fi
+                if [ "$TARGET_ENV" = "prod" ]; then
+                  git fetch --tags --force >/dev/null 2>&1 || true
+                  VER=$(git describe --tags --always 2>/dev/null || echo "$BUILD_NUMBER")
+                  EXTS="$EXTS -Dsonar.projectVersion=${VER}"
+                fi
+              fi
 
-                  # Usa sonar-project.properties de la raíz del repo
-                  sonar-scanner -Dsonar.token=$SONAR_TOKEN $EXTS
-                '''
-              }
-            }
+              # Usa sonar-project.properties de la raíz (ya define sonar.projectName)
+              sonar-scanner -Dsonar.token=$SONAR_TOKEN $EXTS
+            '''
           }
         }
       }
     }
+  }
+}
+
 
     stage('Quality Gate - Frontend') {
       when {
