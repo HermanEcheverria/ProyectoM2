@@ -15,13 +15,42 @@ pipeline {
   tools {
     maven 'Maven'
     jdk   'java-17'
-    // El NodeJS se usa dentro de script { nodejs('Node 20') { ... } }
+    // NodeJS se usa dentro de script { nodejs('Node 20') { ... } }
   }
 
   stages {
 
     stage('Checkout') {
       steps { checkout scm }
+    }
+
+    /********************
+     * STATIC CHECKS (solo en PR)
+     ********************/
+    stage('Static Checks') {
+      when { changeRequest() }
+      steps {
+        script {
+          echo "Ejecutando validaciones estáticas para PR..."
+          // Backend: compila sin tests
+          dir('backend') {
+            sh 'mvn -q verify -DskipTests'
+          }
+          // Frontend: lint si existe script "lint"
+          nodejs('Node 20') {
+            sh '''
+              if [ -f package.json ] && grep -q '"lint"' package.json; then
+                echo "Instalando deps front para lint..."
+                npm ci --no-audit --no-fund
+                echo "Ejecutando lint del frontend..."
+                npm run lint || { echo "Lint falló"; exit 1; }
+              else
+                echo "No hay script lint en package.json, se omite"
+              fi
+            '''
+          }
+        }
+      }
     }
 
     stage('Install Frontend deps (root)') {
@@ -57,13 +86,13 @@ pipeline {
     }
 
     /********************
-     * SONAR - BACKEND
+     * SONAR - BACKEND (usa backend/sonar-project.properties)
      ********************/
     stage('SonarQube Analysis - Backend (con cobertura)') {
       when {
         anyOf {
-          changeRequest() // Ejecuta en PR
-          expression { ['dev','uat','prod','main','master'].contains(env.BRANCH_NAME ?: 'prod') } // Ejecuta en ramas reales
+          changeRequest() // PR
+          expression { ['dev','uat','prod','main','master'].contains(env.BRANCH_NAME ?: 'prod') } // ramas reales
         }
       }
       steps {
@@ -72,46 +101,26 @@ pipeline {
           withSonarQubeEnv("${SONARQUBE_ENV}") {
             withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
               withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
-                sh 'rm -rf .scannerwork backend/.scannerwork || true'
                 dir('backend') {
-                  def isPR      = (env.CHANGE_ID?.trim())
-                  def rawBranch = env.BRANCH_NAME ?: 'prod'
-                  def targetEnv = (rawBranch in ['main','master']) ? 'prod' : rawBranch
-
-                  def keyBase = "${PROJECT_NAME}-backend"
-                  def key     = isPR ? keyBase : "${keyBase}-${targetEnv}"
-                  def pname   = isPR ? "${PROJECT_NAME} :: Backend [PR #${env.CHANGE_ID} → ${env.CHANGE_TARGET}]"
-                                     : "${PROJECT_NAME} :: Backend [${targetEnv}]"
-
-                  // Construimos un archivo de propiedades (evita problemas de comillas/espacios)
-                  def props = new StringBuilder()
-                  props << "sonar.projectKey=${key}\n"
-                  props << "sonar.projectName=${pname}\n"
-                  props << "sonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml\n"
-
-                  if (isPR) {
-                    props << "sonar.pullrequest.key=${env.CHANGE_ID}\n"
-                    props << "sonar.pullrequest.branch=${env.CHANGE_BRANCH}\n"
-                    props << "sonar.pullrequest.base=${env.CHANGE_TARGET}\n"
-                    if (env.GIT_COMMIT) {
-                      props << "sonar.scm.revision=${env.GIT_COMMIT}\n"
-                    }
-                  } else {
-                    props << "sonar.branch.name=${rawBranch}\n"
-                    if (targetEnv == 'prod') {
-                      // Derivar versión desde tag o build number
-                      def ver = sh(script: 'git fetch --tags --force >/dev/null 2>&1 || true; git describe --tags --always 2>/dev/null || echo "$BUILD_NUMBER"', returnStdout: true).trim()
-                      props << "sonar.projectVersion=${ver}\n"
-                    }
-                  }
-
-                  writeFile file: 'sonar-backend.properties', text: props.toString()
-
-                  // Ejecutar Sonar sin interpolar el token en Groovy
+                  sh 'rm -rf .scannerwork || true'
                   sh '''
-                    sonar-scanner \
-                      -Dproject.settings=sonar-backend.properties \
-                      -Dsonar.token=$SONAR_TOKEN
+                    EXTS=""
+                    if [ -n "${CHANGE_ID}" ]; then
+                      # Modo PR
+                      EXTS="$EXTS -Dsonar.pullrequest.key=${CHANGE_ID} -Dsonar.pullrequest.branch=${CHANGE_BRANCH} -Dsonar.pullrequest.base=${CHANGE_TARGET}"
+                      [ -n "${GIT_COMMIT}" ] && EXTS="$EXTS -Dsonar.scm.revision=${GIT_COMMIT}"
+                    else
+                      # Modo rama
+                      EXTS="$EXTS -Dsonar.branch.name=${BRANCH_NAME}"
+                      if [ "${BRANCH_NAME}" = "main" ] || [ "${BRANCH_NAME}" = "master" ] || [ "${BRANCH_NAME}" = "prod" ]; then
+                        git fetch --tags --force >/dev/null 2>&1 || true
+                        VER=$(git describe --tags --always 2>/dev/null || echo "$BUILD_NUMBER")
+                        EXTS="$EXTS -Dsonar.projectVersion=${VER}"
+                      fi
+                    fi
+
+                    # Usa backend/sonar-project.properties por defecto (está en este directorio)
+                    sonar-scanner -Dsonar.token=$SONAR_TOKEN $EXTS
                   '''
                 }
               }
@@ -139,7 +148,7 @@ pipeline {
     }
 
     /********************
-     * SONAR - FRONTEND
+     * SONAR - FRONTEND (usa root/sonar-project.properties)
      ********************/
     stage('SonarQube Analysis - Frontend (sin cobertura)') {
       when {
@@ -157,42 +166,25 @@ pipeline {
           withSonarQubeEnv("${SONARQUBE_ENV}") {
             withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
               withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
-                sh 'rm -rf .scannerwork backend/.scannerwork || true'
-
-                def isPR      = (env.CHANGE_ID?.trim())
-                def rawBranch = env.BRANCH_NAME ?: 'prod'
-                def targetEnv = (rawBranch in ['main','master']) ? 'prod' : rawBranch
-
-                def keyBase = "${PROJECT_NAME}-frontend"
-                def key     = isPR ? keyBase : "${keyBase}-${targetEnv}"
-                def pname   = isPR ? "${PROJECT_NAME} :: Frontend [PR #${env.CHANGE_ID} → ${env.CHANGE_TARGET}]"
-                                   : "${PROJECT_NAME} :: Frontend [${targetEnv}]"
-
-                def props = new StringBuilder()
-                props << "sonar.projectKey=${key}\n"
-                props << "sonar.projectName=${pname}\n"
-
-                if (isPR) {
-                  props << "sonar.pullrequest.key=${env.CHANGE_ID}\n"
-                  props << "sonar.pullrequest.branch=${env.CHANGE_BRANCH}\n"
-                  props << "sonar.pullrequest.base=${env.CHANGE_TARGET}\n"
-                  if (env.GIT_COMMIT) {
-                    props << "sonar.scm.revision=${env.GIT_COMMIT}\n"
-                  }
-                } else {
-                  props << "sonar.branch.name=${rawBranch}\n"
-                  if (targetEnv == 'prod') {
-                    def ver = sh(script: 'git fetch --tags --force >/dev/null 2>&1 || true; git describe --tags --always 2>/dev/null || echo "$BUILD_NUMBER"', returnStdout: true).trim()
-                    props << "sonar.projectVersion=${ver}\n"
-                  }
-                }
-
-                writeFile file: 'sonar-frontend.properties', text: props.toString()
-
+                sh 'rm -rf .scannerwork || true'
                 sh '''
-                  sonar-scanner \
-                    -Dproject.settings=sonar-frontend.properties \
-                    -Dsonar.token=$SONAR_TOKEN
+                  EXTS=""
+                  if [ -n "${CHANGE_ID}" ]; then
+                    # Modo PR
+                    EXTS="$EXTS -Dsonar.pullrequest.key=${CHANGE_ID} -Dsonar.pullrequest.branch=${CHANGE_BRANCH} -Dsonar.pullrequest.base=${CHANGE_TARGET}"
+                    [ -n "${GIT_COMMIT}" ] && EXTS="$EXTS -Dsonar.scm.revision=${GIT_COMMIT}"
+                  else
+                    # Modo rama
+                    EXTS="$EXTS -Dsonar.branch.name=${BRANCH_NAME}"
+                    if [ "${BRANCH_NAME}" = "main" ] || [ "${BRANCH_NAME}" = "master" ] || [ "${BRANCH_NAME}" = "prod" ]; then
+                      git fetch --tags --force >/dev/null 2>&1 || true
+                      VER=$(git describe --tags --always 2>/dev/null || echo "$BUILD_NUMBER")
+                      EXTS="$EXTS -Dsonar.projectVersion=${VER}"
+                    fi
+                  fi
+
+                  # Usa sonar-project.properties de la raíz del repo
+                  sonar-scanner -Dsonar.token=$SONAR_TOKEN $EXTS
                 '''
               }
             }
