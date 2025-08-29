@@ -80,37 +80,39 @@ pipeline {
 
                   def keyBase = "${PROJECT_NAME}-backend"
                   def key     = isPR ? keyBase : "${keyBase}-${targetEnv}"
-                  def pname   = isPR ? "${PROJECT_NAME} :: Backend [PR #${env.CHANGE_ID} → ${env.CHANGE_TARGET}]" 
+                  def pname   = isPR ? "${PROJECT_NAME} :: Backend [PR #${env.CHANGE_ID} → ${env.CHANGE_TARGET}]"
                                      : "${PROJECT_NAME} :: Backend [${targetEnv}]"
 
-                  sh 'git fetch --tags --force || true'
-
-                  def extra = ''
-                  if (!isPR && targetEnv == 'prod') {
-                    def ver = sh(script: 'git describe --tags --always 2>/dev/null || echo "$BUILD_NUMBER"', returnStdout: true).trim()
-                    extra = "-Dsonar.projectVersion=${ver}"
-                  }
-
-                  def sonarParams = [
-                    "-Dsonar.token=${SONAR_TOKEN}",
-                    "-Dsonar.projectKey=${key}",
-                    "-Dsonar.projectName=${pname}",
-                    "-Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml"
-                  ]
+                  // Construimos un archivo de propiedades (evita problemas de comillas/espacios)
+                  def props = new StringBuilder()
+                  props << "sonar.projectKey=${key}\n"
+                  props << "sonar.projectName=${pname}\n"
+                  props << "sonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml\n"
 
                   if (isPR) {
-                    sonarParams += [
-                      "-Dsonar.pullrequest.key=${env.CHANGE_ID}",
-                      "-Dsonar.pullrequest.branch=${env.CHANGE_BRANCH}",
-                      "-Dsonar.pullrequest.base=${env.CHANGE_TARGET}",
-                      "-Dsonar.scm.revision=${env.GIT_COMMIT ?: ''}"
-                    ]
+                    props << "sonar.pullrequest.key=${env.CHANGE_ID}\n"
+                    props << "sonar.pullrequest.branch=${env.CHANGE_BRANCH}\n"
+                    props << "sonar.pullrequest.base=${env.CHANGE_TARGET}\n"
+                    if (env.GIT_COMMIT) {
+                      props << "sonar.scm.revision=${env.GIT_COMMIT}\n"
+                    }
                   } else {
-                    sonarParams += [ "-Dsonar.branch.name=${rawBranch}" ]
-                    if (extra) { sonarParams += extra }
+                    props << "sonar.branch.name=${rawBranch}\n"
+                    if (targetEnv == 'prod') {
+                      // Derivar versión desde tag o build number
+                      def ver = sh(script: 'git fetch --tags --force >/dev/null 2>&1 || true; git describe --tags --always 2>/dev/null || echo "$BUILD_NUMBER"', returnStdout: true).trim()
+                      props << "sonar.projectVersion=${ver}\n"
+                    }
                   }
 
-                  sh "sonar-scanner ${sonarParams.join(' ')}"
+                  writeFile file: 'sonar-backend.properties', text: props.toString()
+
+                  // Ejecutar Sonar sin interpolar el token en Groovy
+                  sh '''
+                    sonar-scanner \
+                      -Dproject.settings=sonar-backend.properties \
+                      -Dsonar.token=$SONAR_TOKEN
+                  '''
                 }
               }
             }
@@ -163,36 +165,35 @@ pipeline {
 
                 def keyBase = "${PROJECT_NAME}-frontend"
                 def key     = isPR ? keyBase : "${keyBase}-${targetEnv}"
-                def pname   = isPR ? "${PROJECT_NAME} :: Frontend [PR #${env.CHANGE_ID} → ${env.CHANGE_TARGET}]" 
+                def pname   = isPR ? "${PROJECT_NAME} :: Frontend [PR #${env.CHANGE_ID} → ${env.CHANGE_TARGET}]"
                                    : "${PROJECT_NAME} :: Frontend [${targetEnv}]"
 
-                sh 'git fetch --tags --force || true'
-
-                def extra = ''
-                if (!isPR && targetEnv == 'prod') {
-                  def ver = sh(script: 'git describe --tags --always 2>/dev/null || echo "$BUILD_NUMBER"', returnStdout: true).trim()
-                  extra = "-Dsonar.projectVersion=${ver}"
-                }
-
-                def sonarParams = [
-                  "-Dsonar.token=${SONAR_TOKEN}",
-                  "-Dsonar.projectKey=${key}",
-                  "-Dsonar.projectName=${pname}"
-                ]
+                def props = new StringBuilder()
+                props << "sonar.projectKey=${key}\n"
+                props << "sonar.projectName=${pname}\n"
 
                 if (isPR) {
-                  sonarParams += [
-                    "-Dsonar.pullrequest.key=${env.CHANGE_ID}",
-                    "-Dsonar.pullrequest.branch=${env.CHANGE_BRANCH}",
-                    "-Dsonar.pullrequest.base=${env.CHANGE_TARGET}",
-                    "-Dsonar.scm.revision=${env.GIT_COMMIT ?: ''}"
-                  ]
+                  props << "sonar.pullrequest.key=${env.CHANGE_ID}\n"
+                  props << "sonar.pullrequest.branch=${env.CHANGE_BRANCH}\n"
+                  props << "sonar.pullrequest.base=${env.CHANGE_TARGET}\n"
+                  if (env.GIT_COMMIT) {
+                    props << "sonar.scm.revision=${env.GIT_COMMIT}\n"
+                  }
                 } else {
-                  sonarParams += [ "-Dsonar.branch.name=${rawBranch}" ]
-                  if (extra) { sonarParams += extra }
+                  props << "sonar.branch.name=${rawBranch}\n"
+                  if (targetEnv == 'prod') {
+                    def ver = sh(script: 'git fetch --tags --force >/dev/null 2>&1 || true; git describe --tags --always 2>/dev/null || echo "$BUILD_NUMBER"', returnStdout: true).trim()
+                    props << "sonar.projectVersion=${ver}\n"
+                  }
                 }
 
-                sh "sonar-scanner ${sonarParams.join(' ')}"
+                writeFile file: 'sonar-frontend.properties', text: props.toString()
+
+                sh '''
+                  sonar-scanner \
+                    -Dproject.settings=sonar-frontend.properties \
+                    -Dsonar.token=$SONAR_TOKEN
+                '''
               }
             }
           }
