@@ -87,7 +87,7 @@ pipeline {
 
     /********************
      * SONAR - BACKEND (Community-compatible)
-     * Usa backend/sonar-project.properties + overrides de KEY/NAME/Version
+     * Usa backend/sonar-project.properties + overrides KEY/NAME/Version
      ********************/
     stage('SonarQube Analysis - Backend (con cobertura)') {
       when {
@@ -110,14 +110,14 @@ pipeline {
                       # Proyecto separado por PR
                       KEY="${PROJECT_NAME}-backend-pr-${CHANGE_ID}"
                       NAME="${PROJECT_NAME} :: Backend [PR #${CHANGE_ID}]"
-                      EXTS="$EXTS -Dsonar.projectKey=${KEY} -Dsonar.projectName=${NAME}"
+                      EXTS="$EXTS -Dsonar.projectKey=${KEY} -Dsonar.projectName=\\"$NAME\\""
                     else
                       RAW="${BRANCH_NAME:-prod}"
                       TARGET_ENV="$RAW"
                       if [ "$RAW" = "main" ] || [ "$RAW" = "master" ]; then TARGET_ENV="prod"; fi
                       KEY="${PROJECT_NAME}-backend-${TARGET_ENV}"
                       NAME="${PROJECT_NAME} :: Backend [${TARGET_ENV}]"
-                      EXTS="$EXTS -Dsonar.projectKey=${KEY} -Dsonar.projectName=${NAME}"
+                      EXTS="$EXTS -Dsonar.projectKey=${KEY} -Dsonar.projectName=\\"$NAME\\""
 
                       if [ "$TARGET_ENV" = "prod" ]; then
                         git fetch --tags --force >/dev/null 2>&1 || true
@@ -156,7 +156,7 @@ pipeline {
 
     /********************
      * SONAR - FRONTEND (Community-compatible)
-     * Usa root/sonar-project.properties + overrides de KEY/NAME/Version
+     * Usa root/sonar-project.properties + overrides KEY/NAME/Version
      ********************/
     stage('SonarQube Analysis - Frontend (sin cobertura)') {
       when {
@@ -180,14 +180,14 @@ pipeline {
                   if [ -n "${CHANGE_ID}" ]; then
                     KEY="${PROJECT_NAME}-frontend-pr-${CHANGE_ID}"
                     NAME="${PROJECT_NAME} :: Frontend [PR #${CHANGE_ID}]"
-                    EXTS="$EXTS -Dsonar.projectKey=${KEY} -Dsonar.projectName=${NAME}"
+                    EXTS="$EXTS -Dsonar.projectKey=${KEY} -Dsonar.projectName=\\"$NAME\\""
                   else
                     RAW="${BRANCH_NAME:-prod}"
                     TARGET_ENV="$RAW"
                     if [ "$RAW" = "main" ] || [ "$RAW" = "master" ]; then TARGET_ENV="prod"; fi
                     KEY="${PROJECT_NAME}-frontend-${TARGET_ENV}"
                     NAME="${PROJECT_NAME} :: Frontend [${TARGET_ENV}]"
-                    EXTS="$EXTS -Dsonar.projectKey=${KEY} -Dsonar.projectName=${NAME}"
+                    EXTS="$EXTS -Dsonar.projectKey=${KEY} -Dsonar.projectName=\\"$NAME\\""
 
                     if [ "$TARGET_ENV" = "prod" ]; then
                       git fetch --tags --force >/dev/null 2>&1 || true
