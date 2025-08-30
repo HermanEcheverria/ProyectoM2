@@ -56,7 +56,7 @@ const myAccountRoute = () => {
         <RouterLink to="/solicitud-hospital">Solicitar Convenio</RouterLink>
         <RouterLink to="/registrar-atencion">Registrar Atención</RouterLink>
         <RouterLink to="/consultar-historial">Consultar Historial</RouterLink>
-        <RouterLink v-if="userRole === 1"to="/citas-aseguradora">Citas por ASeguradora</RouterLink>
+        <RouterLink v-if="userRole === 1" to="/citas-aseguradora">Citas por ASeguradora</RouterLink>
 
 
         <RouterLink v-if="!isLoggedIn" to="/login">Log in</RouterLink>
