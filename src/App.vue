@@ -32,7 +32,7 @@ const myAccountRoute = () => {
 </script>
 
 <template>
-  <header class="navbar">
+  <header class="navbarr">
     <div class="navbar-container">
       <div class="brand">
         <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="50" height="50" />
