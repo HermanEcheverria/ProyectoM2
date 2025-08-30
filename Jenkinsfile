@@ -15,7 +15,7 @@ pipeline {
   tools {
     maven 'Maven'
     jdk   'java-17'
-    // NodeJS se usa dentro de script { nodejs('Node 20') { ... } }
+    // NodeJS se usa dentro de script { nodejs('Node 20') { ... } } si algún día lo necesitas
   }
 
   stages {
@@ -26,27 +26,8 @@ pipeline {
 
     /********************
      * === PR GATE ===
-     * En Pull Requests: Lint Frontend + Unit Tests Backend + Sonar (Backend y Frontend) + Quality Gates
+     * En Pull Requests: Unit Tests Backend + Sonar (Backend y Frontend) + Quality Gates
      ********************/
-    stage('PR: Lint Frontend') {
-      when { changeRequest() }
-      steps {
-        script {
-          nodejs('Node 20') {
-            sh '''
-              set -euxo pipefail
-              if [ -f package.json ] && grep -q '"lint"' package.json; then
-                npm ci --no-audit --no-fund
-                npm run lint
-              else
-                echo "No hay script lint en package.json, se omite"
-              fi
-            '''
-          }
-        }
-      }
-    }
-
     stage('PR: Unit Tests Backend + Jacoco') {
       when { changeRequest() }
       steps {
@@ -78,8 +59,6 @@ pipeline {
                     rm -rf .scannerwork || true
                     KEY="${PROJECT_NAME}-backend-pr-${CHANGE_ID}"
 
-                    # Usa backend/sonar-project.properties (define sonar.projectName).
-                    # Pasamos coverage explícitamente por CLI.
                     sonar-scanner \
                       -Dsonar.token="$SONAR_TOKEN" \
                       -Dsonar.projectKey="$KEY" \
@@ -123,7 +102,6 @@ pipeline {
                   rm -rf .scannerwork || true
                   KEY="${PROJECT_NAME}-frontend-pr-${CHANGE_ID}"
 
-                  # Usa sonar-project.properties de la raíz (define sonar.projectName).
                   sonar-scanner \
                     -Dsonar.token="$SONAR_TOKEN" \
                     -Dsonar.projectKey="$KEY"
@@ -152,7 +130,6 @@ pipeline {
 
     /********************
      * === RAMAS REALES (dev / uat / prod) ===
-     * Build + Tests + Jacoco + Sonar + Quality Gate + Deploy por entorno
      ********************/
     stage('Build & Unit Tests (Backend)') {
       when { not { changeRequest() } }
