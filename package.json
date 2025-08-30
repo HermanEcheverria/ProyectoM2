@@ -11,7 +11,8 @@
     "test:e2e": "playwright test",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
-    "lint": "eslint . --fix",
+    "lint": "eslint \"src/**/*.{js,ts,vue}\"",
+    "lint:fix": "eslint \"src/**/*.{js,ts,vue}\" --fix",
     "format": "prettier --write src/"
   },
   "dependencies": {
