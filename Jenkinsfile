@@ -15,6 +15,7 @@ pipeline {
   tools {
     maven 'Maven'
     jdk   'java-17'
+    // NodeJS se usa dentro de script { nodejs('Node 20') { ... } } si algún día lo necesitas
   }
 
   stages {
