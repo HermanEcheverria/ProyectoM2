@@ -58,10 +58,12 @@ pipeline {
                     set -euo pipefail
                     rm -rf .scannerwork || true
                     KEY="${PROJECT_NAME}-backend-pr-${CHANGE_ID}"
+                    NAME="${PROJECT_NAME} :: Backend [PR-${CHANGE_ID}]"
 
                     sonar-scanner \
                       -Dsonar.token="$SONAR_TOKEN" \
                       -Dsonar.projectKey="$KEY" \
+                      -Dsonar.projectName="$NAME" \
                       -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
                   '''
                 }
@@ -101,10 +103,12 @@ pipeline {
                   set -euo pipefail
                   rm -rf .scannerwork || true
                   KEY="${PROJECT_NAME}-frontend-pr-${CHANGE_ID}"
+                  NAME="${PROJECT_NAME} :: Frontend [PR-${CHANGE_ID}]"
 
                   sonar-scanner \
                     -Dsonar.token="$SONAR_TOKEN" \
-                    -Dsonar.projectKey="$KEY"
+                    -Dsonar.projectKey="$KEY" \
+                    -Dsonar.projectName="$NAME"
                 '''
               }
             }
@@ -188,6 +192,7 @@ pipeline {
                     TARGET_ENV="$RAW"
 
                     KEY="${PROJECT_NAME}-backend-${TARGET_ENV}"
+                    NAME="${PROJECT_NAME} :: Backend [${TARGET_ENV}]"
                     EXTS=""
                     if [ "$TARGET_ENV" = "prod" ]; then
                       git fetch --tags --force >/dev/null 2>&1 || true
@@ -198,6 +203,7 @@ pipeline {
                     sonar-scanner \
                       -Dsonar.token="$SONAR_TOKEN" \
                       -Dsonar.projectKey="$KEY" \
+                      -Dsonar.projectName="$NAME" \
                       -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
                       $EXTS
                   '''
@@ -246,8 +252,9 @@ pipeline {
 
                   RAW="${BRANCH_NAME:-prod}"
                   TARGET_ENV="$RAW"
-
                   KEY="${PROJECT_NAME}-frontend-${TARGET_ENV}"
+                  NAME="${PROJECT_NAME} :: Frontend [${TARGET_ENV}]"
+
                   EXTS=""
                   if [ "$TARGET_ENV" = "prod" ]; then
                     git fetch --tags --force >/dev/null 2>&1 || true
@@ -258,6 +265,7 @@ pipeline {
                   sonar-scanner \
                     -Dsonar.token="$SONAR_TOKEN" \
                     -Dsonar.projectKey="$KEY" \
+                    -Dsonar.projectName="$NAME" \
                     $EXTS
                 '''
               }
