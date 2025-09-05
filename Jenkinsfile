@@ -15,7 +15,6 @@ pipeline {
   tools {
     maven 'Maven'
     jdk   'java-17'
-    // NodeJS se usa dentro de script { nodejs('Node 20') { ... } } si algún día lo necesitas
   }
 
   stages {
@@ -26,8 +25,9 @@ pipeline {
 
     /********************
      * === PR GATE ===
-     * En Pull Requests: Unit Tests Backend + Sonar (Backend y Frontend) + Quality Gates
+     * Unit Tests Backend + Sonar (Backend y Frontend) + Quality Gates
      ********************/
+
     stage('PR: Unit Tests Backend + Jacoco') {
       when { changeRequest() }
       steps {
@@ -86,7 +86,36 @@ pipeline {
       }
     }
 
-    stage('PR: SonarQube Analysis - Frontend (sin cobertura)') {
+    /* === NUEVO: Tests Frontend + Cobertura (PR) === */
+    stage('PR: Unit Tests Frontend + Coverage') {
+      when {
+        allOf {
+          changeRequest()
+          expression { fileExists('package.json') }
+        }
+      }
+      steps {
+        script {
+          nodejs('Node 20') {
+            sh '''
+              set -euxo pipefail
+              npm ci --no-audit --no-fund
+              npm run test:ci
+
+              # Verificar LCOV que usará Sonar
+              test -f coverage/lcov.info || {
+                echo "No se encontró coverage/lcov.info";
+                exit 1;
+              }
+            '''
+            archiveArtifacts artifacts: 'coverage/**', fingerprint: true, onlyIfSuccessful: true
+          }
+        }
+      }
+    }
+
+    /* === REEMPLAZA: Frontend (con cobertura) en PR === */
+    stage('PR: SonarQube Analysis - Frontend (con cobertura)') {
       when {
         allOf {
           changeRequest()
@@ -108,7 +137,13 @@ pipeline {
                   sonar-scanner \
                     -Dsonar.token="$SONAR_TOKEN" \
                     -Dsonar.projectKey="$KEY" \
-                    -Dsonar.projectName="$NAME"
+                    -Dsonar.projectName="$NAME" \
+                    -Dsonar.sources=src \
+                    -Dsonar.tests=src \
+                    -Dsonar.test.inclusions=**/*.spec.*,**/__tests__/**/*.*,**/tests/**/*.* \
+                    -Dsonar.exclusions=**/__tests__/**,**/tests/**,**/*.spec.* \
+                    -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+                    -Dsonar.sourceEncoding=UTF-8
                 '''
               }
             }
@@ -135,6 +170,7 @@ pipeline {
     /********************
      * === RAMAS REALES (dev / uat / prod) ===
      ********************/
+
     stage('Build & Unit Tests (Backend)') {
       when { not { changeRequest() } }
       steps {
@@ -152,7 +188,8 @@ pipeline {
       }
     }
 
-    stage('Install Frontend deps (root)') {
+    /* === REEMPLAZA: Install Frontend deps (root) === */
+    stage('Build & Unit Tests (Frontend)') {
       when { not { changeRequest() } }
       steps {
         script {
@@ -161,10 +198,16 @@ pipeline {
               set -euxo pipefail
               if [ -f package.json ]; then
                 npm ci --no-audit --no-fund
+                npm run test:ci
+                test -f coverage/lcov.info || {
+                  echo "No se encontró coverage/lcov.info";
+                  exit 1;
+                }
               else
                 echo "No hay package.json en la raíz."
               fi
             '''
+            archiveArtifacts artifacts: 'coverage/**', fingerprint: true, onlyIfSuccessful: true
           }
         }
       }
@@ -232,7 +275,8 @@ pipeline {
       }
     }
 
-    stage('SonarQube Analysis - Frontend (sin cobertura)') {
+    /* === REEMPLAZA: Frontend (con cobertura) en ramas reales === */
+    stage('SonarQube Analysis - Frontend (con cobertura)') {
       when {
         allOf {
           not { changeRequest() }
@@ -266,6 +310,12 @@ pipeline {
                     -Dsonar.token="$SONAR_TOKEN" \
                     -Dsonar.projectKey="$KEY" \
                     -Dsonar.projectName="$NAME" \
+                    -Dsonar.sources=src \
+                    -Dsonar.tests=src \
+                    -Dsonar.test.inclusions=**/*.spec.*,**/__tests__/**/*.*,**/tests/**/*.* \
+                    -Dsonar.exclusions=**/__tests__/**,**/tests/**,**/*.spec.* \
+                    -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+                    -Dsonar.sourceEncoding=UTF-8 \
                     $EXTS
                 '''
               }
