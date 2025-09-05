@@ -143,6 +143,7 @@ pipeline {
                     -Dsonar.test.inclusions=**/*.spec.*,**/__tests__/**/*.*,**/tests/**/*.* \
                     -Dsonar.exclusions=**/__tests__/**,**/tests/**,**/*.spec.* \
                     -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+                    -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info \
                     -Dsonar.sourceEncoding=UTF-8
                 '''
               }
@@ -315,6 +316,7 @@ pipeline {
                     -Dsonar.test.inclusions=**/*.spec.*,**/__tests__/**/*.*,**/tests/**/*.* \
                     -Dsonar.exclusions=**/__tests__/**,**/tests/**,**/*.spec.* \
                     -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+                    -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info \
                     -Dsonar.sourceEncoding=UTF-8 \
                     $EXTS
                 '''
