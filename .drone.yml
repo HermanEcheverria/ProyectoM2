@@ -23,8 +23,7 @@ steps:
       - mvn -q jacoco:report
       - 'test -f target/site/jacoco/jacoco.xml || { echo "Falta backend/target/site/jacoco/jacoco.xml"; exit 1; }'
 
-  # Scanner + Quality Gate (PR, Backend)
-  - name: pr-backend-sonar-and-qgate
+  - name: pr-backend-sonar+qgate
     image: sonarsource/sonar-scanner-cli:5
     when:
       event: [ pull_request ]
@@ -34,26 +33,27 @@ steps:
         from_secret: sonar_host_url
       SONAR_TOKEN:
         from_secret: sonar_token
+      PROJECT_NAME: proyecto-m2
     commands:
       - |
         set -euo pipefail
         cd backend
-        KEY="proyecto-m2-backend-pr-${DRONE_PULL_REQUEST}"
-        NAME="proyecto-m2 :: Backend [PR-${DRONE_PULL_REQUEST}]"
-        [ -n "${SONAR_HOST_URL:-}" ] || { echo "Falta secret sonar_host_url"; exit 2; }
-        [ -n "${SONAR_TOKEN:-}" ]    || { echo "Falta secret sonar_token"; exit 2; }
+        : "${SONAR_HOST_URL:?Falta secret sonar_host_url}"
+        : "${SONAR_TOKEN:?Falta secret sonar_token}"
 
-        # Analiza
+        KEY="${PROJECT_NAME}-backend-pr-${DRONE_PULL_REQUEST}"
+        NAME="${PROJECT_NAME} :: Backend [PR-${DRONE_PULL_REQUEST}]"
+
         sonar-scanner \
           -Dsonar.host.url="${SONAR_HOST_URL}" \
           -Dsonar.token="${SONAR_TOKEN}" \
           -Dsonar.projectKey="${KEY}" \
           -Dsonar.projectName="${NAME}"
 
-        # Instala curl y espera CE + Quality Gate
+        # ---- Esperar CE + Quality Gate (mismo paso)
         apk add --no-cache curl >/dev/null
-        CE_PATH="backend/.scannerwork/report-task.txt"
-        [ -f "backend/target/sonar/report-task.txt" ] && CE_PATH="backend/target/sonar/report-task.txt"
+        CE_PATH=".scannerwork/report-task.txt"
+        [ -f "target/sonar/report-task.txt" ] && CE_PATH="target/sonar/report-task.txt"
         if [ -f "$CE_PATH" ]; then
           CE_TASK=$(sed -n 's/^ceTaskId=\(.*\)$/\1/p' "$CE_PATH")
           for i in $(seq 1 60); do
@@ -66,45 +66,56 @@ steps:
         fi
         for i in $(seq 1 30); do
           S=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST_URL}/api/qualitygates/project_status?projectKey=${KEY}" | sed -n 's/.*"status":"\([^"]*\)".*/\1/p')
-          echo "Quality Gate (backend PR): $S"
+          echo "Quality Gate: $S"
           [ "$S" = "OK" ] && exit 0
           [ "$S" = "ERROR" ] && exit 1
           sleep 5
         done
         echo "Timeout esperando Quality Gate (backend PR)"; exit 1
 
-  - name: pr-frontend-unit-and-build
+  - name: pr-frontend-tests
     image: node:20
     when:
       event: [ pull_request ]
-    depends_on: [ pr-backend-sonar-and-qgate ]
+    depends_on: [ pr-backend-sonar+qgate ]
     commands:
       - |
         set -e
-        cd frontend
-        npm ci --no-audit --no-fund
-        npm run test:ci || echo "Tests frontend no bloqueantes en PR"
-        npm run build   || echo "Build frontend no bloqueante en PR"
+        if [ -f package.json ]; then
+          npm ci --no-audit --no-fund
+          npm run test:ci
+          test -f coverage/lcov.info || { echo "Falta coverage/lcov.info en raíz"; exit 1; }
+        elif [ -f frontend/package.json ]; then
+          cd frontend
+          npm ci --no-audit --no-fund
+          npm run test:ci
+          test -f coverage/lcov.info || { echo "Falta frontend/coverage/lcov.info"; exit 1; }
+        else
+          echo "No hay frontend → omitiendo"
+        fi
 
-  # Scanner + Quality Gate (PR, Frontend)
-  - name: pr-frontend-sonar-and-qgate
+  - name: pr-frontend-sonar+qgate
     image: sonarsource/sonar-scanner-cli:5
     when:
       event: [ pull_request ]
-    depends_on: [ pr-frontend-unit-and-build ]
+    depends_on: [ pr-frontend-tests ]
     environment:
       SONAR_HOST_URL:
         from_secret: sonar_host_url
       SONAR_TOKEN:
         from_secret: sonar_token
+      PROJECT_NAME: proyecto-m2
     commands:
       - |
         set -euo pipefail
-        cd frontend
-        KEY="proyecto-m2-frontend-pr-${DRONE_PULL_REQUEST}"
-        NAME="proyecto-m2 :: Frontend [PR-${DRONE_PULL_REQUEST}]"
-        [ -n "${SONAR_HOST_URL:-}" ] || { echo "Falta secret sonar_host_url"; exit 2; }
-        [ -n "${SONAR_TOKEN:-}" ]    || { echo "Falta secret sonar_token"; exit 2; }
+        : "${SONAR_HOST_URL:?Falta secret sonar_host_url}"
+        : "${SONAR_TOKEN:?Falta secret sonar_token}"
+        KEY="${PROJECT_NAME}-frontend-pr-${DRONE_PULL_REQUEST}"
+        NAME="${PROJECT_NAME} :: Frontend [PR-${DRONE_PULL_REQUEST}]"
+
+        BASE="."
+        if [ -f frontend/sonar-project.properties ]; then BASE="frontend"; fi
+        cd "$BASE"
 
         sonar-scanner \
           -Dsonar.host.url="${SONAR_HOST_URL}" \
@@ -113,8 +124,11 @@ steps:
           -Dsonar.projectName="${NAME}"
 
         apk add --no-cache curl >/dev/null
-        CE_PATH="frontend/.scannerwork/report-task.txt"
-        [ -f "frontend/target/sonar/report-task.txt" ] && CE_PATH="frontend/target/sonar/report-task.txt"
+        CE_PATH=".scannerwork/report-task.txt"
+        for i in $(seq 1 60); do
+          [ -f "$CE_PATH" ] && break
+          sleep 1
+        done
         if [ -f "$CE_PATH" ]; then
           CE_TASK=$(sed -n 's/^ceTaskId=\(.*\)$/\1/p' "$CE_PATH")
           for i in $(seq 1 60); do
@@ -127,7 +141,7 @@ steps:
         fi
         for i in $(seq 1 30); do
           S=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST_URL}/api/qualitygates/project_status?projectKey=${KEY}" | sed -n 's/.*"status":"\([^"]*\)".*/\1/p')
-          echo "Quality Gate (frontend PR): $S"
+          echo "Quality Gate: $S"
           [ "$S" = "OK" ] && exit 0
           [ "$S" = "ERROR" ] && exit 1
           sleep 5
@@ -147,8 +161,7 @@ steps:
       - mvn -q jacoco:report
       - 'test -f target/site/jacoco/jacoco.xml || { echo "Falta backend/target/site/jacoco/jacoco.xml"; exit 1; }'
 
-  # Scanner + Quality Gate (push, Backend)
-  - name: sonar-backend-and-qgate
+  - name: sonar-backend+qgate
     image: sonarsource/sonar-scanner-cli:5
     when:
       event: [ push ]
@@ -158,26 +171,33 @@ steps:
         from_secret: sonar_host_url
       SONAR_TOKEN:
         from_secret: sonar_token
+      PROJECT_NAME: proyecto-m2
     commands:
       - |
         set -euo pipefail
         cd backend
+        : "${SONAR_HOST_URL:?Falta secret sonar_host_url}"
+        : "${SONAR_TOKEN:?Falta secret sonar_token}"
         RAW="${DRONE_BRANCH:-dev}"
-        KEY="proyecto-m2-backend-${RAW}"
-        NAME="proyecto-m2 :: Backend [${RAW}]"
-        [ -n "${SONAR_HOST_URL:-}" ] || { echo "Falta secret sonar_host_url"; exit 2; }
-        [ -n "${SONAR_TOKEN:-}" ]    || { echo "Falta secret sonar_token"; exit 2; }
+        KEY="${PROJECT_NAME}-backend-${RAW}"
+        NAME="${PROJECT_NAME} :: Backend [${RAW}]"
+        EXTS=""
+        if [ "$RAW" = "prod" ]; then
+          git fetch --tags --force >/dev/null 2>&1 || true
+          VER=$(git describe --tags --always 2>/dev/null || echo "${DRONE_BUILD_NUMBER}")
+          EXTS="$EXTS -Dsonar.projectVersion=${VER}"
+        fi
 
         sonar-scanner \
           -Dsonar.host.url="${SONAR_HOST_URL}" \
           -Dsonar.token="${SONAR_TOKEN}" \
           -Dsonar.projectKey="${KEY}" \
           -Dsonar.projectName="${NAME}" \
-          $( [ "${RAW}" = "prod" ] && echo "-Dsonar.projectVersion=${DRONE_BUILD_NUMBER}" )
+          ${EXTS}
 
         apk add --no-cache curl >/dev/null
-        CE_PATH="backend/.scannerwork/report-task.txt"
-        [ -f "backend/target/sonar/report-task.txt" ] && CE_PATH="backend/target/sonar/report-task.txt"
+        CE_PATH=".scannerwork/report-task.txt"
+        [ -f "target/sonar/report-task.txt" ] && CE_PATH="target/sonar/report-task.txt"
         if [ -f "$CE_PATH" ]; then
           CE_TASK=$(sed -n 's/^ceTaskId=\(.*\)$/\1/p' "$CE_PATH")
           for i in $(seq 1 60); do
@@ -201,18 +221,26 @@ steps:
     image: node:20
     when:
       event: [ push ]
-    depends_on: [ sonar-backend-and-qgate ]
+    depends_on: [ sonar-backend+qgate ]
     commands:
       - |
         set -e
-        cd frontend
-        npm ci --no-audit --no-fund
-        npm run test:ci
-        test -f coverage/lcov.info || { echo "Falta frontend/coverage/lcov.info"; exit 1; }
-        npm run build
+        if [ -f package.json ]; then
+          npm ci --no-audit --no-fund
+          npm run test:ci
+          test -f coverage/lcov.info || { echo "Falta coverage/lcov.info en raíz"; exit 1; }
+          npm run build
+        elif [ -f frontend/package.json ]; then
+          cd frontend
+          npm ci --no-audit --no-fund
+          npm run test:ci
+          test -f coverage/lcov.info || { echo "Falta frontend/coverage/lcov.info"; exit 1; }
+          npm run build
+        else
+          echo "No hay frontend → omitiendo"
+        fi
 
-  # Scanner + Quality Gate (push, Frontend)
-  - name: sonar-frontend-and-qgate
+  - name: sonar-frontend+qgate
     image: sonarsource/sonar-scanner-cli:5
     when:
       event: [ push ]
@@ -222,26 +250,28 @@ steps:
         from_secret: sonar_host_url
       SONAR_TOKEN:
         from_secret: sonar_token
+      PROJECT_NAME: proyecto-m2
     commands:
       - |
         set -euo pipefail
-        cd frontend
+        : "${SONAR_HOST_URL:?Falta secret sonar_host_url}"
+        : "${SONAR_TOKEN:?Falta secret sonar_token}"
         RAW="${DRONE_BRANCH:-dev}"
-        KEY="proyecto-m2-frontend-${RAW}"
-        NAME="proyecto-m2 :: Frontend [${RAW}]"
-        [ -n "${SONAR_HOST_URL:-}" ] || { echo "Falta secret sonar_host_url"; exit 2; }
-        [ -n "${SONAR_TOKEN:-}" ]    || { echo "Falta secret sonar_token"; exit 2; }
+        KEY="${PROJECT_NAME}-frontend-${RAW}"
+        NAME="${PROJECT_NAME} :: Frontend [${RAW}]"
+
+        BASE="."
+        if [ -f frontend/sonar-project.properties ]; then BASE="frontend"; fi
+        cd "$BASE"
 
         sonar-scanner \
           -Dsonar.host.url="${SONAR_HOST_URL}" \
           -Dsonar.token="${SONAR_TOKEN}" \
           -Dsonar.projectKey="${KEY}" \
-          -Dsonar.projectName="${NAME}" \
-          $( [ "${RAW}" = "prod" ] && echo "-Dsonar.projectVersion=${DRONE_BUILD_NUMBER}" )
+          -Dsonar.projectName="${NAME}"
 
         apk add --no-cache curl >/dev/null
-        CE_PATH="frontend/.scannerwork/report-task.txt"
-        [ -f "frontend/target/sonar/report-task.txt" ] && CE_PATH="frontend/target/sonar/report-task.txt"
+        CE_PATH=".scannerwork/report-task.txt"
         if [ -f "$CE_PATH" ]; then
           CE_TASK=$(sed -n 's/^ceTaskId=\(.*\)$/\1/p' "$CE_PATH")
           for i in $(seq 1 60); do
@@ -269,7 +299,7 @@ steps:
     when:
       event: [ push ]
       branch: [ dev ]
-    depends_on: [ sonar-frontend-and-qgate ]
+    depends_on: [ sonar-frontend+qgate ]
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
@@ -289,7 +319,7 @@ steps:
     when:
       event: [ push ]
       branch: [ uat ]
-    depends_on: [ sonar-frontend-and-qgate ]
+    depends_on: [ sonar-frontend+qgate ]
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
@@ -309,7 +339,7 @@ steps:
     when:
       event: [ push ]
       branch: [ prod ]
-    depends_on: [ sonar-frontend-and-qgate ]
+    depends_on: [ sonar-frontend+qgate ]
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
@@ -324,6 +354,7 @@ steps:
       - docker compose -f ${FILE} down --remove-orphans || true
       - docker compose -f ${FILE} up -d --build
 
+  # ===== Notificación por fallo =====
   - name: notify-failure
     image: appleboy/drone-email
     when:
