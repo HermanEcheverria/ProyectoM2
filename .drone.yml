@@ -3,10 +3,14 @@ type: docker
 name: ProyectoM2-CI-CD
 
 trigger:
-  branch: [ dev, uat, master ]
+  event: [ push ]
+  branch: [ dev, uat, prod ]
 
-# ====== BUILD & QUALITY ======
+concurrency:
+  limit: 1
+
 steps:
+  # === BUILD & QUALITY (Backend) ===
   - name: backend-build-test-sonar
     image: maven:3.9-eclipse-temurin-17
     environment:
@@ -21,38 +25,46 @@ steps:
 
   - name: sonar-quality-gate
     image: curlimages/curl:8.8.0
+    depends_on: [ backend-build-test-sonar ]
     environment:
       SONAR_HOST_URL:
         from_secret: sonar_host_url
       SONAR_TOKEN:
         from_secret: sonar_token
-      SONAR_PROJECT_KEY: proyecto-m2-backend   # <-- AJUSTA a tu key real de Sonar
+      SONAR_PROJECT_KEY: proyecto-m2-backend   # AJUSTA al key real en Sonar
     commands: |
       for i in $(seq 1 30); do
-        s=$(curl -s -u $SONAR_TOKEN: "$SONAR_HOST_URL/api/qualitygates/project_status?projectKey=$SONAR_PROJECT_KEY" \
+        s=$(curl -s -u "$SONAR_TOKEN:" "$SONAR_HOST_URL/api/qualitygates/project_status?projectKey=$SONAR_PROJECT_KEY" \
             | sed -n 's/.*"status":"\([^"]*\)".*/\1/p'); echo "Quality Gate: $s"
         [ "$s" = "OK" ] && exit 0; [ "$s" = "ERROR" ] && exit 1; sleep 5;
-      done; exit 1
+      done; echo "Timeout esperando Quality Gate"; exit 1
 
-  - name: frontend-build-and-two-tests
+  # === FRONTEND (opcional) ===
+  - name: frontend-build-and-tests
     image: node:20
+    depends_on: [ sonar-quality-gate ]
     commands:
-      - cd frontend
-      - npm ci
-      - npm run test:unit || echo "Frontend tests ejecutados"
-      - npm run build
+      - |
+        if [ -d frontend ] && [ -f frontend/package.json ]; then
+          cd frontend
+          npm ci --no-audit --no-fund
+          npm run test:unit || echo "Tests frontend no bloqueantes"
+          npm run build
+        else
+          echo "No hay frontend/ → omitiendo paso"
+        fi
 
-# ====== DEPLOY WITH DOCKER COMPOSE ======
-  # ---- DEV (compose .dev.yml) ----
+  # === DEPLOYS ===
   - name: deploy-dev
     image: docker:26-cli
     when:
       branch: dev
+    depends_on: [ frontend-build-and-tests ]
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
     environment:
-      COMPOSE_DIR: deploy     # <-- AJUSTA: carpeta donde están tus docker-compose.*.yml
+      COMPOSE_DIR: deploy
       NET_NAME: m2-dev-net
       FILE: docker-compose.dev.yml
     commands:
@@ -62,11 +74,11 @@ steps:
       - docker compose -f ${FILE} down --remove-orphans || true
       - docker compose -f ${FILE} up -d --build
 
-  # ---- UAT (compose .uat.yml) ----
   - name: deploy-uat
     image: docker:26-cli
     when:
       branch: uat
+    depends_on: [ frontend-build-and-tests ]
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
@@ -81,11 +93,11 @@ steps:
       - docker compose -f ${FILE} down --remove-orphans || true
       - docker compose -f ${FILE} up -d --build
 
-  # ---- PROD (compose .prod.yml) ----
   - name: deploy-prod
     image: docker:26-cli
     when:
-      branch: master
+      branch: prod
+    depends_on: [ frontend-build-and-tests ]
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
@@ -100,13 +112,27 @@ steps:
       - docker compose -f ${FILE} down --remove-orphans || true
       - docker compose -f ${FILE} up -d --build
 
-  # ---- Notificación en fallo (placeholder) ----
+  # === Notificación por correo (en fallo) ===
   - name: notify-failure
-    image: alpine:3.20
+    image: appleboy/drone-email
     when:
       status: [ failure ]
-    commands:
-      - echo "Pipeline falló en ${DRONE_BRANCH} — enviar correo al lead y Magic"
+    settings:
+      host:
+        from_secret: smtp_host
+      port:
+        from_secret: smtp_port
+      username:
+        from_secret: smtp_user
+      password:
+        from_secret: smtp_pass
+      from:
+        from_secret: smtp_from
+      subject: "[Drone] Falló ${DRONE_REPO} #${DRONE_BUILD_NUMBER} (${DRONE_BRANCH})"
+      recipients:
+        - hecheverria@unis.edu.gt
+        - jflores@unis.edu.gt
+        - magic@ejemplo.com  # cambia al correo real del PO
 
 volumes:
   - name: dockersock
