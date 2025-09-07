@@ -10,7 +10,6 @@ concurrency:
   limit: 1
 
 steps:
-  # === BUILD & QUALITY (Backend) ===
   - name: backend-build-test-sonar
     image: maven:3.9-eclipse-temurin-17
     environment:
@@ -31,15 +30,20 @@ steps:
         from_secret: sonar_host_url
       SONAR_TOKEN:
         from_secret: sonar_token
-      SONAR_PROJECT_KEY: proyecto-m2-backend   # AJUSTA al key real en Sonar
-    commands: |
-      for i in $(seq 1 30); do
-        s=$(curl -s -u "$SONAR_TOKEN:" "$SONAR_HOST_URL/api/qualitygates/project_status?projectKey=$SONAR_PROJECT_KEY" \
-            | sed -n 's/.*"status":"\([^"]*\)".*/\1/p'); echo "Quality Gate: $s"
-        [ "$s" = "OK" ] && exit 0; [ "$s" = "ERROR" ] && exit 1; sleep 5;
-      done; echo "Timeout esperando Quality Gate"; exit 1
+      SONAR_PROJECT_KEY: proyecto-m2-backend   
+    commands:
+      - |
+        for i in $(seq 1 30); do
+          s=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST_URL}/api/qualitygates/project_status?projectKey=${SONAR_PROJECT_KEY}" \
+              | sed -n 's/.*"status":"\([^"]*\)".*/\1/p')
+          echo "Quality Gate: $s"
+          [ "$s" = "OK" ] && exit 0
+          [ "$s" = "ERROR" ] && exit 1
+          sleep 5
+        done
+        echo "Timeout esperando Quality Gate"
+        exit 1
 
-  # === FRONTEND (opcional) ===
   - name: frontend-build-and-tests
     image: node:20
     depends_on: [ sonar-quality-gate ]
@@ -54,11 +58,10 @@ steps:
           echo "No hay frontend/ → omitiendo paso"
         fi
 
-  # === DEPLOYS ===
   - name: deploy-dev
     image: docker:26-cli
     when:
-      branch: dev
+      branch: [ dev ]
     depends_on: [ frontend-build-and-tests ]
     volumes:
       - name: dockersock
@@ -77,7 +80,7 @@ steps:
   - name: deploy-uat
     image: docker:26-cli
     when:
-      branch: uat
+      branch: [ uat ]
     depends_on: [ frontend-build-and-tests ]
     volumes:
       - name: dockersock
@@ -96,7 +99,7 @@ steps:
   - name: deploy-prod
     image: docker:26-cli
     when:
-      branch: prod
+      branch: [ prod ]
     depends_on: [ frontend-build-and-tests ]
     volumes:
       - name: dockersock
@@ -112,7 +115,6 @@ steps:
       - docker compose -f ${FILE} down --remove-orphans || true
       - docker compose -f ${FILE} up -d --build
 
-  # === Notificación por correo (en fallo) ===
   - name: notify-failure
     image: appleboy/drone-email
     when:
@@ -132,7 +134,6 @@ steps:
       recipients:
         - hecheverria@unis.edu.gt
         - jflores@unis.edu.gt
-        - magic@ejemplo.com  # cambia al correo real del PO
 
 volumes:
   - name: dockersock
