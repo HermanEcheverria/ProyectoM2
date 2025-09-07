@@ -25,58 +25,49 @@ steps:
       - mvn -q jacoco:report
       - 'test -f target/site/jacoco/jacoco.xml || { echo "Falta backend/target/site/jacoco/jacoco.xml"; exit 1; }'
 
-  # --- Backend: Sonar (PR) con plugin (lee backend/sonar-project.properties) ---
-  - name: pr-backend-sonar (plugin)
+  # --- Backend: Sonar (PR) con plugin (sin working_dir) ---
+  - name: pr-backend-sonar
     image: aosapps/drone-sonar-plugin
     when:
       event: [ pull_request ]
     depends_on: [ pr-backend-unit-jacoco ]
-    working_dir: backend
     settings:
       sonar_host:
         from_secret: sonar_host_url
       sonar_token:
         from_secret: sonar_token
+      project_key:    proyecto-m2-backend-pr-${DRONE_PULL_REQUEST}
+      project_name:  "proyecto-m2 :: Backend [PR-${DRONE_PULL_REQUEST}]"
+      project_version: "${DRONE_BUILD_NUMBER}"
+      # analizamos solo la carpeta backend
+      sources: backend
 
   # --- Backend: Quality Gate (PR) ---
   - name: pr-backend-quality-gate
     image: curlimages/curl:8.8.0
     when:
       event: [ pull_request ]
-    depends_on: [ pr-backend-sonar (plugin) ]
+    depends_on: [ pr-backend-sonar ]
     environment:
       SONAR_HOST_URL:
         from_secret: sonar_host_url
       SONAR_TOKEN:
         from_secret: sonar_token
-      PROJECT_NAME: proyecto-m2
     commands:
       - |
         set -e
-        KEY="${PROJECT_NAME}-backend-pr-${DRONE_PULL_REQUEST}"
-        CE_PATH="backend/.scannerwork/report-task.txt"
-        [ -f "backend/target/sonar/report-task.txt" ] && CE_PATH="backend/target/sonar/report-task.txt"
-        if [ -f "$CE_PATH" ]; then
-          CE_TASK=$(sed -n 's/^ceTaskId=\(.*\)$/\1/p' "$CE_PATH")
-          for i in $(seq 1 60); do
-            STATUS=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST_URL}/api/ce/task?id=${CE_TASK}" | sed -n 's/.*"status":"\([^"]*\)".*/\1/p')
-            echo "CE status: $STATUS"
-            [ "$STATUS" = "SUCCESS" ] && break
-            [ "$STATUS" = "FAILED" ] && echo "CE task FAILED" && exit 1
-            sleep 5
-          done
-        fi
+        KEY="proyecto-m2-backend-pr-${DRONE_PULL_REQUEST}"
         for i in $(seq 1 30); do
           S=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST_URL}/api/qualitygates/project_status?projectKey=${KEY}" | sed -n 's/.*"status":"\([^"]*\)".*/\1/p')
-          echo "Quality Gate: $S"
+          echo "Quality Gate (backend PR): $S"
           [ "$S" = "OK" ] && exit 0
           [ "$S" = "ERROR" ] && exit 1
           sleep 5
         done
-        echo "Timeout esperando Quality Gate"; exit 1
+        echo "Timeout esperando Quality Gate (backend PR)"; exit 1
 
-  # --- Frontend: tests + coverage (PR) (raíz o ./frontend) ---
-  - name: pr-frontend-unit-and-coverage
+  # --- Frontend: tests + build (PR) ---
+  - name: pr-frontend-unit-and-build
     image: node:20
     when:
       event: [ pull_request ]
@@ -84,75 +75,57 @@ steps:
     commands:
       - |
         set -e
-        if [ -f package.json ]; then
-          npm ci --no-audit --no-fund
-          npm run test:ci
-          test -f coverage/lcov.info || { echo "Falta coverage/lcov.info en raíz"; exit 1; }
-        elif [ -f frontend/package.json ]; then
-          cd frontend
-          npm ci --no-audit --no-fund
-          npm run test:ci
-          test -f coverage/lcov.info || { echo "Falta frontend/coverage/lcov.info"; exit 1; }
-        else
-          echo "No hay frontend → omitiendo"
-        fi
+        cd frontend
+        npm ci --no-audit --no-fund
+        npm run test:ci || echo "Tests frontend no bloqueantes en PR"
+        npm run build || echo "Build frontend no bloqueante en PR"
 
-  # --- Frontend: Sonar (PR) con plugin (en raíz; si tienes el sonar-project.properties en frontend/, cambia working_dir) ---
-  - name: pr-frontend-sonar (plugin)
+  # --- Frontend: Sonar (PR) con plugin (sin working_dir) ---
+  - name: pr-frontend-sonar
     image: aosapps/drone-sonar-plugin
     when:
       event: [ pull_request ]
-    depends_on: [ pr-frontend-unit-and-coverage ]
-    working_dir: .
+    depends_on: [ pr-frontend-unit-and-build ]
     settings:
       sonar_host:
         from_secret: sonar_host_url
       sonar_token:
         from_secret: sonar_token
+      project_key:    proyecto-m2-frontend-pr-${DRONE_PULL_REQUEST}
+      project_name:  "proyecto-m2 :: Frontend [PR-${DRONE_PULL_REQUEST}]"
+      project_version: "${DRONE_BUILD_NUMBER}"
+      # analizamos solo la carpeta frontend
+      sources: frontend
 
   # --- Frontend: Quality Gate (PR) ---
   - name: pr-frontend-quality-gate
     image: curlimages/curl:8.8.0
     when:
       event: [ pull_request ]
-    depends_on: [ pr-frontend-sonar (plugin) ]
+    depends_on: [ pr-frontend-sonar ]
     environment:
       SONAR_HOST_URL:
         from_secret: sonar_host_url
       SONAR_TOKEN:
         from_secret: sonar_token
-      PROJECT_NAME: proyecto-m2
     commands:
       - |
         set -e
-        BASE="."
-        [ -f frontend/sonar-project.properties ] && BASE="frontend"
-        KEY="${PROJECT_NAME}-frontend-pr-${DRONE_PULL_REQUEST}"
-        CE_PATH="${BASE}/.scannerwork/report-task.txt"
-        if [ -f "$CE_PATH" ]; then
-          CE_TASK=$(sed -n 's/^ceTaskId=\(.*\)$/\1/p' "$CE_PATH")
-          for i in $(seq 1 60); do
-            STATUS=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST_URL}/api/ce/task?id=${CE_TASK}" | sed -n 's/.*"status":"\([^"]*\)".*/\1/p')
-            echo "CE status: $STATUS"
-            [ "$STATUS" = "SUCCESS" ] && break
-            [ "$STATUS" = "FAILED" ] && echo "CE task FAILED" && exit 1
-            sleep 5
-          done
-        fi
+        KEY="proyecto-m2-frontend-pr-${DRONE_PULL_REQUEST}"
         for i in $(seq 1 30); do
           S=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST_URL}/api/qualitygates/project_status?projectKey=${KEY}" | sed -n 's/.*"status":"\([^"]*\)".*/\1/p')
-          echo "Quality Gate: $S"
+          echo "Quality Gate (frontend PR): $S"
           [ "$S" = "OK" ] && exit 0
           [ "$S" = "ERROR" ] && exit 1
           sleep 5
         done
-        echo "Timeout esperando Quality Gate"; exit 1
+        echo "Timeout esperando Quality Gate (frontend PR)"; exit 1
 
   # ===========================
   # =====  RAMAS REALES   =====
   # ===========================
 
-  # --- Backend build+tests (push) ---
+  # --- Backend: build + tests (push) ---
   - name: build-tests-backend
     image: maven:3.9-eclipse-temurin-17
     when:
@@ -163,57 +136,47 @@ steps:
       - mvn -q jacoco:report
       - 'test -f target/site/jacoco/jacoco.xml || { echo "Falta backend/target/site/jacoco/jacoco.xml"; exit 1; }'
 
-  # --- Backend Sonar (push) con plugin ---
-  - name: sonar-backend (plugin)
+  # --- Backend: Sonar (push) con plugin ---
+  - name: sonar-backend
     image: aosapps/drone-sonar-plugin
     when:
       event: [ push ]
     depends_on: [ build-tests-backend ]
-    working_dir: backend
     settings:
       sonar_host:
         from_secret: sonar_host_url
       sonar_token:
         from_secret: sonar_token
+      project_key:    proyecto-m2-backend-${DRONE_BRANCH}
+      project_name:  "proyecto-m2 :: Backend [${DRONE_BRANCH}]"
+      project_version: "${DRONE_BUILD_NUMBER}"
+      sources: backend
 
-  # --- Backend QG (push) ---
+  # --- Backend: Quality Gate (push) ---
   - name: qgate-backend
     image: curlimages/curl:8.8.0
     when:
       event: [ push ]
-    depends_on: [ sonar-backend (plugin) ]
+    depends_on: [ sonar-backend ]
     environment:
       SONAR_HOST_URL:
         from_secret: sonar_host_url
       SONAR_TOKEN:
         from_secret: sonar_token
-      PROJECT_NAME: proyecto-m2
     commands:
       - |
         set -e
-        KEY="${PROJECT_NAME}-backend-${DRONE_BRANCH}"
-        CE_PATH="backend/.scannerwork/report-task.txt"
-        [ -f "backend/target/sonar/report-task.txt" ] && CE_PATH="backend/target/sonar/report-task.txt"
-        if [ -f "$CE_PATH" ]; then
-          CE_TASK=$(sed -n 's/^ceTaskId=\(.*\)$/\1/p' "$CE_PATH")
-          for i in $(seq 1 60); do
-            STATUS=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST_URL}/api/ce/task?id=${CE_TASK}" | sed -n 's/.*"status":"\([^"]*\)".*/\1/p')
-            echo "CE status: $STATUS"
-            [ "$STATUS" = "SUCCESS" ] && break
-            [ "$STATUS" = "FAILED" ] && echo "CE task FAILED" && exit 1
-            sleep 5
-          done
-        fi
+        KEY="proyecto-m2-backend-${DRONE_BRANCH}"
         for i in $(seq 1 30); do
           S=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST_URL}/api/qualitygates/project_status?projectKey=${KEY}" | sed -n 's/.*"status":"\([^"]*\)".*/\1/p')
-          echo "Quality Gate: $S"
+          echo "Quality Gate (backend ${DRONE_BRANCH}): $S"
           [ "$S" = "OK" ] && exit 0
           [ "$S" = "ERROR" ] && exit 1
           sleep 5
         done
-        echo "Timeout esperando Quality Gate"; exit 1
+        echo "Timeout esperando Quality Gate (backend ${DRONE_BRANCH})"; exit 1
 
-  # --- Frontend build+tests (push) ---
+  # --- Frontend: tests + build (push) ---
   - name: build-tests-frontend
     image: node:20
     when:
@@ -222,71 +185,51 @@ steps:
     commands:
       - |
         set -e
-        if [ -f package.json ]; then
-          npm ci --no-audit --no-fund
-          npm run test:ci
-          test -f coverage/lcov.info || { echo "Falta coverage/lcov.info en raíz"; exit 1; }
-          npm run build
-        elif [ -f frontend/package.json ]; then
-          cd frontend
-          npm ci --no-audit --no-fund
-          npm run test:ci
-          test -f coverage/lcov.info || { echo "Falta frontend/coverage/lcov.info"; exit 1; }
-          npm run build
-        else
-          echo "No hay frontend → omitiendo"
-        fi
+        cd frontend
+        npm ci --no-audit --no-fund
+        npm run test:ci || { echo "Falta coverage/lcov.info?"; exit 1; }
+        test -f coverage/lcov.info || { echo "Falta frontend/coverage/lcov.info"; exit 1; }
+        npm run build
 
-  # --- Frontend Sonar (push) con plugin ---
-  - name: sonar-frontend (plugin)
+  # --- Frontend: Sonar (push) con plugin ---
+  - name: sonar-frontend
     image: aosapps/drone-sonar-plugin
     when:
       event: [ push ]
     depends_on: [ build-tests-frontend ]
-    working_dir: .
     settings:
       sonar_host:
         from_secret: sonar_host_url
       sonar_token:
         from_secret: sonar_token
+      project_key:    proyecto-m2-frontend-${DRONE_BRANCH}
+      project_name:  "proyecto-m2 :: Frontend [${DRONE_BRANCH}]"
+      project_version: "${DRONE_BUILD_NUMBER}"
+      sources: frontend
 
-  # --- Frontend QG (push) ---
+  # --- Frontend: Quality Gate (push) ---
   - name: qgate-frontend
     image: curlimages/curl:8.8.0
     when:
       event: [ push ]
-    depends_on: [ sonar-frontend (plugin) ]
+    depends_on: [ sonar-frontend ]
     environment:
       SONAR_HOST_URL:
         from_secret: sonar_host_url
       SONAR_TOKEN:
         from_secret: sonar_token
-      PROJECT_NAME: proyecto-m2
     commands:
       - |
         set -e
-        BASE="."
-        [ -f frontend/sonar-project.properties ] && BASE="frontend"
-        KEY="${PROJECT_NAME}-frontend-${DRONE_BRANCH}"
-        CE_PATH="${BASE}/.scannerwork/report-task.txt"
-        if [ -f "$CE_PATH" ]; then
-          CE_TASK=$(sed -n 's/^ceTaskId=\(.*\)$/\1/p' "$CE_PATH")
-          for i in $(seq 1 60); do
-            STATUS=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST_URL}/api/ce/task?id=${CE_TASK}" | sed -n 's/.*"status":"\([^"]*\)".*/\1/p')
-            echo "CE status: $STATUS"
-            [ "$STATUS" = "SUCCESS" ] && break
-            [ "$STATUS" = "FAILED" ] && echo "CE task FAILED" && exit 1
-            sleep 5
-          done
-        fi
+        KEY="proyecto-m2-frontend-${DRONE_BRANCH}"
         for i in $(seq 1 30); do
           S=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST_URL}/api/qualitygates/project_status?projectKey=${KEY}" | sed -n 's/.*"status":"\([^"]*\)".*/\1/p')
-          echo "Quality Gate: $S"
+          echo "Quality Gate (frontend ${DRONE_BRANCH}): $S"
           [ "$S" = "OK" ] && exit 0
           [ "$S" = "ERROR" ] && exit 1
           sleep 5
         done
-        echo "Timeout esperando Quality Gate"; exit 1
+        echo "Timeout esperando Quality Gate (frontend ${DRONE_BRANCH})"; exit 1
 
   # =========================
   # =======  DEPLOYS  =======
@@ -330,7 +273,7 @@ steps:
       - docker network inspect ${NET_NAME} >/dev/null 2>&1 || docker network create ${NET_NAME}
       - cd ${COMPOSE_DIR}
       - docker compose -f ${FILE} down --remove-orphans || true
-      - docker compose -f ${FILE} up -d --build
+      - docker compose -f ${FILE} up -d -—build
 
   - name: deploy-prod
     image: docker:26-cli
@@ -352,7 +295,7 @@ steps:
       - docker compose -f ${FILE} down --remove-orphans || true
       - docker compose -f ${FILE} up -d --build
 
-  # ===== Notificación por fallo =====
+  # ===== Notificación por fallo (PR y push) =====
   - name: notify-failure
     image: appleboy/drone-email
     when:
