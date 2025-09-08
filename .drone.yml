@@ -12,11 +12,6 @@ environment:
 clone:
   depth: 50
 
-volumes:
-  - name: dockersock
-    host:
-      path: /var/run/docker.sock
-
 trigger:
   event: [ push, pull_request ]
   branch: [ dev, uat, prod ]
@@ -25,14 +20,12 @@ concurrency:
   limit: 1
 
 steps:
- 
   - name: checkout
     image: alpine/git
     commands:
       - git fetch --all
       - git reset --hard origin/${DRONE_BRANCH}
 
-  # ===== Backend (build → test) =====
   - name: build-backend
     image: maven:3.9-eclipse-temurin-17
     depends_on: [ checkout ]
@@ -60,7 +53,6 @@ steps:
         mvn -q -B test jacoco:report
         test -f target/site/jacoco/jacoco.xml || { echo "Falta backend/target/site/jacoco/jacoco.xml"; exit 3; }
 
-  
   - name: wait-for-sonar
     image: curlimages/curl:8.9.1
     depends_on: [ test-backend ]
@@ -76,7 +68,6 @@ steps:
         done
         echo "Timeout esperando SonarQube (status!=UP)"; exit 8
 
-  # ===== Sonar BACKEND por rama =====
   - name: sonar-backend-dev
     image: maven:3.9.9-eclipse-temurin-17
     when:
@@ -163,7 +154,6 @@ steps:
           -Dsonar.qualitygate.wait=true \
           -Dsonar.qualitygate.timeout=600
 
-  # ===== Sonar BACKEND para Pull Requests =====
   - name: sonar-backend-pr
     image: maven:3.9.9-eclipse-temurin-17
     when:
@@ -191,7 +181,6 @@ steps:
           -Dsonar.qualitygate.wait=true \
           -Dsonar.qualitygate.timeout=600
 
-  # ===== Frontend (build → test) en RAÍZ =====
   - name: build-frontend
     image: node:20
     depends_on:
@@ -225,7 +214,6 @@ steps:
         npm run test:ci
         test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
 
-  # ===== Sonar FRONTEND por rama=====
   - name: sonar-frontend-dev
     image: sonarsource/sonar-scanner-cli:5
     when:
@@ -322,114 +310,80 @@ steps:
           -Dsonar.qualitygate.wait=true \
           -Dsonar.qualitygate.timeout=600
 
-  # ===== Sonar FRONTEND para Pull Requests =====
-  - name: sonar-frontend-pr
-    image: sonarsource/sonar-scanner-cli:5
+  # =========================
+  # =======  DEPLOYS  =======
+  # =========================
+  - name: deploy-dev
+    image: docker:26-cli
     when:
-      event: [ pull_request ]
+      event: [ push ]
+      branch: [ dev ]
+    depends_on:
+      - sonar-frontend-dev
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
     environment:
-      SONAR_TOKEN:
-        from_secret: sonar_token
-      SONAR_USER_HOME: /tmp/sonar
-    depends_on: [ test-frontend, wait-for-sonar ]
+      COMPOSE_DIR: deploy
+      NET_NAME: m2-dev-net
+      FILE: docker-compose.dev.yml
     commands:
       - |
         set -eu
-        if [ ! -f package.json ]; then
-          echo "No hay frontend en raíz → omitiendo análisis"
-          exit 0
-        fi
-        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
-        test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
-        EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
-        sonar-scanner \
-          -Dsonar.projectKey=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
-          -Dsonar.projectName=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
-          -Dsonar.projectBaseDir=. \
-          -Dsonar.sources=src \
-          -Dsonar.exclusions="${EXCLS}" \
-          -Dsonar.host.url="$SONAR_HOST_URL" \
-          -Dsonar.token="$SONAR_TOKEN" \
-          -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-          -Dsonar.qualitygate.wait=true \
-          -Dsonar.qualitygate.timeout=600
-# =========================
-# =======  DEPLOYS  =======
-# =========================
-- name: deploy-dev
-  image: docker:26-cli
-  when:
-    event: [ push ]
-    branch: [ dev ]
-  depends_on:
-    - sonar-frontend-dev
-  volumes:
-    - name: dockersock
-      path: /var/run/docker.sock
-  environment:
-    COMPOSE_DIR: deploy
-    NET_NAME: m2-dev-net
-    FILE: docker-compose.dev.yml
-  commands:
-    - |
-      set -eu
-      apk add --no-cache docker-cli-compose
-      # Verifica que las variables EXISTAN en tiempo de ejecución
-      echo "NET_NAME=$${NET_NAME} COMPOSE_DIR=$${COMPOSE_DIR} FILE=$${FILE}"
-      # Crea la red si no existe
-      docker network inspect "$${NET_NAME}" >/dev/null 2>&1 || docker network create "$${NET_NAME}"
-      cd "$${COMPOSE_DIR}"
-      docker compose -f "$${FILE}" down --remove-orphans || true
-      docker compose -f "$${FILE}" up -d --build
+        apk add --no-cache docker-cli-compose
+        echo "NET_NAME=$${NET_NAME} COMPOSE_DIR=$${COMPOSE_DIR} FILE=$${FILE}"
+        docker network inspect "$${NET_NAME}" >/dev/null 2>&1 || docker network create "$${NET_NAME}"
+        cd "$${COMPOSE_DIR}"
+        docker compose -f "$${FILE}" down --remove-orphans || true
+        docker compose -f "$${FILE}" up -d --build
 
-- name: deploy-uat
-  image: docker:26-cli
-  when:
-    event: [ push ]
-    branch: [ uat ]
-  depends_on:
-    - sonar-frontend-uat
-  volumes:
-    - name: dockersock
-      path: /var/run/docker.sock
-  environment:
-    COMPOSE_DIR: deploy
-    NET_NAME: m2-uat-net
-    FILE: docker-compose.uat.yml
-  commands:
-    - |
-      set -eu
-      apk add --no-cache docker-cli-compose
-      echo "NET_NAME=$${NET_NAME} COMPOSE_DIR=$${COMPOSE_DIR} FILE=$${FILE}"
-      docker network inspect "$${NET_NAME}" >/dev/null 2>&1 || docker network create "$${NET_NAME}"
-      cd "$${COMPOSE_DIR}"
-      docker compose -f "$${FILE}" down --remove-orphans || true
-      docker compose -f "$${FILE}" up -d --build
+  - name: deploy-uat
+    image: docker:26-cli
+    when:
+      event: [ push ]
+      branch: [ uat ]
+    depends_on:
+      - sonar-frontend-uat
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    environment:
+      COMPOSE_DIR: deploy
+      NET_NAME: m2-uat-net
+      FILE: docker-compose.uat.yml
+    commands:
+      - |
+        set -eu
+        apk add --no-cache docker-cli-compose
+        echo "NET_NAME=$${NET_NAME} COMPOSE_DIR=$${COMPOSE_DIR} FILE=$${FILE}"
+        docker network inspect "$${NET_NAME}" >/dev/null 2>&1 || docker network create "$${NET_NAME}"
+        cd "$${COMPOSE_DIR}"
+        docker compose -f "$${FILE}" down --remove-orphans || true
+        docker compose -f "$${FILE}" up -d --build
 
-- name: deploy-prod
-  image: docker:26-cli
-  when:
-    event: [ push ]
-    branch: [ prod ]
-  depends_on:
-    - sonar-frontend-prod
-  volumes:
-    - name: dockersock
-      path: /var/run/docker.sock
-  environment:
-    COMPOSE_DIR: deploy
-    NET_NAME: m2-prod-net
-    FILE: docker-compose.prod.yml
-  commands:
-    - |
-      set -eu
-      apk add --no-cache docker-cli-compose
-      echo "NET_NAME=$${NET_NAME} COMPOSE_DIR=$${COMPOSE_DIR} FILE=$${FILE}"
-      docker network inspect "$${NET_NAME}" >/dev/null 2>&1 || docker network create "$${NET_NAME}"
-      cd "$${COMPOSE_DIR}"
-      docker compose -f "$${FILE}" down --remove-orphans || true
-      docker compose -f "$${FILE}" up -d --build
-
+  - name: deploy-prod
+    image: docker:26-cli
+    when:
+      event: [ push ]
+      branch: [ prod ]
+    depends_on:
+      - sonar-frontend-prod
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    environment:
+      COMPOSE_DIR: deploy
+      NET_NAME: m2-prod-net
+      FILE: docker-compose.prod.yml
+    commands:
+      - |
+        set -eu
+        apk add --no-cache docker-cli-compose
+        echo "NET_NAME=$${NET_NAME} COMPOSE_DIR=$${COMPOSE_DIR} FILE=$${FILE}"
+        docker network inspect "$${NET_NAME}" >/dev/null 2>&1 || docker network create "$${NET_NAME}"
+        cd "$${COMPOSE_DIR}"
+        docker compose -f "$${FILE}" down --remove-orphans || true
+        docker compose -f "$${FILE}" up -d --build
 
   - name: notify-failure
     image: appleboy/drone-email
