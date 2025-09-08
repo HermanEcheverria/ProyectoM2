@@ -6,14 +6,12 @@ workspace:
   base: /drone
   path: src
 
-# Host Sonar (no sensible)
 environment:
   SONAR_HOST_URL: http://sonarqube:9000
 
 clone:
   depth: 50
 
-# Montamos el socket de Docker para deploy
 volumes:
   - name: dockersock
     host:
@@ -27,7 +25,7 @@ concurrency:
   limit: 1
 
 steps:
-  # ===== Checkout coherente con la rama =====
+ 
   - name: checkout
     image: alpine/git
     commands:
@@ -62,7 +60,7 @@ steps:
         mvn -q -B test jacoco:report
         test -f target/site/jacoco/jacoco.xml || { echo "Falta backend/target/site/jacoco/jacoco.xml"; exit 3; }
 
-  # === Esperar SonarQube UP (lo usamos para todos los análisis) ===
+  
   - name: wait-for-sonar
     image: curlimages/curl:8.9.1
     depends_on: [ test-backend ]
@@ -78,7 +76,7 @@ steps:
         done
         echo "Timeout esperando SonarQube (status!=UP)"; exit 8
 
-  # ===== Sonar BACKEND por rama (QGate nativo) =====
+  # ===== Sonar BACKEND por rama =====
   - name: sonar-backend-dev
     image: maven:3.9.9-eclipse-temurin-17
     when:
@@ -227,7 +225,7 @@ steps:
         npm run test:ci
         test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
 
-  # ===== Sonar FRONTEND por rama (QGate nativo) =====
+  # ===== Sonar FRONTEND por rama=====
   - name: sonar-frontend-dev
     image: sonarsource/sonar-scanner-cli:5
     when:
@@ -247,10 +245,13 @@ steps:
         fi
         test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
         test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
+        EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
         sonar-scanner \
           -Dsonar.projectKey=M2:Frontend_Dev \
           -Dsonar.projectName=M2:Frontend_Dev \
-          -Dsonar.sources=. \
+          -Dsonar.projectBaseDir=. \
+          -Dsonar.sources=src \
+          -Dsonar.exclusions="${EXCLS}" \
           -Dsonar.host.url="$SONAR_HOST_URL" \
           -Dsonar.token="$SONAR_TOKEN" \
           -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
@@ -276,10 +277,13 @@ steps:
         fi
         test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
         test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
+        EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
         sonar-scanner \
           -Dsonar.projectKey=M2:Frontend_Uat \
           -Dsonar.projectName=M2:Frontend_Uat \
-          -Dsonar.sources=. \
+          -Dsonar.projectBaseDir=. \
+          -Dsonar.sources=src \
+          -Dsonar.exclusions="${EXCLS}" \
           -Dsonar.host.url="$SONAR_HOST_URL" \
           -Dsonar.token="$SONAR_TOKEN" \
           -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
@@ -305,10 +309,13 @@ steps:
         fi
         test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
         test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
+        EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
         sonar-scanner \
           -Dsonar.projectKey=M2:Frontend_Prod \
           -Dsonar.projectName=M2:Frontend_Prod \
-          -Dsonar.sources=. \
+          -Dsonar.projectBaseDir=. \
+          -Dsonar.sources=src \
+          -Dsonar.exclusions="${EXCLS}" \
           -Dsonar.host.url="$SONAR_HOST_URL" \
           -Dsonar.token="$SONAR_TOKEN" \
           -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
@@ -334,10 +341,13 @@ steps:
         fi
         test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
         test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
+        EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
         sonar-scanner \
           -Dsonar.projectKey=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
           -Dsonar.projectName=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
-          -Dsonar.sources=. \
+          -Dsonar.projectBaseDir=. \
+          -Dsonar.sources=src \
+          -Dsonar.exclusions="${EXCLS}" \
           -Dsonar.host.url="$SONAR_HOST_URL" \
           -Dsonar.token="$SONAR_TOKEN" \
           -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
