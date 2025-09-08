@@ -11,6 +11,30 @@ concurrency:
 
 steps:
   # ========================
+  # ===== DIAGNÓSTICO ======
+  # ========================
+  - name: diag-secrets
+    image: alpine:3.20
+    when:
+      event: [ push, pull_request ]
+      branch: [ dev, uat, prod ]
+    environment:
+      SONAR_HOST_URL:
+        from_secret: sonar_host_url
+      SONAR_TOKEN:
+        from_secret: sonar_token
+    commands:
+      - |
+        set -euo pipefail
+        echo "event=${DRONE_BUILD_EVENT:-?} branch=${DRONE_BRANCH:-?} sha=${DRONE_COMMIT_SHA:-?}"
+        echo "WORKDIR=$(pwd)"
+        ls -la
+        echo ".drone.yml (líneas 1-60 del repo):"
+        sed -n '1,60p' .drone.yml || true
+        if [ -n "${SONAR_HOST_URL:-}" ]; then echo "SONAR_HOST_URL: PRESENT"; else echo "SONAR_HOST_URL: MISSING"; fi
+        if [ -n "${SONAR_TOKEN:-}" ]; then echo "SONAR_TOKEN: PRESENT"; else echo "SONAR_TOKEN: MISSING"; fi
+
+  # ========================
   # =======  PR GATE  ======
   # ========================
   - name: pr-backend-unit-jacoco
