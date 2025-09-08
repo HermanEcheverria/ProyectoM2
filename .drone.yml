@@ -2,13 +2,6 @@ kind: pipeline
 type: docker
 name: ProyectoM2-CI-CD
 
-# ↓↓↓ Variables globales heredadas por todos los steps
-environment:
-  SONAR_HOST_URL:
-    from_secret: sonar_host_url
-  SONAR_TOKEN:
-    from_secret: sonar_token
-
 trigger:
   event: [ push, pull_request ]
   branch: [ dev, uat, prod ]
@@ -25,7 +18,6 @@ steps:
     when:
       event: [ push, pull_request ]
       branch: [ dev, uat, prod ]
-    # (opcional; con el bloque global ya no es necesario, pero no estorba)
     environment:
       SONAR_HOST_URL:
         from_secret: sonar_host_url
