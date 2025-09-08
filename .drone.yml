@@ -2,9 +2,16 @@ kind: pipeline
 type: docker
 name: ProyectoM2-CI-CD
 
+environment:
+  SONAR_HOST_URL:
+    from_secret: sonar_host_url
+  SONAR_TOKEN:
+    from_secret: sonar_token
+
 trigger:
   event: [ push, pull_request ]
   branch: [ dev, uat, prod ]
+
 
 concurrency:
   limit: 1
