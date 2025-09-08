@@ -353,11 +353,10 @@ steps:
           -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
           -Dsonar.qualitygate.wait=true \
           -Dsonar.qualitygate.timeout=600
-
-  # =========================
-  # =======  DEPLOYS  =======
-  # =========================
-  - name: deploy-dev
+# =========================
+# =======  DEPLOYS  =======
+# =========================
+- name: deploy-dev
   image: docker:26-cli
   when:
     event: [ push ]
@@ -375,13 +374,15 @@ steps:
     - |
       set -eu
       apk add --no-cache docker-cli-compose
-      # Crear red si no existe
+      # Verifica que las variables EXISTAN en tiempo de ejecución
+      echo "NET_NAME=$${NET_NAME} COMPOSE_DIR=$${COMPOSE_DIR} FILE=$${FILE}"
+      # Crea la red si no existe
       docker network inspect "$${NET_NAME}" >/dev/null 2>&1 || docker network create "$${NET_NAME}"
       cd "$${COMPOSE_DIR}"
       docker compose -f "$${FILE}" down --remove-orphans || true
       docker compose -f "$${FILE}" up -d --build
 
-  - name: deploy-uat
+- name: deploy-uat
   image: docker:26-cli
   when:
     event: [ push ]
@@ -399,55 +400,36 @@ steps:
     - |
       set -eu
       apk add --no-cache docker-cli-compose
+      echo "NET_NAME=$${NET_NAME} COMPOSE_DIR=$${COMPOSE_DIR} FILE=$${FILE}"
       docker network inspect "$${NET_NAME}" >/dev/null 2>&1 || docker network create "$${NET_NAME}"
       cd "$${COMPOSE_DIR}"
       docker compose -f "$${FILE}" down --remove-orphans || true
       docker compose -f "$${FILE}" up -d --build
 
-  - name: deploy-prod
-    image: docker:26-cli
-    when:
+- name: deploy-prod
+  image: docker:26-cli
+  when:
     event: [ push ]
     branch: [ prod ]
-    depends_on:
+  depends_on:
     - sonar-frontend-prod
-    volumes:
+  volumes:
     - name: dockersock
       path: /var/run/docker.sock
-    environment:
+  environment:
     COMPOSE_DIR: deploy
     NET_NAME: m2-prod-net
     FILE: docker-compose.prod.yml
-    commands:
+  commands:
     - |
       set -eu
       apk add --no-cache docker-cli-compose
+      echo "NET_NAME=$${NET_NAME} COMPOSE_DIR=$${COMPOSE_DIR} FILE=$${FILE}"
       docker network inspect "$${NET_NAME}" >/dev/null 2>&1 || docker network create "$${NET_NAME}"
       cd "$${COMPOSE_DIR}"
       docker compose -f "$${FILE}" down --remove-orphans || true
       docker compose -f "$${FILE}" up -d --build
 
-
-  - name: deploy-prod
-    image: docker:26-cli
-    when:
-      event: [ push ]
-      branch: [ prod ]
-    depends_on:
-      - sonar-frontend-prod
-    volumes:
-      - name: dockersock
-        path: /var/run/docker.sock
-    environment:
-      COMPOSE_DIR: deploy
-      NET_NAME: m2-prod-net
-      FILE: docker-compose.prod.yml
-    commands:
-      - apk add --no-cache docker-cli-compose
-      - docker network inspect ${NET_NAME} >/dev/null 2>&1 || docker network create ${NET_NAME}
-      - cd ${COMPOSE_DIR}
-      - docker compose -f ${FILE} down --remove-orphans || true
-      - docker compose -f ${FILE} up -d --build
 
   - name: notify-failure
     image: appleboy/drone-email
