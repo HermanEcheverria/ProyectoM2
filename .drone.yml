@@ -6,14 +6,13 @@ workspace:
   base: /drone
   path: src
 
-# Host Sonar (no sensible)
+
 environment:
   SONAR_HOST_URL: http://sonarqube:9000
 
 clone:
   depth: 50
 
-# Montamos el socket de Docker para los steps de deploy
 volumes:
   - name: dockersock
     host:
@@ -27,41 +26,47 @@ concurrency:
   limit: 1
 
 steps:
-  # ===== Checkout coherente con la rama del build =====
+
   - name: checkout
     image: alpine/git
     commands:
       - git fetch --all
       - git reset --hard origin/${DRONE_BRANCH}
 
-  # ===== Backend (build → test) =====
+
   - name: build-backend
     image: maven:3.9-eclipse-temurin-17
-    when:
-      exists: [ backend/pom.xml ]
-    environment:
-      MAVEN_OPTS: -Dmaven.test.skip=true
     depends_on: [ checkout ]
     commands:
-      - cd backend
-      - mvn -q -B clean install -DskipTests
+      - |
+        set -euo pipefail
+        if [ ! -f backend/pom.xml ]; then
+          echo "No hay backend → omitiendo build"
+          exit 0
+        fi
+        cd backend
+        mvn -q -B clean install -DskipTests
 
   - name: test-backend
     image: maven:3.9-eclipse-temurin-17
-    when:
-      exists: [ backend/pom.xml ]
     depends_on: [ build-backend ]
     commands:
-      - cd backend
-      - mvn -q -B test jacoco:report
-      - 'test -f target/site/jacoco/jacoco.xml || { echo "Falta backend/target/site/jacoco/jacoco.xml"; exit 3; }'
+      - |
+        set -euo pipefail
+        if [ ! -f backend/pom.xml ]; then
+          echo "No hay backend → omitiendo tests"
+          exit 0
+        fi
+        cd backend
+        mvn -q -B test jacoco:report
+        test -f target/site/jacoco/jacoco.xml || { echo "Falta backend/target/site/jacoco/jacoco.xml"; exit 3; }
 
-  # === Esperar SonarQube UP ===
   - name: wait-for-sonar
     image: curlimages/curl:8.9.1
     depends_on: [ test-backend ]
     commands:
       - |
+        set -euo pipefail
         echo "Esperando $SONAR_HOST_URL ..."
         for i in $(seq 1 60); do
           if curl -fsS "$SONAR_HOST_URL/api/system/status" | grep -q '"status":"UP"'; then
@@ -71,21 +76,24 @@ steps:
         done
         echo "Timeout esperando SonarQube (status!=UP)"; exit 8
 
-  # ===== Sonar BACKEND por rama (Quality Gate nativo) =====
   - name: sonar-backend-dev
     image: maven:3.9.9-eclipse-temurin-17
     when:
       event: [ push ]
       branch: [ dev ]
-      exists: [ backend/pom.xml ]
     environment:
       SONAR_TOKEN:
         from_secret: sonar_token
     depends_on: [ wait-for-sonar ]
     commands:
-      - test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
-      - cd backend
       - |
+        set -euo pipefail
+        if [ ! -f backend/pom.xml ]; then
+          echo "No hay backend → omitiendo análisis"
+          exit 0
+        fi
+        test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
+        cd backend
         mvn -B sonar:sonar \
           -DskipTests \
           -Dsonar.projectKey=M2:Backend_Dev \
@@ -101,15 +109,19 @@ steps:
     when:
       event: [ push ]
       branch: [ uat ]
-      exists: [ backend/pom.xml ]
     environment:
       SONAR_TOKEN:
         from_secret: sonar_token
     depends_on: [ wait-for-sonar ]
     commands:
-      - test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
-      - cd backend
       - |
+        set -euo pipefail
+        if [ ! -f backend/pom.xml ]; then
+          echo "No hay backend → omitiendo análisis"
+          exit 0
+        fi
+        test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
+        cd backend
         mvn -B sonar:sonar \
           -DskipTests \
           -Dsonar.projectKey=M2:Backend_Uat \
@@ -125,15 +137,19 @@ steps:
     when:
       event: [ push ]
       branch: [ prod ]
-      exists: [ backend/pom.xml ]
     environment:
       SONAR_TOKEN:
         from_secret: sonar_token
     depends_on: [ wait-for-sonar ]
     commands:
-      - test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
-      - cd backend
       - |
+        set -euo pipefail
+        if [ ! -f backend/pom.xml ]; then
+          echo "No hay backend → omitiendo análisis"
+          exit 0
+        fi
+        test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
+        cd backend
         VER=$(git describe --tags --always 2>/dev/null || echo "${DRONE_BUILD_NUMBER}")
         mvn -B sonar:sonar \
           -DskipTests \
@@ -151,15 +167,19 @@ steps:
     image: maven:3.9.9-eclipse-temurin-17
     when:
       event: [ pull_request ]
-      exists: [ backend/pom.xml ]
     environment:
       SONAR_TOKEN:
         from_secret: sonar_token
     depends_on: [ wait-for-sonar ]
     commands:
-      - test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
-      - cd backend
       - |
+        set -euo pipefail
+        if [ ! -f backend/pom.xml ]; then
+          echo "No hay backend → omitiendo análisis"
+          exit 0
+        fi
+        test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
+        cd backend
         mvn -B sonar:sonar \
           -DskipTests \
           -Dsonar.projectKey=M2:Backend_PR-${DRONE_PULL_REQUEST} \
@@ -170,101 +190,60 @@ steps:
           -Dsonar.qualitygate.wait=true \
           -Dsonar.qualitygate.timeout=600
 
-  # ===== Frontend (build → test) =====
-  # Raíz
-  - name: build-frontend-root
+  # ===== Frontend (build → test) en RAÍZ =====
+  - name: build-frontend
     image: node:20
-    when:
-      exists: [ package.json ]
     depends_on:
       - sonar-backend-dev
       - sonar-backend-uat
       - sonar-backend-prod
       - sonar-backend-pr
     commands:
-      - npm ci --no-audit --no-fund
-      - npm run build || true
+      - |
+        set -euo pipefail
+        if [ ! -f package.json ]; then
+          echo "No hay frontend en raíz → omitiendo build"
+          exit 0
+        fi
+        npm ci --no-audit --no-fund
+        npm run build || true
 
-  - name: test-frontend-root
+  - name: test-frontend
     image: node:20
-    when:
-      exists: [ package.json ]
     environment:
       CI: "true"
-    depends_on: [ build-frontend-root ]
+    depends_on: [ build-frontend ]
     commands:
-      - npm ci --no-audit --no-fund
-      - npm run test:ci
-      - 'test -f coverage/lcov.info || { echo "No existe coverage/lcov.info en raíz"; exit 3; }'
+      - |
+        set -euo pipefail
+        if [ ! -f package.json ]; then
+          echo "No hay frontend en raíz → omitiendo tests"
+          exit 0
+        fi
+        npm ci --no-audit --no-fund
+        npm run test:ci
+        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
 
-  # Carpeta frontend/
-  - name: build-frontend-subdir
-    image: node:20
-    when:
-      exists: [ frontend/package.json ]
-    depends_on:
-      - sonar-backend-dev
-      - sonar-backend-uat
-      - sonar-backend-prod
-      - sonar-backend-pr
-    commands:
-      - cd frontend
-      - npm ci --no-audit --no-fund
-      - npm run build || true
-
-  - name: test-frontend-subdir
-    image: node:20
-    when:
-      exists: [ frontend/package.json ]
-    environment:
-      CI: "true"
-    depends_on: [ build-frontend-subdir ]
-    commands:
-      - cd frontend
-      - npm ci --no-audit --no-fund
-      - npm run test:ci
-      - 'test -f coverage/lcov.info || { echo "No existe frontend/coverage/lcov.info"; exit 3; }'
-
-  # ===== Sonar FRONTEND por rama (Quality Gate nativo) =====
+  # ===== Sonar FRONTEND por rama (QGate nativo) =====
   - name: sonar-frontend-dev
     image: sonarsource/sonar-scanner-cli:5
     when:
       event: [ push ]
       branch: [ dev ]
-      exists: [ package.json ]
     environment:
       SONAR_TOKEN:
         from_secret: sonar_token
       SONAR_USER_HOME: /tmp/sonar
-    depends_on: [ test-frontend-root, wait-for-sonar ]
+    depends_on: [ test-frontend, wait-for-sonar ]
     commands:
-      - test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
       - |
-        sonar-scanner \
-          -Dsonar.projectKey=M2:Frontend_Dev \
-          -Dsonar.projectName=M2:Frontend_Dev \
-          -Dsonar.sources=. \
-          -Dsonar.host.url="$SONAR_HOST_URL" \
-          -Dsonar.token="$SONAR_TOKEN" \
-          -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-          -Dsonar.qualitygate.wait=true \
-          -Dsonar.qualitygate.timeout=600
-
-  - name: sonar-frontend-dev-subdir
-    image: sonarsource/sonar-scanner-cli:5
-    when:
-      event: [ push ]
-      branch: [ dev ]
-      exists: [ frontend/package.json ]
-    environment:
-      SONAR_TOKEN:
-        from_secret: sonar_token
-      SONAR_USER_HOME: /tmp/sonar
-    depends_on: [ test-frontend-subdir, wait-for-sonar ]
-    commands:
-      - test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
-      - cd frontend
-      - |
+        set -euo pipefail
+        if [ ! -f package.json ]; then
+          echo "No hay frontend en raíz → omitiendo análisis"
+          exit 0
+        fi
+        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
+        test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
         sonar-scanner \
           -Dsonar.projectKey=M2:Frontend_Dev \
           -Dsonar.projectName=M2:Frontend_Dev \
@@ -280,40 +259,20 @@ steps:
     when:
       event: [ push ]
       branch: [ uat ]
-      exists: [ package.json ]
     environment:
       SONAR_TOKEN:
         from_secret: sonar_token
       SONAR_USER_HOME: /tmp/sonar
-    depends_on: [ test-frontend-root, wait-for-sonar ]
+    depends_on: [ test-frontend, wait-for-sonar ]
     commands:
-      - test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
       - |
-        sonar-scanner \
-          -Dsonar.projectKey=M2:Frontend_Uat \
-          -Dsonar.projectName=M2:Frontend_Uat \
-          -Dsonar.sources=. \
-          -Dsonar.host.url="$SONAR_HOST_URL" \
-          -Dsonar.token="$SONAR_TOKEN" \
-          -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-          -Dsonar.qualitygate.wait=true \
-          -Dsonar.qualitygate.timeout=600
-
-  - name: sonar-frontend-uat-subdir
-    image: sonarsource/sonar-scanner-cli:5
-    when:
-      event: [ push ]
-      branch: [ uat ]
-      exists: [ frontend/package.json ]
-    environment:
-      SONAR_TOKEN:
-        from_secret: sonar_token
-      SONAR_USER_HOME: /tmp/sonar
-    depends_on: [ test-frontend-subdir, wait-for-sonar ]
-    commands:
-      - test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
-      - cd frontend
-      - |
+        set -euo pipefail
+        if [ ! -f package.json ]; then
+          echo "No hay frontend en raíz → omitiendo análisis"
+          exit 0
+        fi
+        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
+        test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
         sonar-scanner \
           -Dsonar.projectKey=M2:Frontend_Uat \
           -Dsonar.projectName=M2:Frontend_Uat \
@@ -329,40 +288,20 @@ steps:
     when:
       event: [ push ]
       branch: [ prod ]
-      exists: [ package.json ]
     environment:
       SONAR_TOKEN:
         from_secret: sonar_token
       SONAR_USER_HOME: /tmp/sonar
-    depends_on: [ test-frontend-root, wait-for-sonar ]
+    depends_on: [ test-frontend, wait-for-sonar ]
     commands:
-      - test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
       - |
-        sonar-scanner \
-          -Dsonar.projectKey=M2:Frontend_Prod \
-          -Dsonar.projectName=M2:Frontend_Prod \
-          -Dsonar.sources=. \
-          -Dsonar.host.url="$SONAR_HOST_URL" \
-          -Dsonar.token="$SONAR_TOKEN" \
-          -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-          -Dsonar.qualitygate.wait=true \
-          -Dsonar.qualitygate.timeout=600
-
-  - name: sonar-frontend-prod-subdir
-    image: sonarsource/sonar-scanner-cli:5
-    when:
-      event: [ push ]
-      branch: [ prod ]
-      exists: [ frontend/package.json ]
-    environment:
-      SONAR_TOKEN:
-        from_secret: sonar_token
-      SONAR_USER_HOME: /tmp/sonar
-    depends_on: [ test-frontend-subdir, wait-for-sonar ]
-    commands:
-      - test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
-      - cd frontend
-      - |
+        set -euo pipefail
+        if [ ! -f package.json ]; then
+          echo "No hay frontend en raíz → omitiendo análisis"
+          exit 0
+        fi
+        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
+        test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
         sonar-scanner \
           -Dsonar.projectKey=M2:Frontend_Prod \
           -Dsonar.projectName=M2:Frontend_Prod \
@@ -374,43 +313,24 @@ steps:
           -Dsonar.qualitygate.timeout=600
 
   # ===== Sonar FRONTEND para Pull Requests =====
-  - name: sonar-frontend-pr-root
+  - name: sonar-frontend-pr
     image: sonarsource/sonar-scanner-cli:5
     when:
       event: [ pull_request ]
-      exists: [ package.json ]
     environment:
       SONAR_TOKEN:
         from_secret: sonar_token
       SONAR_USER_HOME: /tmp/sonar
-    depends_on: [ test-frontend-root, wait-for-sonar ]
+    depends_on: [ test-frontend, wait-for-sonar ]
     commands:
-      - test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
       - |
-        sonar-scanner \
-          -Dsonar.projectKey=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
-          -Dsonar.projectName=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
-          -Dsonar.sources=. \
-          -Dsonar.host.url="$SONAR_HOST_URL" \
-          -Dsonar.token="$SONAR_TOKEN" \
-          -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-          -Dsonar.qualitygate.wait=true \
-          -Dsonar.qualitygate.timeout=600
-
-  - name: sonar-frontend-pr-subdir
-    image: sonarsource/sonar-scanner-cli:5
-    when:
-      event: [ pull_request ]
-      exists: [ frontend/package.json ]
-    environment:
-      SONAR_TOKEN:
-        from_secret: sonar_token
-      SONAR_USER_HOME: /tmp/sonar
-    depends_on: [ test-frontend-subdir, wait-for-sonar ]
-    commands:
-      - test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
-      - cd frontend
-      - |
+        set -euo pipefail
+        if [ ! -f package.json ]; then
+          echo "No hay frontend en raíz → omitiendo análisis"
+          exit 0
+        fi
+        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
+        test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
         sonar-scanner \
           -Dsonar.projectKey=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
           -Dsonar.projectName=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
@@ -431,7 +351,6 @@ steps:
       branch: [ dev ]
     depends_on:
       - sonar-frontend-dev
-      - sonar-frontend-dev-subdir
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
@@ -453,7 +372,6 @@ steps:
       branch: [ uat ]
     depends_on:
       - sonar-frontend-uat
-      - sonar-frontend-uat-subdir
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
@@ -475,7 +393,6 @@ steps:
       branch: [ prod ]
     depends_on:
       - sonar-frontend-prod
-      - sonar-frontend-prod-subdir
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
