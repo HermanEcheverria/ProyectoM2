@@ -20,9 +20,9 @@ steps:
       branch: [ dev, uat, prod ]
     environment:
       SONAR_HOST_URL:
-        from_secret: sonar_host_url
+        from_secret: sonar_host_url_repo
       SONAR_TOKEN:
-        from_secret: sonar_token
+        from_secret: sonar_token_repo
     commands:
       - |
         set -euo pipefail
@@ -31,6 +31,7 @@ steps:
         ls -la
         echo ".drone.yml (líneas 1-60 del repo):"
         sed -n '1,60p' .drone.yml || true
+        # No mostramos el token; solo indicamos si está seteado
         if [ -n "${SONAR_HOST_URL:-}" ]; then echo "SONAR_HOST_URL: PRESENT"; else echo "SONAR_HOST_URL: MISSING"; fi
         if [ -n "${SONAR_TOKEN:-}" ]; then echo "SONAR_TOKEN: PRESENT"; else echo "SONAR_TOKEN: MISSING"; fi
 
@@ -54,16 +55,14 @@ steps:
     depends_on: [ pr-backend-unit-jacoco ]
     environment:
       SONAR_HOST_URL:
-        from_secret: sonar_host_url
+        from_secret: sonar_host_url_repo
       SONAR_TOKEN:
-        from_secret: sonar_token
+        from_secret: sonar_token_repo
       PROJECT_NAME: proyecto-m2
     commands:
       - |
         set -euo pipefail
         cd backend
-
-        # Defaults razonables
         : "${SONAR_HOST_URL:=http://sonarqube:9000}"
         [ -n "${SONAR_HOST_URL}" ] || { echo "Falta secret sonar_host_url"; exit 2; }
         [ -n "${SONAR_TOKEN:-}" ]  || { echo "Falta secret sonar_token"; exit 2; }
@@ -77,7 +76,6 @@ steps:
           -Dsonar.projectKey="${KEY}" \
           -Dsonar.projectName="${NAME}"
 
-        # Esperar CE + Quality Gate
         apk add --no-cache curl >/dev/null
         CE_PATH=".scannerwork/report-task.txt"
         [ -f "target/sonar/report-task.txt" ] && CE_PATH="target/sonar/report-task.txt"
@@ -130,9 +128,9 @@ steps:
     depends_on: [ pr-frontend-tests ]
     environment:
       SONAR_HOST_URL:
-        from_secret: sonar_host_url
+        from_secret: sonar_host_url_repo
       SONAR_TOKEN:
-        from_secret: sonar_token
+        from_secret: sonar_token_repo
       PROJECT_NAME: proyecto-m2
     commands:
       - |
@@ -195,9 +193,9 @@ steps:
     depends_on: [ build-tests-backend ]
     environment:
       SONAR_HOST_URL:
-        from_secret: sonar_host_url
+        from_secret: sonar_host_url_repo
       SONAR_TOKEN:
-        from_secret: sonar_token
+        from_secret: sonar_token_repo
       PROJECT_NAME: proyecto-m2
     commands:
       - |
@@ -276,9 +274,9 @@ steps:
     depends_on: [ build-tests-frontend ]
     environment:
       SONAR_HOST_URL:
-        from_secret: sonar_host_url
+        from_secret: sonar_host_url_repo
       SONAR_TOKEN:
-        from_secret: sonar_token
+        from_secret: sonar_token_repo
       PROJECT_NAME: proyecto-m2
     commands:
       - |
