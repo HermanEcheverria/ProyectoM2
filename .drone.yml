@@ -18,6 +18,13 @@ steps:
     when:
       event: [ push, pull_request ]
       branch: [ dev, uat, prod ]
+    # Mapeo explícito de secretos -> variables de entorno
+    secrets:
+      - source: sonar_host_url_repo
+        target: SONAR_HOST_URL
+      - source: sonar_token_repo
+        target: SONAR_TOKEN
+    # (opcional) redundante, pero no estorba:
     environment:
       SONAR_HOST_URL:
         from_secret: sonar_host_url_repo
@@ -31,7 +38,7 @@ steps:
         ls -la
         echo ".drone.yml (líneas 1-60 del repo):"
         sed -n '1,60p' .drone.yml || true
-        # No mostramos el token; solo indicamos si está seteado
+        # Solo indicamos si existen (sin imprimir el token)
         if [ -n "${SONAR_HOST_URL:-}" ]; then echo "SONAR_HOST_URL: PRESENT"; else echo "SONAR_HOST_URL: MISSING"; fi
         if [ -n "${SONAR_TOKEN:-}" ]; then echo "SONAR_TOKEN: PRESENT"; else echo "SONAR_TOKEN: MISSING"; fi
 
@@ -53,11 +60,12 @@ steps:
     when:
       event: [ pull_request ]
     depends_on: [ pr-backend-unit-jacoco ]
+    secrets:
+      - source: sonar_host_url_repo
+        target: SONAR_HOST_URL
+      - source: sonar_token_repo
+        target: SONAR_TOKEN
     environment:
-      SONAR_HOST_URL:
-        from_secret: sonar_host_url_repo
-      SONAR_TOKEN:
-        from_secret: sonar_token_repo
       PROJECT_NAME: proyecto-m2
     commands:
       - |
@@ -126,11 +134,12 @@ steps:
     when:
       event: [ pull_request ]
     depends_on: [ pr-frontend-tests ]
+    secrets:
+      - source: sonar_host_url_repo
+        target: SONAR_HOST_URL
+      - source: sonar_token_repo
+        target: SONAR_TOKEN
     environment:
-      SONAR_HOST_URL:
-        from_secret: sonar_host_url_repo
-      SONAR_TOKEN:
-        from_secret: sonar_token_repo
       PROJECT_NAME: proyecto-m2
     commands:
       - |
@@ -191,11 +200,12 @@ steps:
     when:
       event: [ push ]
     depends_on: [ build-tests-backend ]
+    secrets:
+      - source: sonar_host_url_repo
+        target: SONAR_HOST_URL
+      - source: sonar_token_repo
+        target: SONAR_TOKEN
     environment:
-      SONAR_HOST_URL:
-        from_secret: sonar_host_url_repo
-      SONAR_TOKEN:
-        from_secret: sonar_token_repo
       PROJECT_NAME: proyecto-m2
     commands:
       - |
@@ -272,11 +282,12 @@ steps:
     when:
       event: [ push ]
     depends_on: [ build-tests-frontend ]
+    secrets:
+      - source: sonar_host_url_repo
+        target: SONAR_HOST_URL
+      - source: sonar_token_repo
+        target: SONAR_TOKEN
     environment:
-      SONAR_HOST_URL:
-        from_secret: sonar_host_url_repo
-      SONAR_TOKEN:
-        from_secret: sonar_token_repo
       PROJECT_NAME: proyecto-m2
     commands:
       - |
