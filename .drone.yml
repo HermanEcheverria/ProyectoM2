@@ -11,38 +11,6 @@ concurrency:
 
 steps:
   # ========================
-  # ===== DIAGNÓSTICO ======
-  # ========================
-  - name: diag-secrets
-    image: alpine:3.20
-    when:
-      event: [ push, pull_request ]
-      branch: [ dev, uat, prod ]
-    # Mapeo explícito de secretos -> variables de entorno
-    secrets:
-      - source: sonar_host_url_repo
-        target: SONAR_HOST_URL
-      - source: sonar_token_repo
-        target: SONAR_TOKEN
-    # (opcional) redundante, pero no estorba:
-    environment:
-      SONAR_HOST_URL:
-        from_secret: sonar_host_url_repo
-      SONAR_TOKEN:
-        from_secret: sonar_token_repo
-    commands:
-      - |
-        set -euo pipefail
-        echo "event=${DRONE_BUILD_EVENT:-?} branch=${DRONE_BRANCH:-?} sha=${DRONE_COMMIT_SHA:-?}"
-        echo "WORKDIR=$(pwd)"
-        ls -la
-        echo ".drone.yml (líneas 1-60 del repo):"
-        sed -n '1,60p' .drone.yml || true
-        # Solo indicamos si existen (sin imprimir el token)
-        if [ -n "${SONAR_HOST_URL:-}" ]; then echo "SONAR_HOST_URL: PRESENT"; else echo "SONAR_HOST_URL: MISSING"; fi
-        if [ -n "${SONAR_TOKEN:-}" ]; then echo "SONAR_TOKEN: PRESENT"; else echo "SONAR_TOKEN: MISSING"; fi
-
-  # ========================
   # =======  PR GATE  ======
   # ========================
   - name: pr-backend-unit-jacoco
@@ -60,21 +28,14 @@ steps:
     when:
       event: [ pull_request ]
     depends_on: [ pr-backend-unit-jacoco ]
-    secrets:
-      - source: sonar_host_url_repo
-        target: SONAR_HOST_URL
-      - source: sonar_token_repo
-        target: SONAR_TOKEN
     environment:
       PROJECT_NAME: proyecto-m2
+      SONAR_HOST_URL: http://sonarqube:9000
+      SONAR_TOKEN: squ_caf420591cbd740340ee8e4b8c772ae3e3f44aab
     commands:
       - |
         set -euo pipefail
         cd backend
-        : "${SONAR_HOST_URL:=http://sonarqube:9000}"
-        [ -n "${SONAR_HOST_URL}" ] || { echo "Falta secret sonar_host_url"; exit 2; }
-        [ -n "${SONAR_TOKEN:-}" ]  || { echo "Falta secret sonar_token"; exit 2; }
-
         KEY="${PROJECT_NAME}-backend-pr-${DRONE_PULL_REQUEST}"
         NAME="${PROJECT_NAME} :: Backend [PR-${DRONE_PULL_REQUEST}]"
 
@@ -87,7 +48,6 @@ steps:
         apk add --no-cache curl >/dev/null
         CE_PATH=".scannerwork/report-task.txt"
         [ -f "target/sonar/report-task.txt" ] && CE_PATH="target/sonar/report-task.txt"
-
         if [ -f "$CE_PATH" ]; then
           CE_TASK=$(sed -n 's/^ceTaskId=\(.*\)$/\1/p' "$CE_PATH")
           for i in $(seq 1 60); do
@@ -98,7 +58,6 @@ steps:
             sleep 5
           done
         fi
-
         for i in $(seq 1 30); do
           S=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST_URL}/api/qualitygates/project_status?projectKey=${KEY}" | sed -n 's/.*"status":"\([^"]*\)".*/\1/p')
           echo "Quality Gate: $S"
@@ -134,23 +93,15 @@ steps:
     when:
       event: [ pull_request ]
     depends_on: [ pr-frontend-tests ]
-    secrets:
-      - source: sonar_host_url_repo
-        target: SONAR_HOST_URL
-      - source: sonar_token_repo
-        target: SONAR_TOKEN
     environment:
       PROJECT_NAME: proyecto-m2
+      SONAR_HOST_URL: http://sonarqube:9000
+      SONAR_TOKEN: squ_caf420591cbd740340ee8e4b8c772ae3e3f44aab
     commands:
       - |
         set -euo pipefail
-        : "${SONAR_HOST_URL:=http://sonarqube:9000}"
-        [ -n "${SONAR_HOST_URL}" ] || { echo "Falta secret sonar_host_url"; exit 2; }
-        [ -n "${SONAR_TOKEN:-}" ]  || { echo "Falta secret sonar_token"; exit 2; }
-
         KEY="${PROJECT_NAME}-frontend-pr-${DRONE_PULL_REQUEST}"
         NAME="${PROJECT_NAME} :: Frontend [PR-${DRONE_PULL_REQUEST}]"
-
         BASE="."
         if [ -f frontend/sonar-project.properties ]; then BASE="frontend"; fi
         cd "$BASE"
@@ -200,21 +151,14 @@ steps:
     when:
       event: [ push ]
     depends_on: [ build-tests-backend ]
-    secrets:
-      - source: sonar_host_url_repo
-        target: SONAR_HOST_URL
-      - source: sonar_token_repo
-        target: SONAR_TOKEN
     environment:
       PROJECT_NAME: proyecto-m2
+      SONAR_HOST_URL: http://sonarqube:9000
+      SONAR_TOKEN: squ_caf420591cbd740340ee8e4b8c772ae3e3f44aab
     commands:
       - |
         set -euo pipefail
         cd backend
-        : "${SONAR_HOST_URL:=http://sonarqube:9000}"
-        [ -n "${SONAR_HOST_URL}" ] || { echo "Falta secret sonar_host_url"; exit 2; }
-        [ -n "${SONAR_TOKEN:-}" ]  || { echo "Falta secret sonar_token"; exit 2; }
-
         RAW="${DRONE_BRANCH:-dev}"
         KEY="${PROJECT_NAME}-backend-${RAW}"
         NAME="${PROJECT_NAME} :: Backend [${RAW}]"
@@ -282,20 +226,13 @@ steps:
     when:
       event: [ push ]
     depends_on: [ build-tests-frontend ]
-    secrets:
-      - source: sonar_host_url_repo
-        target: SONAR_HOST_URL
-      - source: sonar_token_repo
-        target: SONAR_TOKEN
     environment:
       PROJECT_NAME: proyecto-m2
+      SONAR_HOST_URL: http://sonarqube:9000
+      SONAR_TOKEN: squ_caf420591cbd740340ee8e4b8c772ae3e3f44aab
     commands:
       - |
         set -euo pipefail
-        : "${SONAR_HOST_URL:=http://sonarqube:9000}"
-        [ -n "${SONAR_HOST_URL}" ] || { echo "Falta secret sonar_host_url"; exit 2; }
-        [ -n "${SONAR_TOKEN:-}" ]  || { echo "Falta secret sonar_token"; exit 2; }
-
         RAW="${DRONE_BRANCH:-dev}"
         KEY="${PROJECT_NAME}-frontend-${RAW}"
         NAME="${PROJECT_NAME} :: Frontend [${RAW}]"
