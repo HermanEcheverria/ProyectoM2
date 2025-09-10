@@ -405,7 +405,6 @@ steps:
         - jflores@unis.edu.gt
       subject: "[Drone] Falló {{repo.fullName}} #{{build.number}} ({{build.event}} @ {{commit.branch}})"
 
-
 volumes:
   - name: dockersock
     host:
