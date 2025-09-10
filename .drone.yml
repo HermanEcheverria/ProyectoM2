@@ -230,15 +230,45 @@ steps:
         else
           test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
         fi
+
+  # ===== Diagnóstico de secretos en PR =====
+  - name: diag-pr-secrets
+    image: alpine:3.20
+    when:
+      event: [ pull_request ]
+    environment:
+      SNR_TOKEN_REPO:
+        from_secret: sonar_token_repo
+      SNR_TOKEN:
+        from_secret: sonar_token
+    depends_on: [ wait-for-sonar ]
+    commands:
+      - |
+        set -eu
+        echo "EVENT=${DRONE_BUILD_EVENT} PR=${DRONE_PULL_REQUEST:-N/A} TARGET=${DRONE_TARGET_BRANCH:-N/A}"
+        if [ -n "${SNR_TOKEN_REPO:-}" ]; then
+          echo "OK: SNR_TOKEN_REPO (sonar_token_repo) presente"
+        else
+          echo "MISSING: SNR_TOKEN_REPO (sonar_token_repo) vacio"
+        fi
+        if [ -n "${SNR_TOKEN:-}" ]; then
+          echo "OK: SNR_TOKEN (sonar_token) presente"
+        else
+          echo "MISSING: SNR_TOKEN (sonar_token) vacio"
+        fi
+
   - name: sonar-frontend-pr
     image: sonarsource/sonar-scanner-cli:5
     when:
       event: [ pull_request ]
     environment:
+      # Preferimos el secreto alterno y mantenemos el original como respaldo
+      SNR_TOKEN_REPO:
+        from_secret: sonar_token_repo
       SNR_TOKEN:
         from_secret: sonar_token
       SONAR_USER_HOME: /tmp/sonar
-    depends_on: [ test-frontend, wait-for-sonar ]
+    depends_on: [ test-frontend, wait-for-sonar, diag-pr-secrets ]
     commands:
       - |
         set -eu
@@ -246,8 +276,14 @@ steps:
           echo "No hay frontend en raíz → omitiendo análisis"; exit 0
         fi
 
-        echo "SONAR_TOKEN_PRESENT=$([ -n "${SNR_TOKEN:-}" ] && echo SI || echo NO)"
-        [ -n "${SNR_TOKEN:-}" ] || { echo "Falta secreto sonar_token"; exit 2; }
+        TOKEN="${SNR_TOKEN_REPO:-}"
+        if [ -z "$TOKEN" ]; then TOKEN="${SNR_TOKEN:-}"; fi
+
+        if [ -n "$TOKEN" ]; then
+          echo "PR TOKEN PRESENT=SI (usando $([ -n "${SNR_TOKEN_REPO:-}" ] && echo sonar_token_repo || echo sonar_token))"
+        else
+          echo "PR TOKEN PRESENT=NO"; exit 2
+        fi
 
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
 
@@ -258,8 +294,8 @@ steps:
             -Dsonar.projectBaseDir=. \
             -Dsonar.sources=src \
             -Dsonar.exclusions="${EXCLS}" \
-            -Dsonar.host.url=http://sonarqube:9000 \
-            -Dsonar.token="$SNR_TOKEN" \
+            -Dsonar.host.url="$SONAR_HOST_URL" \
+            -Dsonar.token="$TOKEN" \
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
             -Dsonar.qualitygate.wait=true \
             -Dsonar.qualitygate.timeout=600
@@ -271,12 +307,11 @@ steps:
             -Dsonar.projectBaseDir=. \
             -Dsonar.sources=src \
             -Dsonar.exclusions="${EXCLS}" \
-            -Dsonar.host.url=http://sonarqube:9000 \
-            -Dsonar.token="$SNR_TOKEN" \
+            -Dsonar.host.url="$SONAR_HOST_URL" \
+            -Dsonar.token="$TOKEN" \
             -Dsonar.qualitygate.wait=true \
             -Dsonar.qualitygate.timeout=600
         fi
-
 
   - name: sonar-frontend-dev
     image: sonarsource/sonar-scanner-cli:5
