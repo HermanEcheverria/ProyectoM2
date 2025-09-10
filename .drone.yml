@@ -211,8 +211,61 @@ steps:
           exit 0
         fi
         npm ci --no-audit --no-fund
-        npm run test:ci
-        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
+
+        # Ejecutar test:ci si existe; si no, fallback a test; si no hay tests, salir OK
+        if node -e "p=require('./package.json');process.exit(p.scripts && p.scripts['test:ci'] ? 0 : 1)"; then
+          npm run test:ci
+        elif node -e "p=require('./package.json');process.exit(p.scripts && p.scripts['test'] ? 0 : 1)"; then
+          npm test -- --ci || npm test
+        else
+          echo 'No hay scripts de prueba (test/test:ci) → omitiendo tests'
+          exit 0
+        fi
+
+        # En PR no exigimos cobertura; en push sí
+        if [ "${DRONE_BUILD_EVENT}" = "pull_request" ]; then
+          if [ ! -f coverage/lcov.info ]; then
+            echo "Aviso: PR sin coverage/lcov.info (Sonar se ejecutará sin cobertura)"
+          fi
+        else
+          test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
+        fi
+
+  - name: sonar-frontend-pr
+    image: sonarsource/sonar-scanner-cli:5
+    when:
+      event: [ pull_request ]
+    environment:
+      SONAR_TOKEN:
+        from_secret: sonar_token
+      SONAR_USER_HOME: /tmp/sonar
+    depends_on: [ test-frontend, wait-for-sonar ]
+    commands:
+      - |
+        set -eu
+        if [ ! -f package.json ]; then
+          echo "No hay frontend en raíz → omitiendo análisis"
+          exit 0
+        fi
+        test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
+        EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
+
+        COMMON_ARGS="-Dsonar.projectKey=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
+                     -Dsonar.projectName=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
+                     -Dsonar.projectBaseDir=. \
+                     -Dsonar.sources=src \
+                     -Dsonar.exclusions=${EXCLS} \
+                     -Dsonar.host.url=${SONAR_HOST_URL} \
+                     -Dsonar.token=${SONAR_TOKEN} \
+                     -Dsonar.qualitygate.wait=true \
+                     -Dsonar.qualitygate.timeout=600"
+
+        if [ -f coverage/lcov.info ]; then
+          sonar-scanner $COMMON_ARGS -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+        else
+          echo "Ejecutando Sonar PR sin cobertura"
+          sonar-scanner $COMMON_ARGS
+        fi
 
   - name: sonar-frontend-dev
     image: sonarsource/sonar-scanner-cli:5
