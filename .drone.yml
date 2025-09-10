@@ -230,13 +230,11 @@ steps:
         else
           test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
         fi
-
   - name: sonar-frontend-pr
     image: sonarsource/sonar-scanner-cli:5
     when:
       event: [ pull_request ]
     environment:
-      SONAR_HOST_URL: http://sonarqube:9000
       SONAR_TOKEN:
         from_secret: sonar_token
       SONAR_USER_HOME: /tmp/sonar
@@ -245,15 +243,11 @@ steps:
       - |
         set -eu
         if [ ! -f package.json ]; then
-          echo "No hay frontend en raíz → omitiendo análisis"
-          exit 0
+          echo "No hay frontend en raíz → omitiendo análisis"; exit 0
         fi
 
-        # Diagnóstico mínimo para evitar "host vacío"
-        echo "SONAR_HOST_URL=${SONAR_HOST_URL}"
-        echo "SONAR_TOKEN_PRESENT=$([ -n "$SONAR_TOKEN" ] && echo SI || echo NO)"
-
-        test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
+        echo "SONAR_TOKEN_PRESENT=$([ -n "${SONAR_TOKEN:-}" ] && echo SI || echo NO)"
+        [ -n "${SONAR_TOKEN:-}" ] || { echo "Falta secreto sonar_token"; exit 2; }
 
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
 
@@ -264,7 +258,7 @@ steps:
             -Dsonar.projectBaseDir=. \
             -Dsonar.sources=src \
             -Dsonar.exclusions="${EXCLS}" \
-            -Dsonar.host.url="${SONAR_HOST_URL}" \
+            -Dsonar.host.url=http://sonarqube:9000 \
             -Dsonar.token="${SONAR_TOKEN}" \
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
             -Dsonar.qualitygate.wait=true \
@@ -277,11 +271,12 @@ steps:
             -Dsonar.projectBaseDir=. \
             -Dsonar.sources=src \
             -Dsonar.exclusions="${EXCLS}" \
-            -Dsonar.host.url="${SONAR_HOST_URL}" \
+            -Dsonar.host.url=http://sonarqube:9000 \
             -Dsonar.token="${SONAR_TOKEN}" \
             -Dsonar.qualitygate.wait=true \
             -Dsonar.qualitygate.timeout=600
         fi
+
 
   - name: sonar-frontend-dev
     image: sonarsource/sonar-scanner-cli:5
