@@ -259,7 +259,7 @@ steps:
             -Dsonar.sources=src \
             -Dsonar.exclusions="${EXCLS}" \
             -Dsonar.host.url=http://sonarqube:9000 \
-            -Dsonar.token="${SONAR_TOKEN}" \
+            -Dsonar.token="$SONAR_TOKEN" \
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
             -Dsonar.qualitygate.wait=true \
             -Dsonar.qualitygate.timeout=600
