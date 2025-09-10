@@ -235,7 +235,7 @@ steps:
     when:
       event: [ pull_request ]
     environment:
-      SONAR_TOKEN:
+      SNR_TOKEN:
         from_secret: sonar_token
       SONAR_USER_HOME: /tmp/sonar
     depends_on: [ test-frontend, wait-for-sonar ]
@@ -246,8 +246,8 @@ steps:
           echo "No hay frontend en raíz → omitiendo análisis"; exit 0
         fi
 
-        echo "SONAR_TOKEN_PRESENT=$([ -n "${SONAR_TOKEN:-}" ] && echo SI || echo NO)"
-        [ -n "${SONAR_TOKEN:-}" ] || { echo "Falta secreto sonar_token"; exit 2; }
+        echo "SONAR_TOKEN_PRESENT=$([ -n "${SNR_TOKEN:-}" ] && echo SI || echo NO)"
+        [ -n "${SNR_TOKEN:-}" ] || { echo "Falta secreto sonar_token"; exit 2; }
 
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
 
@@ -259,7 +259,7 @@ steps:
             -Dsonar.sources=src \
             -Dsonar.exclusions="${EXCLS}" \
             -Dsonar.host.url=http://sonarqube:9000 \
-            -Dsonar.token="$SONAR_TOKEN" \
+            -Dsonar.token="$SNR_TOKEN" \
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
             -Dsonar.qualitygate.wait=true \
             -Dsonar.qualitygate.timeout=600
@@ -272,7 +272,7 @@ steps:
             -Dsonar.sources=src \
             -Dsonar.exclusions="${EXCLS}" \
             -Dsonar.host.url=http://sonarqube:9000 \
-            -Dsonar.token="${SONAR_TOKEN}" \
+            -Dsonar.token="$SNR_TOKEN" \
             -Dsonar.qualitygate.wait=true \
             -Dsonar.qualitygate.timeout=600
         fi
