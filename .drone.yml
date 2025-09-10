@@ -247,24 +247,39 @@ steps:
           echo "No hay frontend en raíz → omitiendo análisis"
           exit 0
         fi
+
+        # Diagnóstico mínimo para evitar "host vacío"
+        echo "SONAR_HOST_URL=${SONAR_HOST_URL}"
+        echo "SONAR_TOKEN_PRESENT=$([ -n "$SONAR_TOKEN" ] && echo SI || echo NO)"
+
         test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
+
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
 
-        COMMON_ARGS="-Dsonar.projectKey=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
-                     -Dsonar.projectName=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
-                     -Dsonar.projectBaseDir=. \
-                     -Dsonar.sources=src \
-                     -Dsonar.exclusions=${EXCLS} \
-                     -Dsonar.host.url=${SONAR_HOST_URL} \
-                     -Dsonar.token=${SONAR_TOKEN} \
-                     -Dsonar.qualitygate.wait=true \
-                     -Dsonar.qualitygate.timeout=600"
-
         if [ -f coverage/lcov.info ]; then
-          sonar-scanner $COMMON_ARGS -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+          sonar-scanner \
+            -Dsonar.projectKey=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
+            -Dsonar.projectName=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
+            -Dsonar.projectBaseDir=. \
+            -Dsonar.sources=src \
+            -Dsonar.exclusions="${EXCLS}" \
+            -Dsonar.host.url="${SONAR_HOST_URL}" \
+            -Dsonar.token="${SONAR_TOKEN}" \
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+            -Dsonar.qualitygate.wait=true \
+            -Dsonar.qualitygate.timeout=600
         else
           echo "Ejecutando Sonar PR sin cobertura"
-          sonar-scanner $COMMON_ARGS
+          sonar-scanner \
+            -Dsonar.projectKey=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
+            -Dsonar.projectName=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
+            -Dsonar.projectBaseDir=. \
+            -Dsonar.sources=src \
+            -Dsonar.exclusions="${EXCLS}" \
+            -Dsonar.host.url="${SONAR_HOST_URL}" \
+            -Dsonar.token="${SONAR_TOKEN}" \
+            -Dsonar.qualitygate.wait=true \
+            -Dsonar.qualitygate.timeout=600
         fi
 
   - name: sonar-frontend-dev
@@ -348,7 +363,7 @@ steps:
           echo "No hay frontend en raíz → omitiendo análisis"
           exit 0
         fi
-        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
+        test -f coverage/lcov.info || { echo "No existe cobertura/lcov.info"; exit 3; }
         test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
         sonar-scanner \
