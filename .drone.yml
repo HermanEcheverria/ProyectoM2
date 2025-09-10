@@ -386,9 +386,10 @@ steps:
         docker compose -f "$${FILE}" up -d --build
 
   - name: notify-failure
-    image: appleboy/drone-email
+    image: plugins/email
     when:
-      status: [ failure ]
+    status: [ failure ]
+
     settings:
       host:
         from_secret: smtp_host
@@ -400,10 +401,12 @@ steps:
         from_secret: smtp_pass
       from:
         from_secret: smtp_from
-      subject: "[Drone] Falló ${DRONE_REPO} #${DRONE_BUILD_NUMBER} (${DRONE_EVENT} @ ${DRONE_BRANCH})"
       recipients:
         - hecheverria@unis.edu.gt
         - jflores@unis.edu.gt
+      subject: "[Drone] Fall\u00f3 {{repo.fullName}} #{{build.number}} ({{build.event}} @ {{commit.branch}})"
+
+
 
 volumes:
   - name: dockersock
