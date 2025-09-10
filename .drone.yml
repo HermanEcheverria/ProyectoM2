@@ -388,8 +388,7 @@ steps:
   - name: notify-failure
     image: plugins/email
     when:
-    status: [ failure ]
-
+      status: [ failure ]
     settings:
       host:
         from_secret: smtp_host
@@ -404,8 +403,7 @@ steps:
       recipients:
         - hecheverria@unis.edu.gt
         - jflores@unis.edu.gt
-      subject: "[Drone] Fall\u00f3 {{repo.fullName}} #{{build.number}} ({{build.event}} @ {{commit.branch}})"
-
+      subject: "[Drone] Falló {{repo.fullName}} #{{build.number}} ({{build.event}} @ {{commit.branch}})"
 
 
 volumes:
