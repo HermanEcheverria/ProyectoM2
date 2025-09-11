@@ -192,7 +192,8 @@ public class ReporteResource {
             }
 
             for (Object obj : reporte) {
-                Row row = sheet.createRow(rownum);
+                rownum++;
+                Row row = sheet.createRow(rownum++);
                 rownum++;
                 for (int i = 0; i < fields.length; i++) {
                     Object val;
