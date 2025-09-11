@@ -400,13 +400,13 @@ steps:
       status: [ success ]
     settings:
       host:
-        from_secret: smtp_host       # ej: smtp.gmail.com
+        from_secret: smtp_host       
       port:
-        from_secret: smtp_port       # ej: 587 o 465
+        from_secret: smtp_port       
       username:
-        from_secret: smtp_user       # cuenta (para Gmail: correo completo)
+        from_secret: smtp_user       
       password:
-        from_secret: smtp_pass       # App Password en Gmail
+        from_secret: smtp_pass       
       from:
         from_secret: smtp_from
       recipients:
@@ -435,6 +435,7 @@ steps:
       subject: "[Drone] Falló {{repo.fullName}} #{{build.number}} ({{build.event}} @ {{commit.branch}})"
 
 
+volumes:
   - name: dockersock
     host:
       path: /var/run/docker.sock
