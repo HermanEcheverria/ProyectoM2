@@ -231,8 +231,6 @@ steps:
           test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
         fi
 
-  
-
   - name: sonar-frontend-dev
     image: sonarsource/sonar-scanner-cli:5
     when:
@@ -250,7 +248,7 @@ steps:
           echo "No hay frontend en raíz → omitiendo análisis"
           exit 0
         fi
-        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
+        test -f coverage/lcov.info || { echo "No existe cobertura/lcov.info"; exit 3; }
         test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
         sonar-scanner \
@@ -282,7 +280,7 @@ steps:
           echo "No hay frontend en raíz → omitiendo análisis"
           exit 0
         fi
-        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
+        test -f coverage/lcov.info || { echo "No existe cobertura/lcov.info"; exit 3; }
         test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
         sonar-scanner \
@@ -314,7 +312,7 @@ steps:
           echo "No hay frontend en raíz → omitiendo análisis"
           exit 0
         fi
-        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
+        test -f coverage/lcov.info || { echo "No existe cobertura/lcov.info"; exit 3; }
         test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
         sonar-scanner \
@@ -403,6 +401,27 @@ steps:
         cd "$${COMPOSE_DIR}"
         docker compose -f "$${FILE}" down --remove-orphans || true
         docker compose -f "$${FILE}" up -d --build
+
+  # ===== Notificación de ÉXITO =====
+  - name: notify-success
+    image: plugins/email
+    when:
+      status: [ success ]
+    settings:
+      host:
+        from_secret: smtp_host
+      port:
+        from_secret: smtp_port
+      username:
+        from_secret: smtp_user
+      password:
+        from_secret: smtp_pass
+      from:
+        from_secret: smtp_from
+      recipients:
+        - hecheverria@unis.edu.gt
+        - jflores@unis.edu.gt
+      subject: "[Drone] Éxito {{repo.fullName}} #{{build.number}} ({{build.event}} @ {{commit.branch}})"
 
   - name: notify-failure
     image: plugins/email
