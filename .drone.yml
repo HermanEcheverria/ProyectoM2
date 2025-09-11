@@ -33,7 +33,8 @@ steps:
       - |
         set -eu
         if [ ! -f backend/pom.xml ]; then
-          echo "No hay backend → omitiendo build"; exit 0
+          echo "No hay backend → omitiendo build"
+          exit 0
         fi
         cd backend
         mvn -q -B clean install -DskipTests
@@ -45,7 +46,8 @@ steps:
       - |
         set -eu
         if [ ! -f backend/pom.xml ]; then
-          echo "No hay backend → omitiendo tests"; exit 0
+          echo "No hay backend → omitiendo tests"
+          exit 0
         fi
         cd backend
         mvn -q -B test jacoco:report
@@ -162,7 +164,10 @@ steps:
     commands:
       - |
         set -eu
-        if [ ! -f package.json ]; then echo "No hay frontend en raíz → omitiendo build"; exit 0; fi
+        if [ ! -f package.json ]; then
+          echo "No hay frontend en raíz → omitiendo build"
+          exit 0
+        fi
         npm ci --no-audit --no-fund
         npm run build || true
 
@@ -174,144 +179,103 @@ steps:
     commands:
       - |
         set -eu
-        if [ ! -f package.json ]; then echo "No hay frontend en raíz → omitiendo tests"; exit 0; fi
+        if [ ! -f package.json ]; then
+          echo "No hay frontend en raíz → omitiendo tests"
+          exit 0
+        fi
         npm ci --no-audit --no-fund
+
         if node -e "p=require('./package.json');process.exit(p.scripts && p.scripts['test:ci'] ? 0 : 1)"; then
           npm run test:ci
         elif node -e "p=require('./package.json');process.exit(p.scripts && p.scripts['test'] ? 0 : 1)"; then
           npm test -- --ci || npm test
         else
-          echo 'No hay scripts de prueba (test/test:ci) → omitiendo tests'; exit 0
+          echo 'No hay scripts de prueba (test/test:ci) → omitiendo tests'
+          exit 0
         fi
+
         if [ "${DRONE_BUILD_EVENT}" = "pull_request" ]; then
           [ -f coverage/lcov.info ] || echo "Aviso: PR sin coverage/lcov.info (Sonar se ejecutará sin cobertura)"
         else
           test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
         fi
 
-  # ===== Diagnóstico del secreto EN la misma imagen del scanner =====
-  - name: diag-pr-secrets-scanner
-    image: sonarsource/sonar-scanner-cli:5
-    when: { event: [ pull_request ] }
+  # ===== Sonar Frontend con imagen Maven (usa el mismo secreto que backend) =====
+  - &sonar_frontend_base
+    name: sonar-frontend-base
+    image: maven:3.9.9-eclipse-temurin-17
     environment:
-      SONAR_TOKEN_SCANNER: { from_secret: sonar_token_scanner }
-    depends_on: [ wait-for-sonar ]
+      SONAR_TOKEN: { from_secret: sonar_token }
     commands:
       - |
-        set -eu
-        if [ -n "${SONAR_TOKEN_SCANNER:-}" ]; then
-          echo "OK (scanner): SONAR_TOKEN_SCANNER presente"
-        else
-          echo "MISSING (scanner): SONAR_TOKEN_SCANNER vacío"
-        fi
-
-  # ===== Sonar Frontend (push) =====
-  - name: sonar-frontend-dev
-    image: sonarsource/sonar-scanner-cli:5
-    when: { event: [ push ], branch: [ dev ] }
-    environment:
-      SONAR_TOKEN_SCANNER: { from_secret: sonar_token_scanner }
-      SONAR_USER_HOME: /tmp/sonar
-    depends_on: [ test-frontend, wait-for-sonar ]
-    commands:
-      - |
-        set -eu
+        set -eux
         if [ ! -f package.json ]; then echo "No hay frontend en raíz → omitiendo análisis"; exit 0; fi
-        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
-        test -n "${SONAR_TOKEN_SCANNER:-}" || { echo "Falta secreto sonar_token_scanner"; exit 2; }
-        EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
+        # Instalar utilidades mínimas y descargar sonar-scanner CLI
+        apt-get update
+        apt-get install -y curl unzip >/dev/null
+        SCAN_VER="5.0.1.3006"
+        curl -fsSL -o /tmp/ss.zip "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SCAN_VER}-linux.zip"
+        unzip -q /tmp/ss.zip -d /tmp
+        export PATH="/tmp/sonar-scanner-${SCAN_VER}-linux/bin:$PATH"
+
+        EXCLS="backend/**,**/*.java,node_modules/**,dist/**,.vite/**"
+        COV_ARGS=""
+        [ -f coverage/lcov.info ] && COV_ARGS="-Dsonar.javascript.lcov.reportPaths=coverage/lcov.info -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info"
+
+        test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
+
+        # Variables comunes
+        KEY="${SONAR_KEY}"
+        NAME="${SONAR_NAME}"
+
         sonar-scanner \
-          -Dsonar.projectKey=M2:Frontend_Dev \
-          -Dsonar.projectName=M2:Frontend_Dev \
+          -Dsonar.projectKey="${KEY}" \
+          -Dsonar.projectName="${NAME}" \
           -Dsonar.projectBaseDir=. \
           -Dsonar.sources=src \
           -Dsonar.exclusions="${EXCLS}" \
           -Dsonar.host.url="$SONAR_HOST_URL" \
-          -Dsonar.token="$SONAR_TOKEN_SCANNER" \
-          -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+          -Dsonar.token="$SONAR_TOKEN" \
+          ${COV_ARGS} \
+          ${SONAR_EXTRA_ARGS:-} \
           -Dsonar.qualitygate.wait=true -Dsonar.qualitygate.timeout=600
+
+  - name: sonar-frontend-dev
+    <<: *sonar_frontend_base
+    when: { event: [ push ], branch: [ dev ] }
+    depends_on: [ test-frontend, wait-for-sonar ]
+    environment:
+      SONAR_TOKEN: { from_secret: sonar_token }
+      SONAR_KEY: "M2:Frontend_Dev"
+      SONAR_NAME: "M2:Frontend_Dev"
 
   - name: sonar-frontend-uat
-    image: sonarsource/sonar-scanner-cli:5
+    <<: *sonar_frontend_base
     when: { event: [ push ], branch: [ uat ] }
-    environment:
-      SONAR_TOKEN_SCANNER: { from_secret: sonar_token_scanner }
-      SONAR_USER_HOME: /tmp/sonar
     depends_on: [ test-frontend, wait-for-sonar ]
-    commands:
-      - |
-        set -eu
-        if [ ! -f package.json ]; then echo "No hay frontend en raíz → omitiendo análisis"; exit 0; fi
-        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
-        test -n "${SONAR_TOKEN_SCANNER:-}" || { echo "Falta secreto sonar_token_scanner"; exit 2; }
-        EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
-        sonar-scanner \
-          -Dsonar.projectKey=M2:Frontend_Uat \
-          -Dsonar.projectName=M2:Frontend_Uat \
-          -Dsonar.projectBaseDir=. \
-          -Dsonar.sources=src \
-          -Dsonar.exclusions="${EXCLS}" \
-          -Dsonar.host.url="$SONAR_HOST_URL" \
-          -Dsonar.token="$SONAR_TOKEN_SCANNER" \
-          -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-          -Dsonar.qualitygate.wait=true -Dsonar.qualitygate.timeout=600
+    environment:
+      SONAR_TOKEN: { from_secret: sonar_token }
+      SONAR_KEY: "M2:Frontend_Uat"
+      SONAR_NAME: "M2:Frontend_Uat"
 
   - name: sonar-frontend-prod
-    image: sonarsource/sonar-scanner-cli:5
+    <<: *sonar_frontend_base
     when: { event: [ push ], branch: [ prod ] }
-    environment:
-      SONAR_TOKEN_SCANNER: { from_secret: sonar_token_scanner }
-      SONAR_USER_HOME: /tmp/sonar
     depends_on: [ test-frontend, wait-for-sonar ]
-    commands:
-      - |
-        set -eu
-        if [ ! -f package.json ]; then echo "No hay frontend en raíz → omitiendo análisis"; exit 0; fi
-        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
-        test -n "${SONAR_TOKEN_SCANNER:-}" || { echo "Falta secreto sonar_token_scanner"; exit 2; }
-        EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
-        sonar-scanner \
-          -Dsonar.projectKey=M2:Frontend_Prod \
-          -Dsonar.projectName=M2:Frontend_Prod \
-          -Dsonar.projectBaseDir=. \
-          -Dsonar.sources=src \
-          -Dsonar.exclusions="${EXCLS}" \
-          -Dsonar.host.url="$SONAR_HOST_URL" \
-          -Dsonar.token="$SONAR_TOKEN_SCANNER" \
-          -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-          -Dsonar.qualitygate.wait=true -Dsonar.qualitygate.timeout=600
-
-  # ===== Sonar Frontend (PR) tolerante =====
-  - name: sonar-frontend-pr
-    image: sonarsource/sonar-scanner-cli:5
-    when: { event: [ pull_request ] }
     environment:
-      SONAR_TOKEN_SCANNER: { from_secret: sonar_token_scanner }
-      SONAR_USER_HOME: /tmp/sonar
-    depends_on: [ test-frontend, wait-for-sonar, diag-pr-secrets-scanner ]
-    commands:
-      - |
-        set -euxo pipefail
-        if [ ! -f package.json ]; then echo "No hay frontend en raíz → omitiendo análisis"; exit 0; fi
-        if [ -z "${SONAR_TOKEN_SCANNER:-}" ]; then
-          echo "SIN SONAR_TOKEN_SCANNER → omito Sonar PR"; exit 0
-        fi
-        EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
-        COV=""
-        [ -f coverage/lcov.info ] && COV="-Dsonar.javascript.lcov.reportPaths=coverage/lcov.info -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info"
-        sonar-scanner \
-          -Dsonar.projectKey=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
-          -Dsonar.projectName=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
-          -Dsonar.projectBaseDir=. \
-          -Dsonar.sources=src \
-          -Dsonar.exclusions="${EXCLS}" \
-          -Dsonar.host.url="$SONAR_HOST_URL" \
-          -Dsonar.token="$SONAR_TOKEN_SCANNER" \
-          -Dsonar.pullrequest.key=${DRONE_PULL_REQUEST} \
-          -Dsonar.pullrequest.branch=${DRONE_SOURCE_BRANCH} \
-          -Dsonar.pullrequest.base=${DRONE_TARGET_BRANCH} \
-          ${COV} \
-          -Dsonar.qualitygate.wait=true -Dsonar.qualitygate.timeout=600
+      SONAR_TOKEN: { from_secret: sonar_token }
+      SONAR_KEY: "M2:Frontend_Prod"
+      SONAR_NAME: "M2:Frontend_Prod"
+
+  - name: sonar-frontend-pr
+    <<: *sonar_frontend_base
+    when: { event: [ pull_request ] }
+    depends_on: [ test-frontend, wait-for-sonar ]
+    environment:
+      SONAR_TOKEN: { from_secret: sonar_token }
+      SONAR_KEY: "M2:Frontend_PR-${DRONE_PULL_REQUEST}"
+      SONAR_NAME: "M2:Frontend_PR-${DRONE_PULL_REQUEST}"
+      SONAR_EXTRA_ARGS: "-Dsonar.pullrequest.key=${DRONE_PULL_REQUEST} -Dsonar.pullrequest.branch=${DRONE_SOURCE_BRANCH} -Dsonar.pullrequest.base=${DRONE_TARGET_BRANCH}"
 
   # =========================
   # =======  DEPLOYS  =======
