@@ -62,7 +62,7 @@ public class ReporteModeracionExcelService {
         header.createCell(0).setCellValue("#");
         header.createCell(1).setCellValue("Usuario");
         header.createCell(2).setCellValue("Total Rechazos");
-        if (true) 
+     
 
         for (ModeracionReporteDTO dto : datos) {
             Row fila = sheet.createRow(rowNum++);
