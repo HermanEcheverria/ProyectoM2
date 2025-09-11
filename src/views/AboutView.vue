@@ -57,20 +57,19 @@
   </div>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      team: [
-        { name: "Dr. Carlos Ramírez", role: "Cirujano General", image: "https://randomuser.me/api/portraits/men/32.jpg" },
-        { name: "Dra. María López", role: "Cardióloga", image: "https://randomuser.me/api/portraits/women/44.jpg" },
-        { name: "Dr. Fernando Castillo", role: "Neurólogo", image: "https://randomuser.me/api/portraits/men/50.jpg" },
-        { name: "Dra. Andrea Méndez", role: "Pediatra", image: "https://randomuser.me/api/portraits/women/30.jpg" }
-      ]
-    };
-  }
-};
+<script setup lang="ts">
+import { ref } from "vue";
+
+type TeamMember = { name: string; role: string; image: string };
+
+const team = ref<TeamMember[]>([
+  { name: "Dr. Carlos Ramírez", role: "Cirujano General", image: "https://randomuser.me/api/portraits/men/32.jpg" },
+  { name: "Dra. María López",   role: "Cardióloga",        image: "https://randomuser.me/api/portraits/women/44.jpg" },
+  { name: "Dr. Fernando Castillo", role: "Neurólogo",      image: "https://randomuser.me/api/portraits/men/50.jpg" },
+  { name: "Dra. Andrea Méndez", role: "Pediatra",          image: "https://randomuser.me/api/portraits/women/30.jpg" }
+]);
 </script>
+
 
 <style scoped>
 /* Estilos Generales */

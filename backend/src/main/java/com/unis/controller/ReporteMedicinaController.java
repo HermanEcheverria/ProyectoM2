@@ -1,5 +1,6 @@
 package com.unis.controller;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -39,21 +40,43 @@ public class ReporteMedicinaController {
      * @param fin the end date in format yyyy-MM-dd
      * @param limite the maximum number of results to return (default is 10)
      * @return a list of {@link MedicinasReporteDTO} objects representing the report data
-     * @throws WebApplicationException if the date format is invalid
+     * @throws WebApplicationException if input is invalid
      */
     @GET
     public List<MedicinasReporteDTO> obtener(
-        @QueryParam("inicio") String inicio,
-        @QueryParam("fin") String fin,
-        @QueryParam("limite") @DefaultValue("10") int limite
+            @QueryParam("inicio") String inicio,
+            @QueryParam("fin") String fin,
+            @QueryParam("limite") @DefaultValue("10") int limite
     ) {
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            Date fechaInicio = sdf.parse(inicio);
-            Date fechaFin = sdf.parse(fin);
-            return service.obtenerReporte(fechaInicio, fechaFin, limite);
-        } catch (Exception e) {
-            throw new WebApplicationException("Formato de fecha inválido", 400);
+        // Validaciones básicas de presencia
+        if (inicio == null || inicio.trim().isEmpty()) {
+            throw new WebApplicationException("El parámetro 'inicio' es obligatorio", 400);
         }
+        if (fin == null || fin.trim().isEmpty()) {
+            throw new WebApplicationException("El parámetro 'fin' es obligatorio", 400);
+        }
+        if (limite <= 0) {
+            throw new WebApplicationException("El parámetro 'limite' debe ser mayor a 0", 400);
+        }
+
+        // Parseo estricto de fechas
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        sdf.setLenient(false);
+        final Date fechaInicio;
+        final Date fechaFin;
+        try {
+            fechaInicio = sdf.parse(inicio.trim());
+            fechaFin = sdf.parse(fin.trim());
+        } catch (ParseException e) {
+            throw new WebApplicationException("Formato de fecha inválido. Use yyyy-MM-dd", 400);
+        }
+
+        // Validación de rango
+        if (fechaFin.before(fechaInicio)) {
+            throw new WebApplicationException("El parámetro 'fin' debe ser posterior o igual a 'inicio'", 400);
+        }
+
+        // Delegación al servicio
+        return service.obtenerReporte(fechaInicio, fechaFin, limite);
     }
 }
