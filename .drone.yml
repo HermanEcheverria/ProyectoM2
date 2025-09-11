@@ -1,3 +1,4 @@
+---
 kind: pipeline
 type: docker
 name: ProyectoM2-CI-CD
@@ -212,7 +213,6 @@ steps:
         fi
         npm ci --no-audit --no-fund
 
-        # Ejecutar test:ci si existe; si no, fallback a test; si no hay tests, salir OK
         if node -e "p=require('./package.json');process.exit(p.scripts && p.scripts['test:ci'] ? 0 : 1)"; then
           npm run test:ci
         elif node -e "p=require('./package.json');process.exit(p.scripts && p.scripts['test'] ? 0 : 1)"; then
@@ -222,7 +222,6 @@ steps:
           exit 0
         fi
 
-        # En PR no exigimos cobertura; en push sí
         if [ "${DRONE_BUILD_EVENT}" = "pull_request" ]; then
           if [ ! -f coverage/lcov.info ]; then
             echo "Aviso: PR sin coverage/lcov.info (Sonar se ejecutará sin cobertura)"
@@ -230,8 +229,6 @@ steps:
         else
           test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
         fi
-
-  
 
   - name: sonar-frontend-dev
     image: sonarsource/sonar-scanner-cli:5
@@ -250,7 +247,7 @@ steps:
           echo "No hay frontend en raíz → omitiendo análisis"
           exit 0
         fi
-        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
+        test -f coverage/lcov.info || { echo "No existe cobertura/lcov.info"; exit 3; }
         test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
         sonar-scanner \
@@ -282,7 +279,7 @@ steps:
           echo "No hay frontend en raíz → omitiendo análisis"
           exit 0
         fi
-        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
+        test -f coverage/lcov.info || { echo "No existe cobertura/lcov.info"; exit 3; }
         test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
         sonar-scanner \
@@ -314,7 +311,7 @@ steps:
           echo "No hay frontend en raíz → omitiendo análisis"
           exit 0
         fi
-        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
+        test -f coverage/lcov.info || { echo "No existe cobertura/lcov.info"; exit 3; }
         test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
         sonar-scanner \
@@ -329,16 +326,12 @@ steps:
           -Dsonar.qualitygate.wait=true \
           -Dsonar.qualitygate.timeout=600
 
-  # =========================
-  # =======  DEPLOYS  =======
-  # =========================
   - name: deploy-dev
     image: docker:26-cli
     when:
       event: [ push ]
       branch: [ dev ]
-    depends_on:
-      - sonar-frontend-dev
+    depends_on: [ sonar-frontend-dev ]
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
@@ -361,8 +354,7 @@ steps:
     when:
       event: [ push ]
       branch: [ uat ]
-    depends_on:
-      - sonar-frontend-uat
+    depends_on: [ sonar-frontend-uat ]
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
@@ -385,8 +377,7 @@ steps:
     when:
       event: [ push ]
       branch: [ prod ]
-    depends_on:
-      - sonar-frontend-prod
+    depends_on: [ sonar-frontend-prod ]
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
@@ -404,15 +395,57 @@ steps:
         docker compose -f "$${FILE}" down --remove-orphans || true
         docker compose -f "$${FILE}" up -d --build
 
-  - name: notify-failure
+volumes:
+  - name: dockersock
+    host:
+      path: /var/run/docker.sock
+
+---
+kind: pipeline
+type: docker
+name: notify
+depends_on:
+  - ProyectoM2-CI-CD
+trigger:
+  status: [ success, failure ]
+  event: [ push, pull_request ]
+  branch: [ dev, uat, prod ]
+
+steps:
+  - name: email-success
+    image: plugins/email
+    when:
+      status: [ success ]
+    settings:
+      host:
+        from_secret: smtp_host
+      port: 587
+      username:
+        from_secret: smtp_user
+      password:
+        from_secret: smtp_pass
+      from:
+        from_secret: smtp_from
+      recipients:
+        - hecheverria@unis.edu.gt
+        - jflores@unis.edu.gt
+      subject: "[Drone] Éxito {{repo.fullName}} #{{build.number}} ({{build.event}} @ {{commit.branch}})"
+      body: >
+        ÉXITO
+        Repo: {{repo.fullName}}
+        Build: #{{build.number}} ({{build.event}} @ {{commit.branch}})
+        Commit: {{truncate commit.sha 8}} — {{commit.message}}
+        Autor: {{commit.author}}
+        Enlace: {{build.link}}
+
+  - name: email-failure
     image: plugins/email
     when:
       status: [ failure ]
     settings:
       host:
         from_secret: smtp_host
-      port:
-        from_secret: smtp_port
+      port: 587
       username:
         from_secret: smtp_user
       password:
@@ -423,8 +456,10 @@ steps:
         - hecheverria@unis.edu.gt
         - jflores@unis.edu.gt
       subject: "[Drone] Falló {{repo.fullName}} #{{build.number}} ({{build.event}} @ {{commit.branch}})"
-
-volumes:
-  - name: dockersock
-    host:
-      path: /var/run/docker.sock
+      body: >
+        FALLO
+        Repo: {{repo.fullName}}
+        Build: #{{build.number}} ({{build.event}} @ {{commit.branch}})
+        Commit: {{truncate commit.sha 8}} — {{commit.message}}
+        Autor: {{commit.author}}
+        Enlace: {{build.link}}
