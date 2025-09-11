@@ -185,18 +185,18 @@ steps:
           test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
         fi
 
-  # ===== Frontend Sonar con Maven + URL fija (Maven Central) =====
-  - &sonar_fe
-    name: sonar-frontend-base
+  # ===== Sonar Frontend usando Maven (descargando scanner de Maven Central) =====
+  - name: sonar-frontend-dev-mvn
     image: maven:3.9.9-eclipse-temurin-17
+    when: { event: [ push ], branch: [ dev ] }
     environment:
       SONAR_TOKEN: { from_secret: sonar_token }
+    depends_on: [ test-frontend, wait-for-sonar ]
     commands:
       - |
         set -eu
         if [ ! -f package.json ]; then echo "No hay frontend en raíz → omitiendo análisis"; exit 0; fi
         apt-get update && apt-get install -y curl unzip >/dev/null
-        # URL fija (evita problemas de variable vacía):
         ZIP_URL="https://repo1.maven.org/maven2/org/sonarsource/scanner/cli/sonar-scanner-cli/5.0.2.4997/sonar-scanner-cli-5.0.2.4997-linux.zip"
         curl -fSL -o /tmp/ss.zip "$ZIP_URL"
         unzip -q /tmp/ss.zip -d /tmp
@@ -208,61 +208,123 @@ steps:
         [ -f coverage/lcov.info ] && COV_ARGS="-Dsonar.javascript.lcov.reportPaths=coverage/lcov.info -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info"
 
         sonar-scanner \
-          -Dsonar.projectKey="${SONAR_KEY}" \
-          -Dsonar.projectName="${SONAR_NAME}" \
+          -Dsonar.projectKey=M2:Frontend_Dev \
+          -Dsonar.projectName=M2:Frontend_Dev \
           -Dsonar.projectBaseDir=. \
           -Dsonar.sources=src \
           -Dsonar.exclusions=backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/** \
           -Dsonar.host.url="$SONAR_HOST_URL" \
           -Dsonar.token="$SONAR_TOKEN" \
           ${COV_ARGS} \
-          ${SONAR_EXTRA_ARGS:-} \
           -Dsonar.qualitygate.wait=true -Dsonar.qualitygate.timeout=600
 
-  - name: sonar-frontend-dev
-    <<: *sonar_fe
-    when: { event: [ push ], branch: [ dev ] }
-    depends_on: [ test-frontend, wait-for-sonar ]
-    environment:
-      SONAR_TOKEN: { from_secret: sonar_token }
-      SONAR_KEY: "M2:Frontend_Dev"
-      SONAR_NAME: "M2:Frontend_Dev"
-
-  - name: sonar-frontend-uat
-    <<: *sonar_fe
+  - name: sonar-frontend-uat-mvn
+    image: maven:3.9.9-eclipse-temurin-17
     when: { event: [ push ], branch: [ uat ] }
-    depends_on: [ test-frontend, wait-for-sonar ]
     environment:
       SONAR_TOKEN: { from_secret: sonar_token }
-      SONAR_KEY: "M2:Frontend_Uat"
-      SONAR_NAME: "M2:Frontend_Uat"
+    depends_on: [ test-frontend, wait-for-sonar ]
+    commands:
+      - |
+        set -eu
+        if [ ! -f package.json ]; then echo "No hay frontend en raíz → omitiendo análisis"; exit 0; fi
+        apt-get update && apt-get install -y curl unzip >/dev/null
+        ZIP_URL="https://repo1.maven.org/maven2/org/sonarsource/scanner/cli/sonar-scanner-cli/5.0.2.4997/sonar-scanner-cli-5.0.2.4997-linux.zip"
+        curl -fSL -o /tmp/ss.zip "$ZIP_URL"
+        unzip -q /tmp/ss.zip -d /tmp
+        export PATH="/tmp/sonar-scanner-5.0.2.4997-linux/bin:$PATH"
 
-  - name: sonar-frontend-prod
-    <<: *sonar_fe
+        test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
+
+        COV_ARGS=""
+        [ -f coverage/lcov.info ] && COV_ARGS="-Dsonar.javascript.lcov.reportPaths=coverage/lcov.info -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info"
+
+        sonar-scanner \
+          -Dsonar.projectKey=M2:Frontend_Uat \
+          -Dsonar.projectName=M2:Frontend_Uat \
+          -Dsonar.projectBaseDir=. \
+          -Dsonar.sources=src \
+          -Dsonar.exclusions=backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/** \
+          -Dsonar.host.url="$SONAR_HOST_URL" \
+          -Dsonar.token="$SONAR_TOKEN" \
+          ${COV_ARGS} \
+          -Dsonar.qualitygate.wait=true -Dsonar.qualitygate.timeout=600
+
+  - name: sonar-frontend-prod-mvn
+    image: maven:3.9.9-eclipse-temurin-17
     when: { event: [ push ], branch: [ prod ] }
-    depends_on: [ test-frontend, wait-for-sonar ]
     environment:
       SONAR_TOKEN: { from_secret: sonar_token }
-      SONAR_KEY: "M2:Frontend_Prod"
-      SONAR_NAME: "M2:Frontend_Prod"
+    depends_on: [ test-frontend, wait-for-sonar ]
+    commands:
+      - |
+        set -eu
+        if [ ! -f package.json ]; then echo "No hay frontend en raíz → omitiendo análisis"; exit 0; fi
+        apt-get update && apt-get install -y curl unzip >/dev/null
+        ZIP_URL="https://repo1.maven.org/maven2/org/sonarsource/scanner/cli/sonar-scanner-cli/5.0.2.4997/sonar-scanner-cli-5.0.2.4997-linux.zip"
+        curl -fSL -o /tmp/ss.zip "$ZIP_URL"
+        unzip -q /tmp/ss.zip -d /tmp
+        export PATH="/tmp/sonar-scanner-5.0.2.4997-linux/bin:$PATH"
 
-  - name: sonar-frontend-pr
-    <<: *sonar_fe
+        test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
+
+        COV_ARGS=""
+        [ -f coverage/lcov.info ] && COV_ARGS="-Dsonar.javascript.lcov.reportPaths=coverage/lcov.info -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info"
+
+        sonar-scanner \
+          -Dsonar.projectKey=M2:Frontend_Prod \
+          -Dsonar.projectName=M2:Frontend_Prod \
+          -Dsonar.projectBaseDir=. \
+          -Dsonar.sources=src \
+          -Dsonar.exclusions=backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/** \
+          -Dsonar.host.url="$SONAR_HOST_URL" \
+          -Dsonar.token="$SONAR_TOKEN" \
+          ${COV_ARGS} \
+          -Dsonar.qualitygate.wait=true -Dsonar.qualitygate.timeout=600
+
+  - name: sonar-frontend-pr-mvn
+    image: maven:3.9.9-eclipse-temurin-17
     when: { event: [ pull_request ] }
-    depends_on: [ test-frontend, wait-for-sonar ]
     environment:
       SONAR_TOKEN: { from_secret: sonar_token }
-      SONAR_KEY: "M2:Frontend_PR-${DRONE_PULL_REQUEST}"
-      SONAR_NAME: "M2:Frontend_PR-${DRONE_PULL_REQUEST}"
-      SONAR_EXTRA_ARGS: "-Dsonar.pullrequest.key=${DRONE_PULL_REQUEST} -Dsonar.pullrequest.branch=${DRONE_SOURCE_BRANCH} -Dsonar.pullrequest.base=${DRONE_TARGET_BRANCH}"
+    depends_on: [ test-frontend, wait-for-sonar ]
+    commands:
+      - |
+        set -eu
+        if [ ! -f package.json ]; then echo "No hay frontend en raíz → omitiendo análisis"; exit 0; fi
+        apt-get update && apt-get install -y curl unzip >/dev/null
+        ZIP_URL="https://repo1.maven.org/maven2/org/sonarsource/scanner/cli/sonar-scanner-cli/5.0.2.4997/sonar-scanner-cli-5.0.2.4997-linux.zip"
+        curl -fSL -o /tmp/ss.zip "$ZIP_URL"
+        unzip -q /tmp/ss.zip -d /tmp
+        export PATH="/tmp/sonar-scanner-5.0.2.4997-linux/bin:$PATH"
+
+        # En PR: si falta el token, FALLAMOS (para que dispare notify-failure)
+        test -n "$SONAR_TOKEN" || { echo "SIN SONAR_TOKEN → fallo el PR para notificar"; exit 2; }
+
+        COV_ARGS=""
+        [ -f coverage/lcov.info ] && COV_ARGS="-Dsonar.javascript.lcov.reportPaths=coverage/lcov.info -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info"
+
+        sonar-scanner \
+          -Dsonar.projectKey=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
+          -Dsonar.projectName=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
+          -Dsonar.projectBaseDir=. \
+          -Dsonar.sources=src \
+          -Dsonar.exclusions=backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/** \
+          -Dsonar.host.url="$SONAR_HOST_URL" \
+          -Dsonar.token="$SONAR_TOKEN" \
+          -Dsonar.pullrequest.key=${DRONE_PULL_REQUEST} \
+          -Dsonar.pullrequest.branch=${DRONE_SOURCE_BRANCH} \
+          -Dsonar.pullrequest.base=${DRONE_TARGET_BRANCH} \
+          ${COV_ARGS} \
+          -Dsonar.qualitygate.wait=true -Dsonar.qualitygate.timeout=600
 
   # =========================
-  # =======  DEPLOYS  =======
+  # ========== DEPLOYS ==========
   # =========================
   - name: deploy-dev
     image: docker:26-cli
     when: { event: [ push ], branch: [ dev ] }
-    depends_on: [ sonar-frontend-dev ]
+    depends_on: [ sonar-frontend-dev-mvn ]
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
@@ -282,7 +344,7 @@ steps:
   - name: deploy-uat
     image: docker:26-cli
     when: { event: [ push ], branch: [ uat ] }
-    depends_on: [ sonar-frontend-uat ]
+    depends_on: [ sonar-frontend-uat-mvn ]
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
@@ -302,7 +364,7 @@ steps:
   - name: deploy-prod
     image: docker:26-cli
     when: { event: [ push ], branch: [ prod ] }
-    depends_on: [ sonar-frontend-prod ]
+    depends_on: [ sonar-frontend-prod-mvn ]
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
@@ -319,7 +381,7 @@ steps:
         docker compose -f "$${FILE}" down --remove-orphans || true
         docker compose -f "$${FILE}" up -d --build
 
-  # ===== Notificación: dispara sólo si la build realmente falla =====
+  # ===== Notificación en fallo real =====
   - name: notify-failure
     image: plugins/email
     depends_on: [ checkout ]
