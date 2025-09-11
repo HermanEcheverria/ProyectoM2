@@ -434,39 +434,6 @@ steps:
         - jflores@unis.edu.gt
       subject: "[Drone] Falló {{repo.fullName}} #{{build.number}} ({{build.event}} @ {{commit.branch}})"
 
- # ===== Diagnóstico de red SMTP (siempre) =====
-  - name: smtp-diagnostics
-    image: alpine:3.20
-    when:
-      status: [ success, failure ]
-  # fuerza la inyección de secretos en este step
-    secrets:
-      - source: smtp_host   # nombre del secreto en Drone
-        target: SMTP_HOST   # nombre de la variable dentro del contenedor
-      - source: smtp_port
-        target: SMTP_PORT
-  # opcional: también puedes dejar environment por compatibilidad
-    environment:
-      SMTP_HOST:
-        from_secret: smtp_host
-      SMTP_PORT:
-        from_secret: smtp_port
-    commands:
-      - apk add --no-cache drill openssl busybox-extras
-      - echo "SMTP_HOST=${SMTP_HOST}  SMTP_PORT=${SMTP_PORT}"
-      - if [ -z "${SMTP_HOST}" ] || [ -z "${SMTP_PORT}" ]; then echo "FALTA SMTP_HOST o SMTP_PORT (secret no inyectado)"; exit 1; fi
-      - echo "DNS ${SMTP_HOST}:" && drill ${SMTP_HOST} || true
-      - echo "TCP ${SMTP_PORT}:" && timeout 8 nc -vz -w 5 ${SMTP_HOST} ${SMTP_PORT} || true
-      - |
-        if [ "${SMTP_PORT}" = "587" ]; then
-          echo "STARTTLS 587 (hello):"
-          timeout 10 sh -c "printf 'QUIT\r\n' | openssl s_client -starttls smtp -crlf -connect ${SMTP_HOST}:${SMTP_PORT} -servername ${SMTP_HOST}" | head -n 15 || true
-        else
-          echo "SMTPS ${SMTP_PORT} (hello):"
-          timeout 10 sh -c "printf 'QUIT\r\n' | openssl s_client -connect ${SMTP_HOST}:${SMTP_PORT} -servername ${SMTP_HOST}" | head -n 15 || true
-        fi
-    # dump de entorno para verificar inyección (se ocultan valores sensibles)
-      - echo "--- ENV (grep SMTP/DRONE) ---" && env | sort | grep -E '(^SMTP_|^DRONE_)' || true
 
   - name: dockersock
     host:
