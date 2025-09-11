@@ -6,9 +6,6 @@ workspace:
   base: /drone
   path: src
 
-environment:
-  SONAR_HOST_URL: http://sonarqube:9000
-
 clone:
   depth: 50
 
@@ -20,12 +17,18 @@ concurrency:
   limit: 1
 
 steps:
+  # =========================
+  # =======   CHECKOUT  =====
+  # =========================
   - name: checkout
     image: alpine/git
     commands:
       - git fetch --all
       - git reset --hard origin/${DRONE_BRANCH}
 
+  # =========================
+  # === BACKEND (tests + sonar)
+  # =========================
   - name: build-backend
     image: maven:3.9-eclipse-temurin-17
     depends_on: [ checkout ]
@@ -55,7 +58,12 @@ steps:
 
   - name: wait-for-sonar
     image: curlimages/curl:8.9.1
+    environment:
+      SONAR_HOST_URL:
+        from_secret: sonar_host_url
     depends_on: [ test-backend ]
+    extra_hosts:
+      - host.docker.internal:host-gateway
     commands:
       - |
         set -eu
@@ -68,14 +76,17 @@ steps:
         done
         echo "Timeout esperando SonarQube (status!=UP)"; exit 8
 
-  - name: sonar-backend-dev
+  - name: sonar-backend-pr
     image: maven:3.9.9-eclipse-temurin-17
     when:
-      event: [ push ]
-      branch: [ dev ]
+      event: [ pull_request ]
     environment:
+      SONAR_HOST_URL:
+        from_secret: sonar_host_url
       SONAR_TOKEN:
         from_secret: sonar_token
+    extra_hosts:
+      - host.docker.internal:host-gateway
     depends_on: [ wait-for-sonar ]
     commands:
       - |
@@ -84,7 +95,39 @@ steps:
           echo "No hay backend → omitiendo análisis"
           exit 0
         fi
-        test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
+        test -n "${SONAR_TOKEN:-}" || { echo "Falta secreto sonar_token"; exit 2; }
+        cd backend
+        mvn -B sonar:sonar \
+          -DskipTests \
+          -Dsonar.projectKey=M2:Backend_PR-${DRONE_PULL_REQUEST} \
+          -Dsonar.projectName=M2:Backend_PR-${DRONE_PULL_REQUEST} \
+          -Dsonar.host.url="$SONAR_HOST_URL" \
+          -Dsonar.token="$SONAR_TOKEN" \
+          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+          -Dsonar.qualitygate.wait=true \
+          -Dsonar.qualitygate.timeout=600
+
+  - name: sonar-backend-dev
+    image: maven:3.9.9-eclipse-temurin-17
+    when:
+      event: [ push ]
+      branch: [ dev ]
+    environment:
+      SONAR_HOST_URL:
+        from_secret: sonar_host_url
+      SONAR_TOKEN:
+        from_secret: sonar_token
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    depends_on: [ wait-for-sonar ]
+    commands:
+      - |
+        set -eu
+        if [ ! -f backend/pom.xml ]; then
+          echo "No hay backend → omitiendo análisis"
+          exit 0
+        fi
+        test -n "${SONAR_TOKEN:-}" || { echo "Falta secreto sonar_token"; exit 2; }
         cd backend
         mvn -B sonar:sonar \
           -DskipTests \
@@ -102,8 +145,12 @@ steps:
       event: [ push ]
       branch: [ uat ]
     environment:
+      SONAR_HOST_URL:
+        from_secret: sonar_host_url
       SONAR_TOKEN:
         from_secret: sonar_token
+    extra_hosts:
+      - host.docker.internal:host-gateway
     depends_on: [ wait-for-sonar ]
     commands:
       - |
@@ -112,7 +159,7 @@ steps:
           echo "No hay backend → omitiendo análisis"
           exit 0
         fi
-        test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
+        test -n "${SONAR_TOKEN:-}" || { echo "Falta secreto sonar_token"; exit 2; }
         cd backend
         mvn -B sonar:sonar \
           -DskipTests \
@@ -130,8 +177,12 @@ steps:
       event: [ push ]
       branch: [ prod ]
     environment:
+      SONAR_HOST_URL:
+        from_secret: sonar_host_url
       SONAR_TOKEN:
         from_secret: sonar_token
+    extra_hosts:
+      - host.docker.internal:host-gateway
     depends_on: [ wait-for-sonar ]
     commands:
       - |
@@ -140,7 +191,7 @@ steps:
           echo "No hay backend → omitiendo análisis"
           exit 0
         fi
-        test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
+        test -n "${SONAR_TOKEN:-}" || { echo "Falta secreto sonar_token"; exit 2; }
         cd backend
         VER=$(git describe --tags --always 2>/dev/null || echo "${DRONE_BUILD_NUMBER}")
         mvn -B sonar:sonar \
@@ -154,33 +205,9 @@ steps:
           -Dsonar.qualitygate.wait=true \
           -Dsonar.qualitygate.timeout=600
 
-  - name: sonar-backend-pr
-    image: maven:3.9.9-eclipse-temurin-17
-    when:
-      event: [ pull_request ]
-    environment:
-      SONAR_TOKEN:
-        from_secret: sonar_token
-    depends_on: [ wait-for-sonar ]
-    commands:
-      - |
-        set -eu
-        if [ ! -f backend/pom.xml ]; then
-          echo "No hay backend → omitiendo análisis"
-          exit 0
-        fi
-        test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
-        cd backend
-        mvn -B sonar:sonar \
-          -DskipTests \
-          -Dsonar.projectKey=M2:Backend_PR-${DRONE_PULL_REQUEST} \
-          -Dsonar.projectName=M2:Backend_PR-${DRONE_PULL_REQUEST} \
-          -Dsonar.host.url="$SONAR_HOST_URL" \
-          -Dsonar.token="$SONAR_TOKEN" \
-          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
-          -Dsonar.qualitygate.wait=true \
-          -Dsonar.qualitygate.timeout=600
-
+  # =========================
+  # === FRONTEND (build + tests + sonar)
+  # =========================
   - name: build-frontend
     image: node:20
     depends_on:
@@ -231,34 +258,20 @@ steps:
           test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
         fi
 
-  # ===== Diagnóstico de secretos en PR =====
-  - name: diag-pr-secrets
-    image: alpine:3.20
-    when:
-      event: [ pull_request ]
-    environment:
-      SONAR_TOKEN:
-        from_secret: sonar_token
-    depends_on: [ wait-for-sonar ]
-    commands:
-      - |
-        set -eu
-        echo "EVENT=${DRONE_BUILD_EVENT} PR=${DRONE_PULL_REQUEST:-N/A} TARGET=${DRONE_TARGET_BRANCH:-N/A}"
-        if [ -n "${SONAR_TOKEN:-}" ]; then
-          echo "OK: SONAR_TOKEN presente"
-        else
-          echo "MISSING: SONAR_TOKEN vacio"
-        fi
-
+  # --- PR: Sonar Frontend (usa la imagen oficial + secretos por step) ---
   - name: sonar-frontend-pr
     image: sonarsource/sonar-scanner-cli:5
     when:
       event: [ pull_request ]
     environment:
+      SONAR_HOST_URL:
+        from_secret: sonar_host_url
       SONAR_TOKEN:
         from_secret: sonar_token
       SONAR_USER_HOME: /tmp/sonar
-    depends_on: [ test-frontend, wait-for-sonar, diag-pr-secrets ]
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    depends_on: [ test-frontend, wait-for-sonar ]
     commands:
       - |
         set -eu
@@ -266,32 +279,34 @@ steps:
           echo "No hay frontend en raíz → omitiendo análisis"; exit 0
         fi
 
-        if [ -n "${SONAR_TOKEN:-}" ]; then
-          echo "PR TOKEN PRESENT=SI"
-        else
-          echo "PR TOKEN PRESENT=NO"; exit 2
-        fi
-
+        test -n "${SONAR_TOKEN:-}" || { echo "Falta secreto sonar_token"; exit 2; }
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
 
+        # Clave por rama destino del PR (igual que tu compa)
+        case "$DRONE_TARGET_BRANCH" in
+          dev)  KEY="M2:Frontend_Dev" ;;
+          uat)  KEY="M2:Frontend_Uat" ;;
+          prod) KEY="M2:Frontend_Prod" ;;
+          *)    KEY="M2:Frontend_Dev" ;;
+        esac
+
         if [ -f coverage/lcov.info ]; then
-          echo "Ejecutando Sonar PR con cobertura"
           sonar-scanner \
-            -Dsonar.projectKey=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
-            -Dsonar.projectName=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
+            -Dsonar.projectKey="$KEY" \
             -Dsonar.projectBaseDir=. \
             -Dsonar.sources=src \
             -Dsonar.exclusions="${EXCLS}" \
+            -Dsonar.tests=src \
+            -Dsonar.test.inclusions=**/*.spec.*,**/__tests__/**/*.*,**/tests/**/*.* \
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
             -Dsonar.host.url="$SONAR_HOST_URL" \
             -Dsonar.token="$SONAR_TOKEN" \
-            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
             -Dsonar.qualitygate.wait=true \
             -Dsonar.qualitygate.timeout=600
         else
           echo "Ejecutando Sonar PR sin cobertura"
           sonar-scanner \
-            -Dsonar.projectKey=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
-            -Dsonar.projectName=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
+            -Dsonar.projectKey="$KEY" \
             -Dsonar.projectBaseDir=. \
             -Dsonar.sources=src \
             -Dsonar.exclusions="${EXCLS}" \
@@ -301,15 +316,20 @@ steps:
             -Dsonar.qualitygate.timeout=600
         fi
 
+  # --- PUSH: Sonar Frontend por rama ---
   - name: sonar-frontend-dev
     image: sonarsource/sonar-scanner-cli:5
     when:
       event: [ push ]
       branch: [ dev ]
     environment:
+      SONAR_HOST_URL:
+        from_secret: sonar_host_url
       SONAR_TOKEN:
         from_secret: sonar_token
       SONAR_USER_HOME: /tmp/sonar
+    extra_hosts:
+      - host.docker.internal:host-gateway
     depends_on: [ test-frontend, wait-for-sonar ]
     commands:
       - |
@@ -319,17 +339,18 @@ steps:
           exit 0
         fi
         test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
-        test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
+        test -n "${SONAR_TOKEN:-}" || { echo "Falta secreto sonar_token"; exit 2; }
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
         sonar-scanner \
           -Dsonar.projectKey=M2:Frontend_Dev \
-          -Dsonar.projectName=M2:Frontend_Dev \
           -Dsonar.projectBaseDir=. \
           -Dsonar.sources=src \
           -Dsonar.exclusions="${EXCLS}" \
+          -Dsonar.tests=src \
+          -Dsonar.test.inclusions=**/*.spec.*,**/__tests__/**/*.*,**/tests/**/*.* \
+          -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
           -Dsonar.host.url="$SONAR_HOST_URL" \
           -Dsonar.token="$SONAR_TOKEN" \
-          -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
           -Dsonar.qualitygate.wait=true \
           -Dsonar.qualitygate.timeout=600
 
@@ -339,9 +360,13 @@ steps:
       event: [ push ]
       branch: [ uat ]
     environment:
+      SONAR_HOST_URL:
+        from_secret: sonar_host_url
       SONAR_TOKEN:
         from_secret: sonar_token
       SONAR_USER_HOME: /tmp/sonar
+    extra_hosts:
+      - host.docker.internal:host-gateway
     depends_on: [ test-frontend, wait-for-sonar ]
     commands:
       - |
@@ -351,17 +376,18 @@ steps:
           exit 0
         fi
         test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
-        test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
+        test -n "${SONAR_TOKEN:-}" || { echo "Falta secreto sonar_token"; exit 2; }
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
         sonar-scanner \
           -Dsonar.projectKey=M2:Frontend_Uat \
-          -Dsonar.projectName=M2:Frontend_Uat \
           -Dsonar.projectBaseDir=. \
           -Dsonar.sources=src \
           -Dsonar.exclusions="${EXCLS}" \
+          -Dsonar.tests=src \
+          -Dsonar.test.inclusions=**/*.spec.*,**/__tests__/**/*.*,**/tests/**/*.* \
+          -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
           -Dsonar.host.url="$SONAR_HOST_URL" \
           -Dsonar.token="$SONAR_TOKEN" \
-          -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
           -Dsonar.qualitygate.wait=true \
           -Dsonar.qualitygate.timeout=600
 
@@ -371,9 +397,13 @@ steps:
       event: [ push ]
       branch: [ prod ]
     environment:
+      SONAR_HOST_URL:
+        from_secret: sonar_host_url
       SONAR_TOKEN:
         from_secret: sonar_token
       SONAR_USER_HOME: /tmp/sonar
+    extra_hosts:
+      - host.docker.internal:host-gateway
     depends_on: [ test-frontend, wait-for-sonar ]
     commands:
       - |
@@ -382,24 +412,40 @@ steps:
           echo "No hay frontend en raíz → omitiendo análisis"
           exit 0
         fi
-        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
-        test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
+        test -f coverage/lcov.info || { echo "No existe cobertura/lcov.info"; exit 3; }
+        test -n "${SONAR_TOKEN:-}" || { echo "Falta secreto sonar_token"; exit 2; }
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
         sonar-scanner \
           -Dsonar.projectKey=M2:Frontend_Prod \
-          -Dsonar.projectName=M2:Frontend_Prod \
           -Dsonar.projectBaseDir=. \
           -Dsonar.sources=src \
           -Dsonar.exclusions="${EXCLS}" \
+          -Dsonar.tests=src \
+          -Dsonar.test.inclusions=**/*.spec.*,**/__tests__/**/*.*,**/tests/**/*.* \
+          -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
           -Dsonar.host.url="$SONAR_HOST_URL" \
           -Dsonar.token="$SONAR_TOKEN" \
-          -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
           -Dsonar.qualitygate.wait=true \
           -Dsonar.qualitygate.timeout=600
 
   # =========================
   # =======  DEPLOYS  =======
   # =========================
+  - name: build-backend-artifact
+    image: maven:3.9-eclipse-temurin-17
+    when:
+      event: [ push ]
+      branch: [ dev, uat, prod ]
+    commands:
+      - |
+        set -eu
+        if [ ! -f backend/pom.xml ]; then
+          echo "No hay backend → omitiendo empaquetado"
+          exit 0
+        fi
+        cd backend
+        mvn -B -DskipTests clean package
+
   - name: deploy-dev
     image: docker:26-cli
     when:
@@ -407,22 +453,18 @@ steps:
       branch: [ dev ]
     depends_on:
       - sonar-frontend-dev
+      - build-backend-artifact
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
-    environment:
-      COMPOSE_DIR: deploy
-      NET_NAME: m2-dev-net
-      FILE: docker-compose.dev.yml
     commands:
       - |
         set -eu
         apk add --no-cache docker-cli-compose
-        echo "NET_NAME=$${NET_NAME} COMPOSE_DIR=$${COMPOSE_DIR} FILE=$${FILE}"
-        docker network inspect "$${NET_NAME}" >/dev/null 2>&1 || docker network create "$${NET_NAME}"
-        cd "$${COMPOSE_DIR}"
-        docker compose -f "$${FILE}" down --remove-orphans || true
-        docker compose -f "$${FILE}" up -d --build
+        docker compose -p m2dev -f deploy/docker-compose.dev.yml down --remove-orphans || true
+        docker rm -f oracle-xe-dev-m2 backend-dev-m2 frontend-dev-m2 2>/dev/null || true
+        docker network rm m2-dev-net 2>/dev/null || true
+        docker compose -p m2dev -f deploy/docker-compose.dev.yml up -d --build
 
   - name: deploy-uat
     image: docker:26-cli
@@ -431,22 +473,18 @@ steps:
       branch: [ uat ]
     depends_on:
       - sonar-frontend-uat
+      - build-backend-artifact
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
-    environment:
-      COMPOSE_DIR: deploy
-      NET_NAME: m2-uat-net
-      FILE: docker-compose.uat.yml
     commands:
       - |
         set -eu
         apk add --no-cache docker-cli-compose
-        echo "NET_NAME=$${NET_NAME} COMPOSE_DIR=$${COMPOSE_DIR} FILE=$${FILE}"
-        docker network inspect "$${NET_NAME}" >/dev/null 2>&1 || docker network create "$${NET_NAME}"
-        cd "$${COMPOSE_DIR}"
-        docker compose -f "$${FILE}" down --remove-orphans || true
-        docker compose -f "$${FILE}" up -d --build
+        docker compose -p m2uat -f deploy/docker-compose.uat.yml down --remove-orphans || true
+        docker rm -f oracle-xe-uat-m2 backend-uat-m2 frontend-uat-m2 2>/dev/null || true
+        docker network rm m2-uat-net 2>/dev/null || true
+        docker compose -p m2uat -f deploy/docker-compose.uat.yml up -d --build
 
   - name: deploy-prod
     image: docker:26-cli
@@ -455,25 +493,24 @@ steps:
       branch: [ prod ]
     depends_on:
       - sonar-frontend-prod
+      - build-backend-artifact
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
-    environment:
-      COMPOSE_DIR: deploy
-      NET_NAME: m2-prod-net
-      FILE: docker-compose.prod.yml
     commands:
       - |
         set -eu
         apk add --no-cache docker-cli-compose
-        echo "NET_NAME=$${NET_NAME} COMPOSE_DIR=$${COMPOSE_DIR} FILE=$${FILE}"
-        docker network inspect "$${NET_NAME}" >/dev/null 2>&1 || docker network create "$${NET_NAME}"
-        cd "$${COMPOSE_DIR}"
-        docker compose -f "$${FILE}" down --remove-orphans || true
-        docker compose -f "$${FILE}" up -d --build
+        docker compose -p m2prod -f deploy/docker-compose.prod.yml down --remove-orphans || true
+        docker rm -f oracle-xe-prod-m2 backend-prod-m2 frontend-prod-m2 2>/dev/null || true
+        docker network rm m2-prod-net 2>/dev/null || true
+        docker compose -p m2prod -f deploy/docker-compose.prod.yml up -d --build
 
+  # =========================
+  # ===== NOTIFICACIONES ====
+  # =========================
   - name: notify-failure
-    image: plugins/email
+    image: appleboy/drone-email
     when:
       status: [ failure ]
     settings:
@@ -487,10 +524,10 @@ steps:
         from_secret: smtp_pass
       from:
         from_secret: smtp_from
-      recipients:
+      subject: "[Drone] Falló ${DRONE_REPO} #${DRONE_BUILD_NUMBER} (${DRONE_EVENT} @ ${DRONE_BRANCH})"
+      to:
         - hecheverria@unis.edu.gt
         - jflores@unis.edu.gt
-      subject: "[Drone] Falló {{repo.fullName}} #{{build.number}} ({{build.event}} @ {{commit.branch}})"
 
 volumes:
   - name: dockersock
