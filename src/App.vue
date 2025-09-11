@@ -37,7 +37,7 @@ const myAccountRoute = () => {
       <div class="brand">
         <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="50" height="50" />
 
-        <h1>Magic 14-07-2025-Prod</h1>
+        <h1>Austin 6:00 11/09</h1>
 
       </div>
 
