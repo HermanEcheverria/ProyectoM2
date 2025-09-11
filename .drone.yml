@@ -242,7 +242,7 @@ steps:
           echo "No hay frontend en raíz → omitiendo análisis"
           exit 0
         fi
-        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
+        test -f coverage/lcov.info || { echo "No existe cobertura"; exit 3; }
         test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
         sonar-scanner \
@@ -274,7 +274,7 @@ steps:
           echo "No hay frontend en raíz → omitiendo análisis"
           exit 0
         fi
-        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
+        test -f coverage/lcov.info || { echo "No existe cobertura"; exit 3; }
         test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
         sonar-scanner \
@@ -306,7 +306,7 @@ steps:
           echo "No hay frontend en raíz → omitiendo análisis"
           exit 0
         fi
-        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
+        test -f coverage/lcov.info || { echo "No existe cobertura"; exit 3; }
         test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
         sonar-scanner \
@@ -342,7 +342,6 @@ steps:
       - |
         set -eu
         apk add --no-cache docker-cli-compose
-        echo "NET_NAME=$${NET_NAME} COMPOSE_DIR=$${COMPOSE_DIR} FILE=$${FILE}"
         docker network inspect "$${NET_NAME}" >/dev/null 2>&1 || docker network create "$${NET_NAME}"
         cd "$${COMPOSE_DIR}"
         docker compose -f "$${FILE}" down --remove-orphans || true
@@ -366,7 +365,6 @@ steps:
       - |
         set -eu
         apk add --no-cache docker-cli-compose
-        echo "NET_NAME=$${NET_NAME} COMPOSE_DIR=$${COMPOSE_DIR} FILE=$${FILE}"
         docker network inspect "$${NET_NAME}" >/dev/null 2>&1 || docker network create "$${NET_NAME}"
         cd "$${COMPOSE_DIR}"
         docker compose -f "$${FILE}" down --remove-orphans || true
@@ -390,7 +388,6 @@ steps:
       - |
         set -eu
         apk add --no-cache docker-cli-compose
-        echo "NET_NAME=$${NET_NAME} COMPOSE_DIR=$${COMPOSE_DIR} FILE=$${FILE}"
         docker network inspect "$${NET_NAME}" >/dev/null 2>&1 || docker network create "$${NET_NAME}"
         cd "$${COMPOSE_DIR}"
         docker compose -f "$${FILE}" down --remove-orphans || true
@@ -403,13 +400,13 @@ steps:
       status: [ success ]
     settings:
       host:
-        from_secret: smtp_host
+        from_secret: smtp_host       # ej: smtp.gmail.com
       port:
-        from_secret: smtp_port
+        from_secret: smtp_port       # ej: 587 o 465
       username:
-        from_secret: smtp_user
+        from_secret: smtp_user       # cuenta (para Gmail: correo completo)
       password:
-        from_secret: smtp_pass
+        from_secret: smtp_pass       # App Password en Gmail
       from:
         from_secret: smtp_from
       recipients:
@@ -436,6 +433,19 @@ steps:
         - hecheverria@unis.edu.gt
         - jflores@unis.edu.gt
       subject: "[Drone] Falló {{repo.fullName}} #{{build.number}} ({{build.event}} @ {{commit.branch}})"
+
+  # ===== Diagnóstico de red SMTP (siempre) =====
+  - name: smtp-diagnostics
+    image: alpine:3.20
+    when:
+      status: [ success, failure ]
+    commands:
+      - apk add --no-cache drill openssl busybox-extras
+      - echo "DNS smtp.gmail.com:" && drill smtp.gmail.com || true
+      - echo "Probar TCP 587:" && timeout -t 8 sh -c "nc -vz smtp.gmail.com 587" || true
+      - echo "Probar TCP 465:" && timeout -t 8 sh -c "nc -vz smtp.gmail.com 465" || true
+      - echo "STARTTLS 587 (hello):" && timeout -t 10 openssl s_client -starttls smtp -crlf -connect smtp.gmail.com:587 -servername smtp.gmail.com </dev/null | head -n 5 || true
+      - echo "SMTPS 465 (hello):" && timeout -t 10 openssl s_client -connect smtp.gmail.com:465 -servername smtp.gmail.com </dev/null | head -n 5 || true
 
 volumes:
   - name: dockersock
