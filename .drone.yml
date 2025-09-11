@@ -439,11 +439,11 @@ steps:
     image: alpine:3.20
     when:
       status: [ success, failure ]
-      environment:
-        SMTP_HOST:
-          from_secret: smtp_host
-        SMTP_PORT:
-          from_secret: smtp_port
+    environment:
+      SMTP_HOST:
+        from_secret: smtp_host
+      SMTP_PORT:
+        from_secret: smtp_port
     commands:
       - apk add --no-cache drill openssl busybox-extras
       - echo "DNS ${SMTP_HOST}:" && drill ${SMTP_HOST} || true
