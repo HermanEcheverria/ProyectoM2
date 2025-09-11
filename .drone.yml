@@ -211,6 +211,8 @@ steps:
           exit 0
         fi
         npm ci --no-audit --no-fund
+
+        # Ejecutar test:ci si existe; si no, fallback a test; si no hay tests, salir OK
         if node -e "p=require('./package.json');process.exit(p.scripts && p.scripts['test:ci'] ? 0 : 1)"; then
           npm run test:ci
         elif node -e "p=require('./package.json');process.exit(p.scripts && p.scripts['test'] ? 0 : 1)"; then
@@ -219,11 +221,17 @@ steps:
           echo 'No hay scripts de prueba (test/test:ci) → omitiendo tests'
           exit 0
         fi
+
+        # En PR no exigimos cobertura; en push sí
         if [ "${DRONE_BUILD_EVENT}" = "pull_request" ]; then
-          [ -f coverage/lcov.info ] || echo "Aviso: PR sin coverage/lcov.info (Sonar se ejecutará sin cobertura)"
+          if [ ! -f coverage/lcov.info ]; then
+            echo "Aviso: PR sin coverage/lcov.info (Sonar se ejecutará sin cobertura)"
+          fi
         else
           test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
         fi
+
+  
 
   - name: sonar-frontend-dev
     image: sonarsource/sonar-scanner-cli:5
@@ -242,7 +250,7 @@ steps:
           echo "No hay frontend en raíz → omitiendo análisis"
           exit 0
         fi
-        test -f coverage/lcov.info || { echo "No existe cobertura"; exit 3; }
+        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
         test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
         sonar-scanner \
@@ -274,7 +282,7 @@ steps:
           echo "No hay frontend en raíz → omitiendo análisis"
           exit 0
         fi
-        test -f coverage/lcov.info || { echo "No existe cobertura"; exit 3; }
+        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
         test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
         sonar-scanner \
@@ -306,7 +314,7 @@ steps:
           echo "No hay frontend en raíz → omitiendo análisis"
           exit 0
         fi
-        test -f coverage/lcov.info || { echo "No existe cobertura"; exit 3; }
+        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
         test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
         sonar-scanner \
@@ -342,6 +350,7 @@ steps:
       - |
         set -eu
         apk add --no-cache docker-cli-compose
+        echo "NET_NAME=$${NET_NAME} COMPOSE_DIR=$${COMPOSE_DIR} FILE=$${FILE}"
         docker network inspect "$${NET_NAME}" >/dev/null 2>&1 || docker network create "$${NET_NAME}"
         cd "$${COMPOSE_DIR}"
         docker compose -f "$${FILE}" down --remove-orphans || true
@@ -365,6 +374,7 @@ steps:
       - |
         set -eu
         apk add --no-cache docker-cli-compose
+        echo "NET_NAME=$${NET_NAME} COMPOSE_DIR=$${COMPOSE_DIR} FILE=$${FILE}"
         docker network inspect "$${NET_NAME}" >/dev/null 2>&1 || docker network create "$${NET_NAME}"
         cd "$${COMPOSE_DIR}"
         docker compose -f "$${FILE}" down --remove-orphans || true
@@ -388,31 +398,11 @@ steps:
       - |
         set -eu
         apk add --no-cache docker-cli-compose
+        echo "NET_NAME=$${NET_NAME} COMPOSE_DIR=$${COMPOSE_DIR} FILE=$${FILE}"
         docker network inspect "$${NET_NAME}" >/dev/null 2>&1 || docker network create "$${NET_NAME}"
         cd "$${COMPOSE_DIR}"
         docker compose -f "$${FILE}" down --remove-orphans || true
         docker compose -f "$${FILE}" up -d --build
-
-  # ===== Notificaciones =====
-  - name: notify-success
-    image: plugins/email
-    when:
-      status: [ success ]
-    settings:
-      host:
-        from_secret: smtp_host       
-      port:
-        from_secret: smtp_port       
-      username:
-        from_secret: smtp_user       
-      password:
-        from_secret: smtp_pass       
-      from:
-        from_secret: smtp_from
-      recipients:
-        - hecheverria@unis.edu.gt
-        - jflores@unis.edu.gt
-      subject: "[Drone] Éxito {{repo.fullName}} #{{build.number}} ({{build.event}} @ {{commit.branch}})"
 
   - name: notify-failure
     image: plugins/email
@@ -433,7 +423,6 @@ steps:
         - hecheverria@unis.edu.gt
         - jflores@unis.edu.gt
       subject: "[Drone] Falló {{repo.fullName}} #{{build.number}} ({{build.event}} @ {{commit.branch}})"
-
 
 volumes:
   - name: dockersock
