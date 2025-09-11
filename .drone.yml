@@ -441,11 +441,11 @@ steps:
       status: [ success, failure ]
     commands:
       - apk add --no-cache drill openssl busybox-extras
-      - echo "DNS smtp.gmail.com:" && drill smtp.gmail.com || true
-      - echo "Probar TCP 587:" && timeout -t 8 sh -c "nc -vz smtp.gmail.com 587" || true
-      - echo "Probar TCP 465:" && timeout -t 8 sh -c "nc -vz smtp.gmail.com 465" || true
-      - echo "STARTTLS 587 (hello):" && timeout -t 10 openssl s_client -starttls smtp -crlf -connect smtp.gmail.com:587 -servername smtp.gmail.com </dev/null | head -n 5 || true
-      - echo "SMTPS 465 (hello):" && timeout -t 10 openssl s_client -connect smtp.gmail.com:465 -servername smtp.gmail.com </dev/null | head -n 5 || true
+      - echo "DNS ${SMTP_HOST}:" && drill ${SMTP_HOST} || true
+      - echo "TCP 587:" && timeout 8 nc -vz -w 5 ${SMTP_HOST} 587 || true
+      - echo "TCP 465:" && timeout 8 nc -vz -w 5 ${SMTP_HOST} 465 || true
+      - echo "STARTTLS 587 (hello):" && timeout 10 sh -c "printf 'QUIT\r\n' | openssl s_client -starttls smtp -crlf -connect ${SMTP_HOST}:587 -servername ${SMTP_HOST}" | head -n 5 || true
+      - echo "SMTPS 465 (hello):" && timeout 10 sh -c "printf 'QUIT\r\n' | openssl s_client -connect ${SMTP_HOST}:465 -servername ${SMTP_HOST}" | head -n 5 || true
 
 volumes:
   - name: dockersock
