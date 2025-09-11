@@ -212,7 +212,6 @@ steps:
         fi
         npm ci --no-audit --no-fund
 
-        # Ejecutar test:ci si existe; si no, fallback a test; si no hay tests, salir OK
         if node -e "p=require('./package.json');process.exit(p.scripts && p.scripts['test:ci'] ? 0 : 1)"; then
           npm run test:ci
         elif node -e "p=require('./package.json');process.exit(p.scripts && p.scripts['test'] ? 0 : 1)"; then
@@ -222,16 +221,29 @@ steps:
           exit 0
         fi
 
-        # En PR no exigimos cobertura; en push sí
         if [ "${DRONE_BUILD_EVENT}" = "pull_request" ]; then
-          if [ ! -f coverage/lcov.info ]; then
-            echo "Aviso: PR sin coverage/lcov.info (Sonar se ejecutará sin cobertura)"
-          fi
+          [ -f coverage/lcov.info ] || echo "Aviso: PR sin coverage/lcov.info (Sonar se ejecutará sin cobertura)"
         else
           test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
         fi
 
-  
+  # --- diagnosticar el secreto en la MISMA imagen del scanner ---
+  - name: diag-pr-secrets-scanner
+    image: sonarsource/sonar-scanner-cli:5
+    when:
+      event: [ pull_request ]
+    environment:
+      SONAR_TOKEN:
+        from_secret: sonar_token
+    depends_on: [ wait-for-sonar ]
+    commands:
+      - |
+        set -eu
+        if [ -n "${SONAR_TOKEN:-}" ]; then
+          echo "OK (scanner): SONAR_TOKEN presente"
+        else
+          echo "MISSING (scanner): SONAR_TOKEN vacío"
+        fi
 
   - name: sonar-frontend-dev
     image: sonarsource/sonar-scanner-cli:5
@@ -329,6 +341,46 @@ steps:
           -Dsonar.qualitygate.wait=true \
           -Dsonar.qualitygate.timeout=600
 
+  - name: sonar-frontend-pr
+    image: sonarsource/sonar-scanner-cli:5
+    when:
+      event: [ pull_request ]
+    environment:
+      SONAR_TOKEN:
+        from_secret: sonar_token
+      SONAR_USER_HOME: /tmp/sonar
+    depends_on: [ test-frontend, wait-for-sonar, diag-pr-secrets-scanner ]
+    commands:
+      - |
+        set -euxo pipefail
+        if [ ! -f package.json ]; then
+          echo "No hay frontend en raíz → omitiendo análisis"; exit 0
+        fi
+
+        # Si por cualquier razón el secreto no llega, no romper el PR:
+        if [ -z "${SONAR_TOKEN:-}" ]; then
+          echo "SIN SONAR_TOKEN (restricción/colisión) → omito Sonar PR"; exit 0
+        fi
+
+        EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
+        COV=""
+        [ -f coverage/lcov.info ] && COV="-Dsonar.javascript.lcov.reportPaths=coverage/lcov.info -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info"
+
+        sonar-scanner \
+          -Dsonar.projectKey=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
+          -Dsonar.projectName=M2:Frontend_PR-${DRONE_PULL_REQUEST} \
+          -Dsonar.projectBaseDir=. \
+          -Dsonar.sources=src \
+          -Dsonar.exclusions="${EXCLS}" \
+          -Dsonar.host.url="$SONAR_HOST_URL" \
+          -Dsonar.token="$SONAR_TOKEN" \
+          -Dsonar.pullrequest.key=${DRONE_PULL_REQUEST} \
+          -Dsonar.pullrequest.branch=${DRONE_SOURCE_BRANCH} \
+          -Dsonar.pullrequest.base=${DRONE_TARGET_BRANCH} \
+          ${COV} \
+          -Dsonar.qualitygate.wait=true \
+          -Dsonar.qualitygate.timeout=600
+
   # =========================
   # =======  DEPLOYS  =======
   # =========================
@@ -350,7 +402,6 @@ steps:
       - |
         set -eu
         apk add --no-cache docker-cli-compose
-        echo "NET_NAME=$${NET_NAME} COMPOSE_DIR=$${COMPOSE_DIR} FILE=$${FILE}"
         docker network inspect "$${NET_NAME}" >/dev/null 2>&1 || docker network create "$${NET_NAME}"
         cd "$${COMPOSE_DIR}"
         docker compose -f "$${FILE}" down --remove-orphans || true
@@ -374,7 +425,6 @@ steps:
       - |
         set -eu
         apk add --no-cache docker-cli-compose
-        echo "NET_NAME=$${NET_NAME} COMPOSE_DIR=$${COMPOSE_DIR} FILE=$${FILE}"
         docker network inspect "$${NET_NAME}" >/dev/null 2>&1 || docker network create "$${NET_NAME}"
         cd "$${COMPOSE_DIR}"
         docker compose -f "$${FILE}" down --remove-orphans || true
@@ -398,16 +448,17 @@ steps:
       - |
         set -eu
         apk add --no-cache docker-cli-compose
-        echo "NET_NAME=$${NET_NAME} COMPOSE_DIR=$${COMPOSE_DIR} FILE=$${FILE}"
         docker network inspect "$${NET_NAME}" >/dev/null 2>&1 || docker network create "$${NET_NAME}"
         cd "$${COMPOSE_DIR}"
         docker compose -f "$${FILE}" down --remove-orphans || true
         docker compose -f "$${FILE}" up -d --build
 
+  # ===== Notificación desacoplada (corre aunque algún step intermedio falle) =====
   - name: notify-failure
     image: plugins/email
+    depends_on: [ checkout ]
     when:
-      status: [ failure ]
+      status: [ failure, error, killed ]
     settings:
       host:
         from_secret: smtp_host
