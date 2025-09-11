@@ -211,8 +211,6 @@ steps:
           exit 0
         fi
         npm ci --no-audit --no-fund
-
-        # Ejecutar test:ci si existe; si no, fallback a test; si no hay tests, salir OK
         if node -e "p=require('./package.json');process.exit(p.scripts && p.scripts['test:ci'] ? 0 : 1)"; then
           npm run test:ci
         elif node -e "p=require('./package.json');process.exit(p.scripts && p.scripts['test'] ? 0 : 1)"; then
@@ -221,12 +219,8 @@ steps:
           echo 'No hay scripts de prueba (test/test:ci) → omitiendo tests'
           exit 0
         fi
-
-        # En PR no exigimos cobertura; en push sí
         if [ "${DRONE_BUILD_EVENT}" = "pull_request" ]; then
-          if [ ! -f coverage/lcov.info ]; then
-            echo "Aviso: PR sin coverage/lcov.info (Sonar se ejecutará sin cobertura)"
-          fi
+          [ -f coverage/lcov.info ] || echo "Aviso: PR sin coverage/lcov.info (Sonar se ejecutará sin cobertura)"
         else
           test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
         fi
@@ -248,7 +242,7 @@ steps:
           echo "No hay frontend en raíz → omitiendo análisis"
           exit 0
         fi
-        test -f coverage/lcov.info || { echo "No existe cobertura/lcov.info"; exit 3; }
+        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
         test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
         sonar-scanner \
@@ -280,7 +274,7 @@ steps:
           echo "No hay frontend en raíz → omitiendo análisis"
           exit 0
         fi
-        test -f coverage/lcov.info || { echo "No existe cobertura/lcov.info"; exit 3; }
+        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
         test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
         sonar-scanner \
@@ -312,7 +306,7 @@ steps:
           echo "No hay frontend en raíz → omitiendo análisis"
           exit 0
         fi
-        test -f coverage/lcov.info || { echo "No existe cobertura/lcov.info"; exit 3; }
+        test -f coverage/lcov.info || { echo "No existe coverage/lcov.info"; exit 3; }
         test -n "$SONAR_TOKEN" || { echo "Falta secreto sonar_token"; exit 2; }
         EXCLS="backend/**,**/*.java,node_modules/**,dist/**,coverage/**,.vite/**"
         sonar-scanner \
@@ -402,7 +396,7 @@ steps:
         docker compose -f "$${FILE}" down --remove-orphans || true
         docker compose -f "$${FILE}" up -d --build
 
-  # ===== Notificación de ÉXITO =====
+  # ===== Notificaciones =====
   - name: notify-success
     image: plugins/email
     when:
