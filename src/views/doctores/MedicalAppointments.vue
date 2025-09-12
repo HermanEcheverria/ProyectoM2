@@ -319,6 +319,8 @@ export default {
       while (hora < 16 || (hora === 16 && minutos === 0)) {
         horas.push(`${hora.toString().padStart(2, "0")}:${minutos.toString().padStart(2, "0")}`);
         minutos += 30;
+
+        while(0)
         if (minutos === 60) {
           minutos = 0;
           hora++;
