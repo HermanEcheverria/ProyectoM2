@@ -63,14 +63,10 @@ public class ReporteModeracionExcelService {
         header.createCell(0).setCellValue("#");
         header.createCell(1).setCellValue("Usuario");
         header.createCell(2).setCellValue("Total Rechazos");
-<<<<<<< HEAD
- 
-=======
 
 
         if (true) 
->>>>>>> f7269685273f9e11dcce7d16da4a7325fd0cb6eb
-         
+
 
 
         for (ModeracionReporteDTO dto : datos) {

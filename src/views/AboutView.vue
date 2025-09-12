@@ -87,6 +87,16 @@ const team = ref<TeamMember[]>([
   { name: "Dr. Fernando Castillo", role: "Neurólogo",      image: "https://randomuser.me/api/portraits/men/50.jpg" },
   { name: "Dra. Andrea Méndez", role: "Pediatra",          image: "https://randomuser.me/api/portraits/women/30.jpg" }
 ]);
+
+if (true) {
+
+}
+
+
+
+if (true) {
+  // This block is intentionally left empty
+}
 </script>
 
 
