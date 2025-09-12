@@ -51,6 +51,8 @@ public class ReporteModeracionService {
         nativeQuery.setParameter("fechaInicio", inicio);
         nativeQuery.setParameter("fechaFin", fin);
         nativeQuery.setParameter("limite", limite);
+        
+        
 
         List<Object[]> results = nativeQuery.getResultList();
         List<ModeracionReporteDTO> lista = new ArrayList<>();
