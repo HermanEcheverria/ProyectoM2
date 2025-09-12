@@ -18,33 +18,24 @@ pipeline {
   }
 
   stages {
+
     stage('Checkout') {
       steps { checkout scm }
     }
 
-    stage('Install Frontend deps (root)') {
-      steps {
-        script {
-          nodejs('Node 20') {
-            sh '''
-              if [ -f package.json ]; then
-                echo "Instalando dependencias del front en la raíz..."
-                npm ci --no-audit --no-fund
-              else
-                echo "No hay package.json en la raíz."
-              fi
-            '''
-          }
-        }
-      }
-    }
+    /********************
+     * === PR GATE ===
+     * Unit Tests Backend + Sonar (Backend y Frontend) + Quality Gates
+     ********************/
 
-    stage('Build & Unit Tests (Backend)') {
+    stage('PR: Unit Tests Backend + Jacoco') {
+      when { changeRequest() }
       steps {
         dir('backend') {
-          sh 'mvn -q clean verify -DskipTests=false'
-          sh 'mvn -q jacoco:report'
           sh '''
+            set -euxo pipefail
+            mvn -q clean verify -DskipTests=false
+            mvn -q jacoco:report
             test -f target/site/jacoco/jacoco.xml || {
               echo "No se encontró backend/target/site/jacoco/jacoco.xml";
               exit 1;
@@ -54,9 +45,82 @@ pipeline {
       }
     }
 
-    stage('SonarQube Analysis - Backend (con cobertura)') {
+    stage('PR: SonarQube Analysis - Backend (con cobertura)') {
+      when { changeRequest() }
+      steps {
+        script {
+          def scannerHome = tool 'SonarScanner'
+          withSonarQubeEnv("${SONARQUBE_ENV}") {
+            withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
+              withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
+                dir('backend') {
+                  sh '''
+                    set -euo pipefail
+                    rm -rf .scannerwork || true
+                    KEY="${PROJECT_NAME}-backend-pr-${CHANGE_ID}"
+                    NAME="${PROJECT_NAME} :: Backend [PR-${CHANGE_ID}]"
+
+                    sonar-scanner \
+                      -Dsonar.token="$SONAR_TOKEN" \
+                      -Dsonar.projectKey="$KEY" \
+                      -Dsonar.projectName="$NAME" \
+                      -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                  '''
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    stage('PR: Quality Gate - Backend') {
+      when { changeRequest() }
+      steps {
+        dir('backend') {
+          timeout(time: 10, unit: 'MINUTES') {
+            waitForQualityGate abortPipeline: true
+            echo "Quality Gate BACKEND (PR) OK"
+          }
+        }
+      }
+    }
+
+    /* === NUEVO: Tests Frontend + Cobertura (PR) === */
+    stage('PR: Unit Tests Frontend + Coverage') {
       when {
-        expression { ['dev','uat','prod','main','master'].contains(env.BRANCH_NAME ?: 'prod') }
+        allOf {
+          changeRequest()
+          expression { fileExists('package.json') }
+        }
+      }
+      steps {
+        script {
+          nodejs('Node 20') {
+            sh '''
+              set -euxo pipefail
+              npm ci --no-audit --no-fund
+              npm run test:ci
+
+              # Verificar LCOV que usará Sonar
+              test -f coverage/lcov.info || {
+                echo "No se encontró coverage/lcov.info";
+                exit 1;
+              }
+            '''
+            archiveArtifacts artifacts: 'coverage/**', fingerprint: true, onlyIfSuccessful: true
+          }
+        }
+      }
+    }
+
+    /* === REEMPLAZA: Frontend (con cobertura) en PR === */
+    stage('PR: SonarQube Analysis - Frontend (con cobertura)') {
+      when {
+        allOf {
+          changeRequest()
+          expression { fileExists('sonar-project.properties') && fileExists('package.json') }
+        }
       }
       steps {
         script {
@@ -64,28 +128,129 @@ pipeline {
           withSonarQubeEnv("${SONARQUBE_ENV}") {
             withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
               withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
-                sh 'rm -rf .scannerwork backend/.scannerwork || true'
+                sh '''
+                  set -euo pipefail
+                  rm -rf .scannerwork || true
+                  KEY="${PROJECT_NAME}-frontend-pr-${CHANGE_ID}"
+                  NAME="${PROJECT_NAME} :: Frontend [PR-${CHANGE_ID}]"
+
+                  sonar-scanner \
+                    -Dsonar.token="$SONAR_TOKEN" \
+                    -Dsonar.projectKey="$KEY" \
+                    -Dsonar.projectName="$NAME" \
+                    -Dsonar.sources=src \
+                    -Dsonar.tests=src \
+                    -Dsonar.test.inclusions=**/*.spec.*,**/__tests__/**/*.*,**/tests/**/*.* \
+                    -Dsonar.exclusions=**/__tests__/**,**/tests/**,**/*.spec.* \
+                    -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+                    -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info \
+                    -Dsonar.sourceEncoding=UTF-8
+                '''
+              }
+            }
+          }
+        }
+      }
+    }
+
+    stage('PR: Quality Gate - Frontend') {
+      when {
+        allOf {
+          changeRequest()
+          expression { fileExists('sonar-project.properties') && fileExists('package.json') }
+        }
+      }
+      steps {
+        timeout(time: 10, unit: 'MINUTES') {
+          waitForQualityGate abortPipeline: true
+          echo "Quality Gate FRONTEND (PR) OK"
+        }
+      }
+    }
+
+    /********************
+     * === RAMAS REALES (dev / uat / prod) ===
+     ********************/
+
+    stage('Build & Unit Tests (Backend)') {
+      when { not { changeRequest() } }
+      steps {
+        dir('backend') {
+          sh '''
+            set -euxo pipefail
+            mvn -q clean verify -DskipTests=false
+            mvn -q jacoco:report
+            test -f target/site/jacoco/jacoco.xml || {
+              echo "No se encontró backend/target/site/jacoco/jacoco.xml";
+              exit 1;
+            }
+          '''
+        }
+      }
+    }
+
+    /* === REEMPLAZA: Install Frontend deps (root) === */
+    stage('Build & Unit Tests (Frontend)') {
+      when { not { changeRequest() } }
+      steps {
+        script {
+          nodejs('Node 20') {
+            sh '''
+              set -euxo pipefail
+              if [ -f package.json ]; then
+                npm ci --no-audit --no-fund
+                npm run test:ci
+                test -f coverage/lcov.info || {
+                  echo "No se encontró coverage/lcov.info";
+                  exit 1;
+                }
+              else
+                echo "No hay package.json en la raíz."
+              fi
+            '''
+            archiveArtifacts artifacts: 'coverage/**', fingerprint: true, onlyIfSuccessful: true
+          }
+        }
+      }
+    }
+
+    stage('SonarQube Analysis - Backend (con cobertura)') {
+      when {
+        allOf {
+          not { changeRequest() }
+          expression { ['dev','uat','prod'].contains(env.BRANCH_NAME ?: 'prod') }
+        }
+      }
+      steps {
+        script {
+          def scannerHome = tool 'SonarScanner'
+          withSonarQubeEnv("${SONARQUBE_ENV}") {
+            withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
+              withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
                 dir('backend') {
-                  def raw = env.BRANCH_NAME ?: 'prod'
-                  def targetEnv = (raw in ['main','master']) ? 'prod' : raw
-                  def key   = "${PROJECT_NAME}-backend-${targetEnv}"
-                  def pname = "${PROJECT_NAME} :: Backend [${targetEnv}]"
-                  withEnv(["SONAR_PROJECT_KEY=${key}", "SONAR_PROJECT_NAME=${pname}", "TARGET_ENV=${targetEnv}"]) {
-                    sh '''
-                      # asegurar tags para versionado en prod
-                      git fetch --tags --force || true
+                  sh '''
+                    set -euo pipefail
+                    rm -rf .scannerwork || true
 
-                      EXTRA=""
-                      if [ "$TARGET_ENV" = "prod" ]; then
-                        VER=$(git describe --tags --always 2>/dev/null || echo "$BUILD_NUMBER")
-                        EXTRA="-Dsonar.projectVersion=$VER"
-                      fi
+                    RAW="${BRANCH_NAME:-prod}"
+                    TARGET_ENV="$RAW"
 
-                      sonar-scanner -Dsonar.token=$SONAR_TOKEN \
-                                    -Dsonar.projectKey=$SONAR_PROJECT_KEY \
-                                    -Dsonar.projectName="$SONAR_PROJECT_NAME" $EXTRA
-                    '''
-                  }
+                    KEY="${PROJECT_NAME}-backend-${TARGET_ENV}"
+                    NAME="${PROJECT_NAME} :: Backend [${TARGET_ENV}]"
+                    EXTS=""
+                    if [ "$TARGET_ENV" = "prod" ]; then
+                      git fetch --tags --force >/dev/null 2>&1 || true
+                      VER=$(git describe --tags --always 2>/dev/null || echo "$BUILD_NUMBER")
+                      EXTS="$EXTS -Dsonar.projectVersion=${VER}"
+                    fi
+
+                    sonar-scanner \
+                      -Dsonar.token="$SONAR_TOKEN" \
+                      -Dsonar.projectKey="$KEY" \
+                      -Dsonar.projectName="$NAME" \
+                      -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+                      $EXTS
+                  '''
                 }
               }
             }
@@ -96,7 +261,10 @@ pipeline {
 
     stage('Quality Gate - Backend') {
       when {
-        expression { ['dev','uat','prod','main','master'].contains(env.BRANCH_NAME ?: 'prod') }
+        allOf {
+          not { changeRequest() }
+          expression { ['dev','uat','prod'].contains(env.BRANCH_NAME ?: 'prod') }
+        }
       }
       steps {
         dir('backend') {
@@ -108,11 +276,13 @@ pipeline {
       }
     }
 
-    stage('SonarQube Analysis - Frontend (sin cobertura)') {
+    /* === REEMPLAZA: Frontend (con cobertura) en ramas reales === */
+    stage('SonarQube Analysis - Frontend (con cobertura)') {
       when {
         allOf {
+          not { changeRequest() }
           expression { fileExists('sonar-project.properties') && fileExists('package.json') }
-          expression { ['dev','uat','prod','main','master'].contains(env.BRANCH_NAME ?: 'prod') }
+          expression { ['dev','uat','prod'].contains(env.BRANCH_NAME ?: 'prod') }
         }
       }
       steps {
@@ -121,26 +291,35 @@ pipeline {
           withSonarQubeEnv("${SONARQUBE_ENV}") {
             withCredentials([string(credentialsId: 'tokensonar', variable: 'SONAR_TOKEN')]) {
               withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
-                sh 'rm -rf .scannerwork backend/.scannerwork || true'
-                def raw = env.BRANCH_NAME ?: 'prod'
-                def targetEnv = (raw in ['main','master']) ? 'prod' : raw
-                def key   = "${PROJECT_NAME}-frontend-${targetEnv}"
-                def pname = "${PROJECT_NAME} :: Frontend [${targetEnv}]"
-                withEnv(["SONAR_PROJECT_KEY=${key}", "SONAR_PROJECT_NAME=${pname}", "TARGET_ENV=${targetEnv}"]) {
-                  sh '''
-                    git fetch --tags --force || true
+                sh '''
+                  set -euo pipefail
+                  rm -rf .scannerwork || true
 
-                    EXTRA=""
-                    if [ "$TARGET_ENV" = "prod" ]; then
-                      VER=$(git describe --tags --always 2>/dev/null || echo "$BUILD_NUMBER")
-                      EXTRA="-Dsonar.projectVersion=$VER"
-                    fi
+                  RAW="${BRANCH_NAME:-prod}"
+                  TARGET_ENV="$RAW"
+                  KEY="${PROJECT_NAME}-frontend-${TARGET_ENV}"
+                  NAME="${PROJECT_NAME} :: Frontend [${TARGET_ENV}]"
 
-                    sonar-scanner -Dsonar.token=$SONAR_TOKEN \
-                                  -Dsonar.projectKey=$SONAR_PROJECT_KEY \
-                                  -Dsonar.projectName="$SONAR_PROJECT_NAME" $EXTRA
-                  '''
-                }
+                  EXTS=""
+                  if [ "$TARGET_ENV" = "prod" ]; then
+                    git fetch --tags --force >/dev/null 2>&1 || true
+                    VER=$(git describe --tags --always 2>/dev/null || echo "$BUILD_NUMBER")
+                    EXTS="$EXTS -Dsonar.projectVersion=${VER}"
+                  fi
+
+                  sonar-scanner \
+                    -Dsonar.token="$SONAR_TOKEN" \
+                    -Dsonar.projectKey="$KEY" \
+                    -Dsonar.projectName="$NAME" \
+                    -Dsonar.sources=src \
+                    -Dsonar.tests=src \
+                    -Dsonar.test.inclusions=**/*.spec.*,**/__tests__/**/*.*,**/tests/**/*.* \
+                    -Dsonar.exclusions=**/__tests__/**,**/tests/**,**/*.spec.* \
+                    -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+                    -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info \
+                    -Dsonar.sourceEncoding=UTF-8 \
+                    $EXTS
+                '''
               }
             }
           }
@@ -151,8 +330,9 @@ pipeline {
     stage('Quality Gate - Frontend') {
       when {
         allOf {
+          not { changeRequest() }
           expression { fileExists('sonar-project.properties') && fileExists('package.json') }
-          expression { ['dev','uat','prod','main','master'].contains(env.BRANCH_NAME ?: 'prod') }
+          expression { ['dev','uat','prod'].contains(env.BRANCH_NAME ?: 'prod') }
         }
       }
       steps {
@@ -163,108 +343,83 @@ pipeline {
       }
     }
 
+    /********************
+     * DEPLOYS (NO en PR)
+     ********************/
     stage('Deploy DEV') {
-      when { branch 'dev' }
+      when { allOf { branch 'dev'; not { changeRequest() } } }
       steps {
         sh '''
           set -euxo pipefail
           cd "$WORKSPACE/deploy"
-
-          # Detecta compose v2/v1
           if docker compose version >/dev/null 2>&1; then CMD="docker compose"; else CMD="docker-compose"; fi
-
           docker network inspect m2-dev-net >/dev/null 2>&1 || docker network create m2-dev-net
-
-          # Tira el stack previo y limpia huérfanos (sin borrar volúmenes)
           $CMD -p m2dev -f docker-compose.dev.yml down --remove-orphans || true
-
-          # Construye y recrea contenedores
           $CMD -p m2dev -f docker-compose.dev.yml build --pull
           $CMD -p m2dev -f docker-compose.dev.yml up -d --force-recreate
-
           $CMD -p m2dev ps
         '''
       }
     }
 
     stage('Deploy UAT') {
-      when { branch 'uat' }
+      when { allOf { branch 'uat'; not { changeRequest() } } }
       steps {
         sh '''
           set -euxo pipefail
           cd "$WORKSPACE/deploy"
-
           if docker compose version >/dev/null 2>&1; then CMD="docker compose"; else CMD="docker-compose"; fi
-
           docker network inspect m2-uat-net >/dev/null 2>&1 || docker network create m2-uat-net
-
           $CMD -p m2uat -f docker-compose.uat.yml down --remove-orphans || true
           $CMD -p m2uat -f docker-compose.uat.yml build --pull
           $CMD -p m2uat -f docker-compose.uat.yml up -d --force-recreate
-
           $CMD -p m2uat ps
         '''
       }
     }
 
     stage('Deploy PROD') {
-      when { anyOf { branch 'prod'; branch 'main'; branch 'master' } }
+      when { allOf { branch 'prod'; not { changeRequest() } } }
       steps {
         sh '''
           set -euxo pipefail
           cd "$WORKSPACE/deploy"
-
           if docker compose version >/dev/null 2>&1; then CMD="docker compose"; else CMD="docker-compose"; fi
-
           docker network inspect m2-prod-net >/dev/null 2>&1 || docker network create m2-prod-net
-
           $CMD -p m2prod -f docker-compose.prod.yml down --remove-orphans || true
           $CMD -p m2prod -f docker-compose.prod.yml build --pull
           $CMD -p m2prod -f docker-compose.prod.yml up -d --force-recreate
-
           $CMD -p m2prod ps
         '''
       }
     }
   }
 
- post {
-  failure {
-    script {
-      try {
-        
-        def tz  = TimeZone.getTimeZone('America/Guatemala')
-        def now = new Date().format("yyyy-MM-dd HH:mm:ss z", tz)
+  post {
+    failure {
+      script {
+        try {
+          def tz  = TimeZone.getTimeZone('America/Guatemala')
+          def now = new Date().format("yyyy-MM-dd HH:mm:ss z", tz)
+          def raw       = env.BRANCH_NAME ?: 'prod'
+          def targetEnv = raw
+          def stageName = (env.STAGE_NAME ?: 'N/A')
+          def jobName  = env.JOB_NAME
+          def buildNum = env.BUILD_NUMBER
+          def duration = (currentBuild.durationString ?: '').replace(' and counting','')
+          def nodeName = (env.NODE_NAME ?: 'N/A')
+          def buildRoot  = (env.BUILD_URL ?: "").trim()
+          if (buildRoot && !buildRoot.endsWith("/")) { buildRoot += "/" }
+          def displayURL = (env.RUN_DISPLAY_URL ?: buildRoot)
+          def consoleURL = buildRoot + "consoleFull"
+          def commit  = sh(script: 'git rev-parse --short HEAD || true', returnStdout: true).trim()
+          def author  = sh(script: "git --no-pager show -s --format='%an <%ae>' HEAD || true", returnStdout: true).trim()
+          def message = sh(script: "git --no-pager show -s --format='%s' HEAD || true", returnStdout: true).trim()
+          def prURL = env.CHANGE_URL ?: '-'
+          def prID  = env.CHANGE_ID  ?: '-'
 
-        
-        def raw       = env.BRANCH_NAME ?: 'prod'
-        def targetEnv = (['main'].contains(raw)) ? 'prod' : raw
-        def stageName = (env.STAGE_NAME ?: 'N/A')
-
-      
-        def jobName  = env.JOB_NAME
-        def buildNum = env.BUILD_NUMBER
-        def duration = (currentBuild.durationString ?: '').replace(' and counting','')
-        def nodeName = (env.NODE_NAME ?: 'N/A')
-
-        
-        def buildRoot  = (env.BUILD_URL ?: "").trim()      
-        if (buildRoot && !buildRoot.endsWith("/")) { buildRoot += "/" }
-        def displayURL = (env.RUN_DISPLAY_URL ?: buildRoot) 
-        def consoleURL = buildRoot + "consoleFull"
-        
-
-        
-        def commit  = sh(script: 'git rev-parse --short HEAD || true', returnStdout: true).trim()
-        def author  = sh(script: "git --no-pager show -s --format='%an <%ae>' HEAD || true", returnStdout: true).trim()
-        def message = sh(script: "git --no-pager show -s --format='%s' HEAD || true", returnStdout: true).trim()
-
-        
-        def prURL = env.CHANGE_URL ?: '-'
-        def prID  = env.CHANGE_ID  ?: '-'
-
-        def subject = "Falló pipeline | ${jobName} #${buildNum} | rama ${raw} (${targetEnv}) | etapa ${stageName}"
-        def body = """\
+          def subject = "Falló pipeline | ${jobName} #${buildNum} | rama ${raw} (${targetEnv}) | etapa ${stageName}"
+          def body = """\
                         Fecha/Hora:   ${now}
                         Resultado:    FAILURE
                         Job:          ${jobName}
@@ -284,43 +439,37 @@ pipeline {
 
                         -- Jenkins auto-notificación
                         """
-        mail to: 'hecheverria@unis.edu.gt,jflores@unis.edu.gt', subject: subject, body: body
-      } catch (e) {
-        echo "No se pudo enviar correo (failure): ${e}"
+          mail to: 'hecheverria@unis.edu.gt,jflores@unis.edu.gt', subject: subject, body: body
+        } catch (e) {
+          echo "No se pudo enviar correo (failure): ${e}"
+        }
       }
     }
-  }
 
-  unstable {
-    script {
-      try {
-        def tz  = TimeZone.getTimeZone('America/Guatemala')
-        def now = new Date().format("yyyy-MM-dd HH:mm:ss z", tz)
+    unstable {
+      script {
+        try {
+          def tz  = TimeZone.getTimeZone('America/Guatemala')
+          def now = new Date().format("yyyy-MM-dd HH:mm:ss z", tz)
+          def raw       = env.BRANCH_NAME ?: 'prod'
+          def targetEnv = raw
+          def stageName = (env.STAGE_NAME ?: 'N/A')
+          def jobName  = env.JOB_NAME
+          def buildNum = env.BUILD_NUMBER
+          def duration = (currentBuild.durationString ?: '').replace(' and counting','')
+          def nodeName = (env.NODE_NAME ?: 'N/A')
+          def buildRoot  = (env.BUILD_URL ?: "").trim()
+          if (buildRoot && !buildRoot.endsWith("/")) { buildRoot += "/" }
+          def displayURL = (env.RUN_DISPLAY_URL ?: buildRoot)
+          def consoleURL = buildRoot + "consoleFull"
+          def commit  = sh(script: 'git rev-parse --short HEAD || true', returnStdout: true).trim()
+          def author  = sh(script: "git --no-pager show -s --format='%an <%ae>' HEAD || true", returnStdout: true).trim()
+          def message = sh(script: "git --no-pager show -s --format='%s' HEAD || true", returnStdout: true).trim()
+          def prURL = env.CHANGE_URL ?: '-'
+          def prID  = env.CHANGE_ID  ?: '-'
 
-        def raw       = env.BRANCH_NAME ?: 'prod'
-        def targetEnv = (['main','master'].contains(raw)) ? 'prod' : raw
-        def stageName = (env.STAGE_NAME ?: 'N/A')
-
-        def jobName  = env.JOB_NAME
-        def buildNum = env.BUILD_NUMBER
-        def duration = (currentBuild.durationString ?: '').replace(' and counting','')
-        def nodeName = (env.NODE_NAME ?: 'N/A')
-
-        def buildRoot  = (env.BUILD_URL ?: "").trim()
-        if (buildRoot && !buildRoot.endsWith("/")) { buildRoot += "/" }
-        def displayURL = (env.RUN_DISPLAY_URL ?: buildRoot)
-        def consoleURL = buildRoot + "consoleFull"
-        
-
-        def commit  = sh(script: 'git rev-parse --short HEAD || true', returnStdout: true).trim()
-        def author  = sh(script: "git --no-pager show -s --format='%an <%ae>' HEAD || true", returnStdout: true).trim()
-        def message = sh(script: "git --no-pager show -s --format='%s' HEAD || true", returnStdout: true).trim()
-
-        def prURL = env.CHANGE_URL ?: '-'
-        def prID  = env.CHANGE_ID  ?: '-'
-
-        def subject = "Pipeline UNSTABLE | ${jobName} #${buildNum} | rama ${raw} (${targetEnv}) | etapa ${stageName}"
-        def body = """\
+          def subject = "Pipeline UNSTABLE | ${jobName} #${buildNum} | rama ${raw} (${targetEnv}) | etapa ${stageName}"
+          def body = """\
                         Fecha/Hora:   ${now}
                         Resultado:    UNSTABLE
                         Job:          ${jobName}
@@ -337,15 +486,14 @@ pipeline {
                         Pull Request: ${prURL} (ID: ${prID})
                         Build UI:     ${displayURL}
                         Consola:      ${consoleURL}
-                        
 
                         -- Jenkins auto-notificación
                         """
-        mail to: 'hecheverria@unis.edu.gt,jflores@unis.edu.gt', subject: subject, body: body
-      } catch (e) {
-        echo "No se pudo enviar correo (unstable): ${e}"
+          mail to: 'hecheverria@unis.edu.gt,jflores@unis.edu.gt', subject: subject, body: body
+        } catch (e) {
+          echo "No se pudo enviar correo (unstable): ${e}"
+        }
       }
     }
   }
-}
 }

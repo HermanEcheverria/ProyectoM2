@@ -1,5 +1,6 @@
 package com.unis.controller;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -13,49 +14,72 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 
-/**
- * REST controller for exporting medicine report data as an Excel file.
- * <p>
- * Generates and serves a downloadable `.xlsx` report containing medicine-related statistics
- * within a specified date range, limited by a maximum result count, and attributed to a user.
- * </p>
- */
 @Path("/reporte-medicinas/excel")
 public class ReporteMedicinaExcelController {
+
+    static final String CT_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
     @Inject
     ReporteMedicinaExcelService excelService;
 
-    /**
-     * Downloads the medicine report as an Excel file.
-     *
-     * @param inicio the start date in format yyyy-MM-dd
-     * @param fin the end date in format yyyy-MM-dd
-     * @param limite the maximum number of rows to include in the report (default is 10)
-     * @param usuario the user requesting the report (used for metadata)
-     * @return a {@link Response} containing the Excel file or an error message
-     */
     @GET
-    @Produces("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    @Produces(CT_XLSX)
     public Response descargarExcel(
             @QueryParam("inicio") String inicio,
             @QueryParam("fin") String fin,
             @QueryParam("limite") @DefaultValue("10") int limite,
             @QueryParam("usuario") @DefaultValue("admin@hospital.com") String usuario
     ) {
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            Date fechaInicio = sdf.parse(inicio);
-            Date fechaFin = sdf.parse(fin);
+        // Validaciones de entrada esperadas por los tests
+        if (inicio == null || inicio.trim().isEmpty()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("El parámetro 'inicio' es requerido").build();
+        }
+        if (fin == null || fin.trim().isEmpty()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("El parámetro 'fin' es requerido").build();
+        }
+        if (limite <= 0) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("El parámetro 'limite' debe ser mayor a 0").build();
+        }
 
-            byte[] excel = excelService.generarExcel(fechaInicio, fechaFin, limite, usuario);
+        // Normalizar usuario (test espera default si viene vacío)
+        String usuarioNorm = (usuario == null || usuario.trim().isEmpty())
+                ? "admin@hospital.com" : usuario.trim();
+
+        // Parseo de fechas estricto
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        sdf.setLenient(false);
+        final Date fechaInicio;
+        final Date fechaFin;
+        try {
+            fechaInicio = sdf.parse(inicio);
+            fechaFin = sdf.parse(fin);
+        } catch (ParseException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Formato de fecha inválido. Use yyyy-MM-dd").build();
+        }
+
+        // Validar rango
+        if (fechaInicio.after(fechaFin)) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("El parámetro 'inicio' no puede ser posterior a 'fin'").build();
+        }
+
+        try {
+            byte[] excel = excelService.generarExcel(fechaInicio, fechaFin, limite, usuarioNorm);
+
+            // Nombre de archivo con el rango (los tests lo verifican)
+            String filename = String.format("medicinas_reporte_%s_a_%s.xlsx", inicio, fin);
 
             return Response.ok(excel)
-                    .header("Content-Disposition", "attachment; filename=medicinas_reporte.xlsx")
+                    .type(CT_XLSX) // asegurar Content-Type (el @Produces no siempre aplica en Response.ok(byte[]))
+                    .header("Content-Disposition", "attachment; filename=" + filename)
                     .build();
-
         } catch (Exception e) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("Error generando reporte").build();
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Error generando reporte").build();
         }
     }
 }

@@ -123,6 +123,18 @@
       <artifactId>poi-ooxml</artifactId>
       <version>5.2.3</version>
     </dependency>
+    <dependency>
+  <groupId>io.quarkus</groupId>
+  <artifactId>quarkus-junit5-mockito</artifactId>
+  <scope>test</scope>
+</dependency>
+<dependency>
+  <groupId>org.awaitility</groupId>
+  <artifactId>awaitility</artifactId>
+  <version>4.2.0</version>
+  <scope>test</scope>
+</dependency>
+
   </dependencies>
 
   <build>

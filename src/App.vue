@@ -32,11 +32,13 @@ const myAccountRoute = () => {
 </script>
 
 <template>
-  <header class="navbar">
+  <header class="navbarr">
     <div class="navbar-container">
       <div class="brand">
         <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="50" height="50" />
-        <h1>Magic 14-07-2025-Prod</h1>
+
+        <h1>Polonia 6:30 11/09</h1>
+
       </div>
 
       <nav class="nav-links">
@@ -55,7 +57,7 @@ const myAccountRoute = () => {
         <RouterLink to="/solicitud-hospital">Solicitar Convenio</RouterLink>
         <RouterLink to="/registrar-atencion">Registrar Atención</RouterLink>
         <RouterLink to="/consultar-historial">Consultar Historial</RouterLink>
-        <RouterLink v-if="userRole === 1"to="/citas-aseguradora">Citas por ASeguradora</RouterLink>
+        <RouterLink v-if="userRole === 1" to="/citas-aseguradora">Citas por ASeguradora</RouterLink>
 
 
         <RouterLink v-if="!isLoggedIn" to="/login">Log in</RouterLink>
