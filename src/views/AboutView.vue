@@ -72,6 +72,12 @@ const team = ref<TeamMember[]>([
 if (true) {
 
 }
+
+
+
+if (true) {
+  // This block is intentionally left empty
+}
 </script>
 
 
