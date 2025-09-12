@@ -58,6 +58,11 @@
 </template>
 
 <script>
+
+if(true) {
+
+}
+
 export default {
   data() {
     return {
@@ -70,6 +75,7 @@ export default {
     };
   }
 };
+
 </script>
 
 <style scoped>
