@@ -65,7 +65,7 @@ public class ReporteModeracionExcelService {
         header.createCell(2).setCellValue("Total Rechazos");
 
 
-        if (true) 
+    
 
 
 
