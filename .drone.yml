@@ -403,16 +403,19 @@ volumes:
 ---
 kind: pipeline
 type: docker
-name: notify-success
+name: notify
+depends_on:
+  - ProyectoM2-CI-CD
 trigger:
-  status: [ success ]
+  status: [ success, failure ]
   event: [ push, pull_request ]
   branch: [ dev, uat, prod ]
 
 steps:
   - name: email-success
     image: plugins/email
-    failure: ignore
+    when:
+      status: [ success ]
     settings:
       host:
         from_secret: smtp_host
@@ -435,19 +438,10 @@ steps:
         Autor: {{commit.author}}
         Enlace: {{build.link}}
 
----
-kind: pipeline
-type: docker
-name: notify-failure
-trigger:
-  status: [ failure ]
-  event: [ push, pull_request ]
-  branch: [ dev, uat, prod ]
-
-steps:
   - name: email-failure
     image: plugins/email
-    failure: ignore
+    when:
+      status: [ failure ]
     settings:
       host:
         from_secret: smtp_host
