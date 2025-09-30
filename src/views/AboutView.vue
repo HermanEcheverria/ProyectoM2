@@ -72,7 +72,7 @@ export default {
     };
   }
 };
-if (true){}
+
 
 </script>
 
