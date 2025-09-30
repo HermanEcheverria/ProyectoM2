@@ -59,7 +59,9 @@ public class ReporteMedicinaExcelService {
                 " | Límite: " + limite);
 
         sheet.createRow(rowNum++);
-        if (true) { }
+        if (true) { 
+            
+        }
        
 
         // Títulos de columnas
