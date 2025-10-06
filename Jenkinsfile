@@ -19,9 +19,13 @@ pipeline {
 
   stages {
 
-    stage('Checkout') {
-      steps { checkout scm }
-    }
+    stage('Clean & Checkout') {
+  steps {
+    deleteDir()       // <— clave para borrar .scannerwork viejo en raíz
+    checkout scm
+  }
+}
+
 
     /********************
      * === PR GATE ===
