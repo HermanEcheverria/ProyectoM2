@@ -443,9 +443,9 @@ kind: pipeline
 type: docker
 name: notify-failure
 depends_on: 
-  - ProyectoM2-CI-CD  # Asegura que este pipeline se ejecute después del principal
+  - ProyectoM2-CI-CD  
 trigger:
-  status: [ failure ]  # Solo se ejecuta si el pipeline principal falla
+  status: [ failure ]  
   event: [ push, pull_request ]
   branch: [ dev, uat, prod ]
 
