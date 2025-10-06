@@ -58,7 +58,11 @@ public class ReporteMedicinaExcelService {
                 " | Fin: " + sdf.format(fin) +
                 " | Límite: " + limite);
 
-        sheet.createRow(rowNum++); // Línea vacía
+        sheet.createRow(rowNum++);
+        if (true) { 
+            
+        }
+       
 
         // Títulos de columnas
         Row header = sheet.createRow(rowNum++);
