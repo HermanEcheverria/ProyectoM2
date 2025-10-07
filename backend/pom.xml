@@ -54,6 +54,19 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-jdbc-oracle</artifactId>
     </dependency>
+    <!-- Micrometer core -->
+<dependency>
+  <groupId>io.quarkus</groupId>
+  <artifactId>quarkus-micrometer</artifactId>
+</dependency>
+
+<!-- Exportador Prometheus -->
+<dependency>
+  <groupId>io.quarkus</groupId>
+  <artifactId>quarkus-micrometer-registry-prometheus</artifactId>
+</dependency>
+
+
 
     <!-- APIs REST -->
     <dependency>
@@ -134,6 +147,7 @@
   <version>4.2.0</version>
   <scope>test</scope>
 </dependency>
+
 
   </dependencies>
 

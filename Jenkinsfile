@@ -21,7 +21,7 @@ pipeline {
 
     stage('Clean & Checkout') {
   steps {
-    deleteDir()       // <— clave para borrar .scannerwork viejo en raíz
+    deleteDir()       
     checkout scm
   }
 }
