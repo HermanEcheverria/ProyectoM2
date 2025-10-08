@@ -4,22 +4,47 @@ global:
   evaluation_interval: 30s
 
 scrape_configs:
-  # --- Jenkins ---
+  # Jenkins (si Prometheus NO comparte red con Jenkins, deja host/puerto como lo tienes)
   - job_name: jenkins
     scheme: http
     metrics_path: /prometheus
     static_configs:
-      - targets:
-          - host.docker.internal:8081
+      - targets: ["host.docker.internal:8081"]   # o la IP/hostname real alcanzable desde Prometheus
         labels:
           service: jenkins
+          env: prod
 
-  # --- App PROD (Quarkus) ---
+  # Backend PROD (Quarkus)
   - job_name: app-prod
-    scheme: http
     metrics_path: /q/metrics
     static_configs:
-      - targets:
-          - host.docker.internal:8084
+      - targets: ["m2prod-backend-1:8080"]   # nombre del contenedor y puerto interno
         labels:
           service: app-backend-prod
+          env: prod
+
+  # cAdvisor: métricas por contenedor
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["cadvisor:8080"]
+        labels:
+          env: prod
+
+  # Blackbox: probar el frontend HTTP
+  - job_name: blackbox-http
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - http://m2prod-frontend-1:80/   # nombre del contenedor frontend
+        labels:
+          service: app-frontend-prod
+          env: prod
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115        # nombre del contenedor del blackbox
