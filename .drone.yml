@@ -401,21 +401,20 @@ volumes:
       path: /var/run/docker.sock
 
 ---
+
 kind: pipeline
 type: docker
-name: notify
-depends_on:
-  - ProyectoM2-CI-CD
+name: notify-success
+depends_on: 
+  - ProyectoM2-CI-CD  # Asegura que este pipeline se ejecute después del principal
 trigger:
-  status: [ success, failure ]
+  status: [ success ]  # Solo se ejecuta si el pipeline principal tiene éxito
   event: [ push, pull_request ]
   branch: [ dev, uat, prod ]
 
 steps:
   - name: email-success
     image: plugins/email
-    when:
-      status: [ success ]
     settings:
       host:
         from_secret: smtp_host
@@ -438,10 +437,21 @@ steps:
         Autor: {{commit.author}}
         Enlace: {{build.link}}
 
+---
+
+kind: pipeline
+type: docker
+name: notify-failure
+depends_on: 
+  - ProyectoM2-CI-CD  
+trigger:
+  status: [ failure ]  
+  event: [ push, pull_request ]
+  branch: [ dev, uat, prod ]
+
+steps:
   - name: email-failure
     image: plugins/email
-    when:
-      status: [ failure ]
     settings:
       host:
         from_secret: smtp_host
