@@ -48,9 +48,6 @@ public class ReporteModeracionExcelService {
         meta1.createCell(0).setCellValue("Fecha generación:");
         meta1.createCell(1).setCellValue(sdf.format(new Date()));
 
-        if (condition) {
-            
-        }
     
 
         Row meta2 = sheet.createRow(rowNum++);
